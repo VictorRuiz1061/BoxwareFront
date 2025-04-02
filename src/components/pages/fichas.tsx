@@ -23,8 +23,6 @@ const Fichas = () => {
 
   const columns: Column<Ficha>[] = [
     { key: "id_ficha", label: "ID Ficha" },
-    { key: "usuario_ficha_id", label: "ID Usuario" },
-    { key: "programa_id", label: "ID Programa" },
     { key: "fecha_creacion", label: "Fecha de Creación" },
     { key: "fecha_modificacion", label: "Última Modificación" },
     {
@@ -50,6 +48,7 @@ const Fichas = () => {
   ];
 
   const formFields: FormField[] = [
+    { key: "id_ficha", label: "ID Ficha", type: "number", required: true },
     { key: "usuario_ficha_id", label: "ID del Usuario", type: "number", required: true },
     { key: "programa_id", label: "ID del Programa", type: "number", required: true },
   ];
@@ -81,8 +80,8 @@ const Fichas = () => {
     try {
       const method = editingId ? "PUT" : "POST";
       const url = editingId
-        ? `http://localhost:3002/fichas/${editingId}`
-        : "http://localhost:3002/fichas";
+        ? `http://localhost:3002/fichas/actualizar/${editingId}`
+        : "http://localhost:3002/fichas/crear/";
 
       const response = await fetch(url, {
         method,
@@ -111,7 +110,7 @@ const Fichas = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3002/fichas/${id}`,
+        `http://localhost:3002/fichas/eliminar/${id}`,
         {
           method: "DELETE",
         }

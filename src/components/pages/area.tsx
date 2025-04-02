@@ -41,6 +41,7 @@ const Areas = () => {
           >
             Eliminar
           </Boton>
+              
         </div>
       ),
     },

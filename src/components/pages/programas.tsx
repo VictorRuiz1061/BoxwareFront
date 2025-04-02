@@ -54,34 +54,42 @@ const Programas = () => {
   ];
 
   useEffect(() => {
-    const fetchProgramas = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/programas");
-        if (!response.ok) {
-          throw new Error("Error al obtener los programas");
-        }
-        const data = await response.json();
-        const programasWithKeys = data.map((programa: Programa) => ({
+    fetchProgramas();
+  }, []);
+
+  const fetchProgramas = async () => {
+    try {
+      const response = await fetch("http://localhost:3002/programas"); // Cambiar a /programas
+      if (!response.ok) {
+        throw new Error("Error al obtener los programas");
+      }
+      const data = await response.json();
+      
+      // Acceder a data.datos ya que el controlador devuelve { mensaje, datos }
+      if (data.datos && Array.isArray(data.datos)) {
+        const programasWithKeys = data.datos.map((programa: Programa) => ({
           ...programa,
           key: programa.id_programa || `temp-${Math.random()}`,
         }));
         setProgramas(programasWithKeys);
-      } catch (error) {
-        console.error("Error al cargar los programas:", error);
-      } finally {
-        setLoading(false);
+      } else {
+        console.error("Formato de respuesta incorrecto:", data);
+        setProgramas([]);
       }
-    };
-
-    fetchProgramas();
-  }, []);
+    } catch (error) {
+      console.error("Error al cargar los programas:", error);
+      setProgramas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
       const method = editingId ? "PUT" : "POST";
       const url = editingId
-        ? `http://localhost:3002/programas/${editingId}`
-        : "http://localhost:3002/programas";
+        ? `http://localhost:3002/programas/actualizar/${editingId}` // Cambiar ruta
+        : "http://localhost:3002/programas/crear"; // Cambiar ruta
 
       const response = await fetch(url, {
         method,
@@ -90,22 +98,27 @@ const Programas = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Error al guardar el programa");
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || "Error al guardar el programa");
       }
 
-      const message = editingId ? "actualizado" : "creado";
+      const data = await response.json();
+      const message = editingId ? "actualizado" : "creado"; 
       alert(`Programa ${message} con éxito`);
 
-      const updatedProgramas = await fetch("http://localhost:3002/programas").then((res) =>
-        res.json()
-      );
-      setProgramas(updatedProgramas);
+      // Recargar la lista de programas
+      fetchProgramas();
 
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
       console.error("Error al guardar el programa:", error);
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert("Ocurrió un error desconocido");
+      }
     }
   };
 
@@ -114,20 +127,25 @@ const Programas = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3002/programas/${id}`,
+        `http://localhost:3002/programas/${id}`, // Cambiar ruta
         {
           method: "DELETE",
         }
       );
 
       if (!response.ok) {
-        throw new Error("Error al eliminar el programa");
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || "Error al eliminar el programa");
       }
 
-      alert("Programa eliminado con éxito");
+      const data = await response.json();
+      alert(data.mensaje || "Programa eliminado con éxito");
+      
+      // Actualizar el estado local
       setProgramas(programas.filter((programa) => programa.id_programa !== id));
     } catch (error) {
       console.error("Error al eliminar el programa:", error);
+      alert(error.message);
     }
   };
 
