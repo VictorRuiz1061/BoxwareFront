@@ -14,7 +14,7 @@ type Usuario = {
   email: string;
   contrasena: string;
   telefono: string;
-  inicio_sesion: string;
+  inicio_sesion: Date;
   esta_activo: boolean;
   fecha_registro: string;
   rol_id: number;
@@ -63,15 +63,12 @@ const Usuarios = () => {
     { key: "email", label: "Email", type: "email", required: true },
     { key: "contrasena", label: "Contraseña", type: "password", required: true },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
-    { key: "inicio_sesion", label: "Inicio de Sesión", type: "text", required: true },
-    { key: "esta_activo", label: "Activo", type: "checkbox", required: false },
-    { key: "fecha_registro", label: "Fecha de Registro", type: "date", required: true },
     { key: "rol_id", label: "Rol ID", type: "number", required: true },
   ];
 
   // Fetch inicial de usuarios
   useEffect(() => {
-    const fetchUsuarios = async () => {
+    const fetchUsuarios = async () => { 
       try {
         const response = await fetch("http://localhost:3002/usuarios");
         if (!response.ok) {
@@ -97,10 +94,17 @@ const Usuarios = () => {
         ? `http://localhost:3002/usuarios/actualizar/${editingId}`
         : "http://localhost:3002/usuarios/crear";
 
+      // Agregar valores predeterminados para los campos ocultos
+      const payload = {
+        ...values,
+        fecha_registro: new Date().toISOString(), // Fecha actual
+        esta_activo: true, // Estado activo por defecto
+      };
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -201,6 +205,9 @@ const Usuarios = () => {
                  initialValues={{
                    ...formData,
                    esta_activo: formData.esta_activo ? "true" : "false",
+                   inicio_sesion: formData.inicio_sesion
+                     ? new Date(formData.inicio_sesion).toISOString()
+                     : undefined,
                  }}
                />
                 <div className="flex justify-end mt-4">

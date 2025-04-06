@@ -1,6 +1,12 @@
-import { Button } from "@heroui/react";
+import { Button, ButtonProps } from "@heroui/react";
+import { ReactNode } from "react";
 
-const Boton = ({ children = "Click", ...props }) => {
+interface BotonProps extends ButtonProps {
+  children?: ReactNode;
+  onClick?: () => void;
+}
+
+const Boton = ({ children = "Click", ...props }: BotonProps) => {
   return <Button {...props}>{children}</Button>;
 };
 
