@@ -14,9 +14,37 @@ export const useAuth = () => {
       return;
     }
 
-    // Here you would typically make an API call to authenticate
-    console.log('Iniciando sesión con:', values);
-    navigate('/dashboard');
+    try {
+      const response = await fetch('http://localhost:3002/validacion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          contrasena: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.status === 401) {
+        setError('Correo electrónico o contraseña incorrectos');
+        return;
+      }
+
+      if (!response.ok) {
+        setError('Error al iniciar sesión. Por favor, intenta nuevamente.');
+        return;
+      }
+
+      setError(null);
+      console.log('Usuario autenticado exitosamente:', data);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+      setError('Error de conexión. Por favor, verifica tu contraseña y correo electrónico.');
+    }
   };
 
   const register = async (values: RegisterFormValues) => {

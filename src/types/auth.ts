@@ -16,5 +16,4 @@ export interface RegisterFormValues {
 
 export interface AuthResponse {
   message: string;
-  // Add any other fields that your API returns
 }
