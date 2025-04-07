@@ -68,4 +68,3 @@ const Form: React.FC<Props> = ({ fields, onSubmit, buttonText = "Enviar" }) => {
 
 
 export default Form;
-
