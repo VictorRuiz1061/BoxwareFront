@@ -1,23 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Boton from '../atomos/Boton';
+import { useState } from 'react';
 import Sidebar from '../organismos/Sidebar';
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
-
-type TipoSitio = {
-  key: React.Key;
-  id_tipo_sitio: number;
-  nombre_tipo_sitio: string;
-  fecha_creacion: string;
-  fecha_modificacion: string;
-};
+import Boton from '../atomos/Boton';
+import { useTiposSitio } from '../../hooks/useTiposSitio';
+import { TipoSitio } from '../../types/tipoSitio';
 
 const TiposSitio = () => {
-  const navigate = useNavigate();
-  const [tiposSitio, setTiposSitio] = useState<TipoSitio[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { tiposSitio, loading, crearTipoSitio, actualizarTipoSitio, eliminarTipoSitio } = useTiposSitio();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoSitio>>({});
@@ -55,95 +46,38 @@ const TiposSitio = () => {
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
 
-  // Fetch inicial de tipos de sitio
-  useEffect(() => {
-    const fetchTiposSitio = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/tipos-sitio");
-        if (!response.ok) {
-          throw new Error("Error al obtener los tipos de sitio");
-        }
-        const data = await response.json();
-        const tiposSitioWithKeys = data.map((tipoSitio: TipoSitio) => ({
-          ...tipoSitio,
-          key: tipoSitio.id_tipo_sitio || `temp-${Math.random()}`, // Genera una clave temporal si no existe
-        }));
-        setTiposSitio(tiposSitioWithKeys);
-      } catch (error) {
-        console.error("Error al cargar los tipos de sitio:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTiposSitio();
-  }, []);
-
   // Crear o actualizar tipo de sitio
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/tipos-sitio/actualizar/${editingId}`
-        : "http://localhost:3002/tipos-sitio/crear";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar el tipo de sitio");
+      if (editingId) {
+        await actualizarTipoSitio(editingId, values);
+        alert('Tipo de sitio actualizado con éxito');
+      } else {
+        await crearTipoSitio({
+          nombre_tipo_sitio: values.nombre_tipo_sitio,
+          fecha_creacion: values.fecha_creacion,
+          fecha_modificacion: values.fecha_modificacion,
+        });
+        alert('Tipo de sitio creado con éxito');
       }
-
-      const message = editingId ? "actualizado" : "creado";
-      alert(`Tipo de sitio ${message} con éxito`);
-
-      // Refrescar la lista
-      const updatedTiposSitio = await fetch(
-        "http://localhost:3002/tipos-sitio"
-      ).then((res) => res.json());
-      
-      const tiposSitioWithKeys = updatedTiposSitio.map((tipoSitio: TipoSitio) => ({
-        ...tipoSitio,
-        key: tipoSitio.id_tipo_sitio || `temp-${Math.random()}`,
-      }));
-      
-      setTiposSitio(tiposSitioWithKeys);
-
-      // Cerrar modal y limpiar estado
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error("Error al guardar el tipo de sitio:", error);
+      console.error('Error al guardar el tipo de sitio:', error);
+      alert('Error al guardar el tipo de sitio');
     }
   };
 
   // Eliminar tipo de sitio
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este tipo de sitio?"))
-      return;
-
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este tipo de sitio?')) return;
     try {
-      const response = await fetch(
-        `http://localhost:3002/tipos-sitio/eliminar/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el tipo de sitio");
-      }
-
-      alert("Tipo de sitio eliminado con éxito");
-
-      // Refrescar la lista
-      setTiposSitio(tiposSitio.filter((tipoSitio) => tipoSitio.id_tipo_sitio !== id));
+      await eliminarTipoSitio(id);
+      alert('Tipo de sitio eliminado con éxito');
     } catch (error) {
-      console.error("Error al eliminar el tipo de sitio:", error);
+      console.error('Error al eliminar el tipo de sitio:', error);
+      alert('Error al eliminar el tipo de sitio');
     }
   };
 
@@ -180,7 +114,7 @@ const TiposSitio = () => {
           {loading ? (
             <p>Cargando tipos de sitio...</p>
           ) : (
-            <GlobalTable columns={columns} data={tiposSitio} rowsPerPage={6} />
+            <GlobalTable columns={columns as Column<any>[]} data={tiposSitio.map(ts => ({ ...ts, key: ts.id_tipo_sitio }))} rowsPerPage={6} />
           )}
 
           {/* Modal para crear/editar */}

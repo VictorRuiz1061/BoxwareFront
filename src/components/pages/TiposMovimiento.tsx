@@ -1,23 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Boton from '../atomos/Boton';
 import Sidebar from '../organismos/Sidebar';
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
-
-type TipoMovimiento = {
-  key: React.Key;
-  id_tipo_movimiento: number;
-  tipo_movimiento: string;
-  fecha_creacion: string;
-  fecha_modificacion: string;
-};
+import { useTiposMovimiento } from '../../hooks/useTiposMovimiento';
+import { TipoMovimiento } from '../../types/tipoMovimiento';
 
 const TiposMovimiento = () => {
   const navigate = useNavigate();
-  const [tiposMovimiento, setTiposMovimiento] = useState<TipoMovimiento[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { tiposMovimiento, loading, crearTipoMovimiento, actualizarTipoMovimiento, eliminarTipoMovimiento } = useTiposMovimiento();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoMovimiento>>({});
@@ -55,69 +48,24 @@ const TiposMovimiento = () => {
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
 
-  // Fetch inicial de tipos de movimiento
-  useEffect(() => {
-    const fetchTiposMovimiento = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/tipos-movimiento");
-        if (!response.ok) {
-          throw new Error("Error al obtener los tipos de movimiento");
-        }
-        const data = await response.json();
-        const tiposMovimientoWithKeys = data.map((tipoMovimiento: TipoMovimiento) => ({
-          ...tipoMovimiento,
-          key: tipoMovimiento.id_tipo_movimiento || `temp-${Math.random()}`, // Genera una clave temporal si no existe
-        }));
-        setTiposMovimiento(tiposMovimientoWithKeys);
-      } catch (error) {
-        console.error("Error al cargar los tipos de movimiento:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTiposMovimiento();
-  }, []);
-
   // Crear o actualizar tipo de movimiento
-  const handleSubmit = async (values: Record<string, string>) => {
+  const handleSubmit = async (values: Record<string, any>) => {
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/tipos-movimiento/actualizar/${editingId}`
-        : "http://localhost:3002/tipos-movimiento/crear";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar el tipo de movimiento");
+      if (editingId) {
+        await actualizarTipoMovimiento(editingId, values);
+        alert("Tipo de movimiento actualizado con éxito");
+      } else {
+        await crearTipoMovimiento(values as Omit<TipoMovimiento, "id_tipo_movimiento">);
+        alert("Tipo de movimiento creado con éxito");
       }
-
-      const message = editingId ? "actualizado" : "creado";
-      alert(`Tipo de movimiento ${message} con éxito`);
-
-      // Refrescar la lista
-      const updatedTiposMovimiento = await fetch(
-        "http://localhost:3002/tipos-movimiento"
-      ).then((res) => res.json());
       
-      const tiposMovimientoWithKeys = updatedTiposMovimiento.map((tipoMovimiento: TipoMovimiento) => ({
-        ...tipoMovimiento,
-        key: tipoMovimiento.id_tipo_movimiento || `temp-${Math.random()}`,
-      }));
-      
-      setTiposMovimiento(tiposMovimientoWithKeys);
-
       // Cerrar modal y limpiar estado
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
       console.error("Error al guardar el tipo de movimiento:", error);
+      alert(`Error al guardar el tipo de movimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 
@@ -127,36 +75,36 @@ const TiposMovimiento = () => {
       return;
 
     try {
-      const response = await fetch(
-        `http://localhost:3002/tipos-movimiento/eliminar/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el tipo de movimiento");
-      }
-
+      await eliminarTipoMovimiento(id);
       alert("Tipo de movimiento eliminado con éxito");
-
-      // Refrescar la lista
-      setTiposMovimiento(tiposMovimiento.filter((tipoMovimiento) => tipoMovimiento.id_tipo_movimiento !== id));
     } catch (error) {
       console.error("Error al eliminar el tipo de movimiento:", error);
+      alert("Error al eliminar el tipo de movimiento");
     }
   };
 
   // Abrir modal para crear nuevo tipo de movimiento
   const handleCreate = () => {
-    setFormData({});
+    // Inicializar con fechas actuales
+    const today = new Date().toISOString().split('T')[0];
+    setFormData({
+      fecha_creacion: today,
+      fecha_modificacion: today
+    });
     setEditingId(null);
     setIsModalOpen(true);
   };
 
   // Abrir modal para editar tipo de movimiento existente
   const handleEdit = (tipoMovimiento: TipoMovimiento) => {
-    setFormData(tipoMovimiento);
+    // Convertir fechas a formato string para los inputs date
+    const formattedTipoMovimiento = {
+      ...tipoMovimiento,
+      fecha_creacion: tipoMovimiento.fecha_creacion ? new Date(tipoMovimiento.fecha_creacion).toISOString().split('T')[0] : '',
+      fecha_modificacion: new Date().toISOString().split('T')[0] // Actualizar fecha de modificación
+    };
+    
+    setFormData(formattedTipoMovimiento);
     setEditingId(tipoMovimiento.id_tipo_movimiento);
     setIsModalOpen(true);
   };
@@ -180,13 +128,25 @@ const TiposMovimiento = () => {
           {loading ? (
             <p>Cargando tipos de movimiento...</p>
           ) : (
-            <GlobalTable columns={columns} data={tiposMovimiento} rowsPerPage={6} />
+            <GlobalTable 
+              columns={columns} 
+              data={tiposMovimiento.map(tm => ({ ...tm, key: tm.id_tipo_movimiento }))} 
+              rowsPerPage={6} 
+            />
           )}
 
           {/* Modal para crear/editar */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+                {/* Botón X para cerrar en la esquina superior derecha */}
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                >
+                  <span className="text-gray-800 font-bold">×</span>
+                </button>
+                
                 <h2 className="text-lg font-bold mb-4 text-center">
                   {editingId ? "Editar Tipo de Movimiento" : "Crear Nuevo Tipo de Movimiento"}
                 </h2>
@@ -194,15 +154,12 @@ const TiposMovimiento = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
+                  initialValues={{
+                    tipo_movimiento: formData.tipo_movimiento || '',
+                    fecha_creacion: formData.fecha_creacion || '',
+                    fecha_modificacion: formData.fecha_modificacion || ''
+                  }}
                 />
-                <div className="flex justify-end mt-4">
-                  <Boton
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cerrar
-                  </Boton>
-                </div>
               </div>
             </div>
           )}

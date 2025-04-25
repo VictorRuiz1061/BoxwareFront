@@ -1,38 +1,87 @@
-import { Bell, User } from 'lucide-react';
+import { Bell, User, Settings, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import AnimatedContainer from "../atomos/AnimatedContainer";
 
 const Header = ({ userName = "Usuario" }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth-token");
+    navigate("/iniciosecion");
+  };
   return (
-    <header className="bg-white shadow-md h-16">
-      <div className="flex items-center justify-between h-full px-6">
-        {/* Búsqueda simple */}
-        <div className="flex items-center">
-          <input
-            type="text"
-            placeholder="Buscar..."
-            className="px-4 py-2 border rounded-md w-64"
-          />
-        </div>
+    <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+      <header className="bg-white shadow-lg h-16 relative z-10">
+        <div className="flex items-center justify-end h-full px-6 bg-gradient-to-r from-black via-blue-800 to-blue-600">
+          {/* Zona de usuario */}
+          <div className="flex items-center space-x-6">
+            {/* Notificaciones */}
+            <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+              <button className="relative p-2 text-white hover:bg-blue-500 rounded-lg transition-all duration-300 group">
+                <Bell
+                  size={20}
+                  className="group-hover:scale-110 transition-transform duration-300"
+                />
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110">
+                  3
+                </span>
+              </button>
+            </AnimatedContainer>
 
-        {/* Zona de usuario */}
-        <div className="flex items-center space-x-4">
-          {/* Notificaciones */}
-          <button className="p-2 rounded-full hover:bg-gray-100">
-            <Bell size={20} />
-            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              3
-            </span>
-          </button>
+            {/* Configuración */}
+            <AnimatedContainer animation="slideUp" delay={200} duration={400}>
+              <a
+                href="/settings"
+                className="p-2 text-white hover:bg-blue-500 rounded-lg transition-all duration-300 group"
+                title="Configuración"
+              >
+                <Settings
+                  size={20}
+                  className="group-hover:scale-110 transition-transform duration-300"
+                />
+              </a>
+            </AnimatedContainer>
 
-          {/* Perfil de usuario */}
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white">
-              <User size={18} />
-            </div>
-            <span>{userName}</span>
+            {/* Botón de cerrar sesión */}
+            <AnimatedContainer animation="slideUp" delay={250} duration={400}>
+              <button
+                onClick={handleLogout}
+                className="relative p-2 text-white hover:bg-blue-500 rounded-lg transition-all duration-300 group"
+                title="Cerrar sesión"
+              >
+                <LogOut
+                  size={20}
+                  className="group-hover:scale-110 transition-transform duration-300"
+                />
+              </button>
+            </AnimatedContainer>
+
+            {/* Separador */}
+            <AnimatedContainer animation="fadeIn" delay={300} duration={600}>
+              <div className="h-8 w-px bg-blue-300/50"></div>
+            </AnimatedContainer>
+
+            {/* Perfil de usuario */}
+            <AnimatedContainer animation="slideUp" delay={400} duration={500}>
+              <div className="flex items-center space-x-3 group cursor-pointer">
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-md transition-all duration-300 group-hover:bg-blue-400">
+                  <User
+                    size={20}
+                    className="group-hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-white text-sm font-medium">
+                    {userName}
+                  </span>
+                  <span className="text-blue-200 text-xs">Administrador</span>
+                </div>
+              </div>
+            </AnimatedContainer>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </AnimatedContainer>
   );
 };
 

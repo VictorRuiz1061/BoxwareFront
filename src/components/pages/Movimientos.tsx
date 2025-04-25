@@ -1,24 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Boton from '../atomos/Boton';
 import Sidebar from '../organismos/Sidebar';
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
-
-type Movimiento = {
-  key: React.Key;
-  id_movimiento: number;
-  fecha_creacion: string;
-  fecha_modificacion: string;
-  usuario_movimiento_id: number;
-  tipo_movimiento_id: number;
-};
+import { useMovimientos } from '../../hooks/useMovimientos';
+import { Movimiento } from '../../types/movimiento';
 
 const Movimientos = () => {
   const navigate = useNavigate();
-  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { movimientos, loading, crearMovimiento, actualizarMovimiento, eliminarMovimiento } = useMovimientos();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Movimiento>>({});
@@ -35,13 +27,13 @@ const Movimientos = () => {
       render: (movimiento) => (
         <div className="flex gap-2">
           <Boton
-            onClick={() => handleEdit(movimiento)}
+            onPress={() => handleEdit(movimiento)}
             className="bg-yellow-500 text-white px-2 py-1"
           >
             Editar
           </Boton>
           <Boton
-            onClick={() => handleDelete(movimiento.id_movimiento)}
+            onPress={() => handleDelete(movimiento.id_movimiento)}
             className="bg-red-500 text-white px-2 py-1"
           >
             Eliminar
@@ -58,93 +50,30 @@ const Movimientos = () => {
     { key: "tipo_movimiento_id", label: "Tipo de Movimiento", type: "number", required: true },
   ];
 
-  // Fetch inicial de movimientos
-  useEffect(() => {
-    const fetchMovimientos = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/movimientos");
-        if (!response.ok) {
-          throw new Error("Error al obtener los movimientos");
-        }
-        const data = await response.json();
-        const movimientosWithKeys = data.map((movimiento: Movimiento) => ({
-          ...movimiento,
-          key: movimiento.id_movimiento || `temp-${Math.random()}`, // Genera una clave temporal si no existe
-        }));
-        setMovimientos(movimientosWithKeys);
-      } catch (error) {
-        console.error("Error al cargar los movimientos:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMovimientos();
-  }, []);
-
   // Crear o actualizar movimiento
-  const handleSubmit = async (values: Record<string, string>) => {
+  const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/movimientos/actualizar/${editingId}`
-        : "http://localhost:3002/movimientos/crear";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar el movimiento");
+      if (editingId) {
+        await actualizarMovimiento(editingId, values);
+        alert('Movimiento actualizado con éxito');
+      } else {
+        await crearMovimiento(values as Omit<Movimiento, 'id_movimiento'>);
+        alert('Movimiento creado con éxito');
       }
-
-      const message = editingId ? "actualizado" : "creado";
-      alert(`Movimiento ${message} con éxito`);
-
-      // Refrescar la lista
-      const updatedMovimientos = await fetch(
-        "http://localhost:3002/movimientos"
-      ).then((res) => res.json());
-      
-      const movimientosWithKeys = updatedMovimientos.map((movimiento: Movimiento) => ({
-        ...movimiento,
-        key: movimiento.id_movimiento || `temp-${Math.random()}`,
-      }));
-      
-      setMovimientos(movimientosWithKeys);
-
-      // Cerrar modal y limpiar estado
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error("Error al guardar el movimiento:", error);
+      console.error('Error al guardar el movimiento:', error);
     }
   };
 
   // Eliminar movimiento
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este movimiento?"))
-      return;
-
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este movimiento?")) return;
     try {
-      const response = await fetch(
-        `http://localhost:3002/movimientos/eliminar/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el movimiento");
-      }
-
+      await eliminarMovimiento(id);
       alert("Movimiento eliminado con éxito");
-
-      // Refrescar la lista
-      setMovimientos(movimientos.filter((movimiento) => movimiento.id_movimiento !== id));
     } catch (error) {
       console.error("Error al eliminar el movimiento:", error);
     }
@@ -152,14 +81,26 @@ const Movimientos = () => {
 
   // Abrir modal para crear nuevo movimiento
   const handleCreate = () => {
-    setFormData({});
+    // Inicializar con fechas actuales
+    const today = new Date().toISOString().split('T')[0];
+    setFormData({
+      fecha_creacion: today,
+      fecha_modificacion: today
+    });
     setEditingId(null);
     setIsModalOpen(true);
   };
 
   // Abrir modal para editar movimiento existente
   const handleEdit = (movimiento: Movimiento) => {
-    setFormData(movimiento);
+    // Convertir fechas a formato string para los inputs date
+    const formattedMovimiento = {
+      ...movimiento,
+      fecha_creacion: movimiento.fecha_creacion ? new Date(movimiento.fecha_creacion).toISOString().split('T')[0] : '',
+      fecha_modificacion: new Date().toISOString().split('T')[0] // Actualizar fecha de modificación
+    };
+    
+    setFormData(formattedMovimiento);
     setEditingId(movimiento.id_movimiento);
     setIsModalOpen(true);
   };
@@ -173,7 +114,7 @@ const Movimientos = () => {
           <h1 className="text-xl font-bold mb-4">Gestión de Movimientos</h1>
 
           <Boton
-            onClick={handleCreate}
+            onPress={handleCreate}
             className="bg-blue-500 text-white px-4 py-2 mb-4"
           >
             Crear Nuevo Movimiento
@@ -183,7 +124,11 @@ const Movimientos = () => {
           {loading ? (
             <p>Cargando movimientos...</p>
           ) : (
-            <GlobalTable columns={columns} data={movimientos} rowsPerPage={6} />
+            <GlobalTable 
+              columns={columns} 
+              data={movimientos.map(m => ({ ...m, key: m.id_movimiento }))} 
+              rowsPerPage={6} 
+            />
           )}
 
           {/* Modal para crear/editar */}
@@ -197,10 +142,11 @@ const Movimientos = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
+                  initialValues={formData}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton
-                    onClick={() => setIsModalOpen(false)}
+                    onPress={() => setIsModalOpen(false)}
                     className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                   >
                     Cerrar
