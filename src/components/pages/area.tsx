@@ -1,24 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-
-type Area = {
-  key: React.Key;
-  id_area: number;
-  nombre_area: string;
-  fecha_creacion: string;
-  fecha_modificacion: string;
-};
+import { useAreas } from '../../hooks/useAreas';
+import { Area } from '../../types/area';
 
 const Areas = () => {
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { areas, loading, crearArea, actualizarArea, eliminarArea, mostrarErrores, validationErrors } = useAreas();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [, setFormData] = useState<Partial<Area>>({});
+  const [formData, setFormData] = useState<Partial<Area>>({});
 
   const columns: Column<Area>[] = [
     { key: "nombre_area", label: "Nombre del Área" },
@@ -41,7 +34,6 @@ const Areas = () => {
           >
             Eliminar
           </Boton>
-              
         </div>
       ),
     },
@@ -51,90 +43,67 @@ const Areas = () => {
     { key: "nombre_area", label: "Nombre del Área", type: "text", required: true },
   ];
 
-  useEffect(() => {
-    const fetchAreas = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/areas");
-        if (!response.ok) {
-          throw new Error("Error al obtener las áreas");
-        }
-        const data = await response.json();
-        const areasWithKeys = data.map((area: Area) => ({
-          ...area,
-          key: area.id_area || `temp-${Math.random()}`,
-        }));
-        setAreas(areasWithKeys);
-      } catch (error) {
-        console.error("Error al cargar las áreas:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAreas();
-  }, []);
-
+  // Crear o actualizar área
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/areas/${editingId}`
-        : "http://localhost:3002/areas";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar el área");
+      // Preparar datos para validación
+      const dataToSubmit = {
+        nombre_area: values.nombre_area,
+        fecha_creacion: editingId ? undefined : new Date().toISOString(),
+        fecha_modificacion: new Date().toISOString()
+      };
+      
+      let resultado;
+      
+      if (editingId) {
+        resultado = await actualizarArea(editingId, dataToSubmit);
+        if (resultado.success) {
+          alert('Área actualizada con éxito');
+          setIsModalOpen(false);
+          setFormData({});
+          setEditingId(null);
+        } else if (resultado.errors) {
+          alert(mostrarErrores());
+        }
+      } else {
+        resultado = await crearArea(dataToSubmit as Omit<Area, 'id_area'>);
+        if (resultado.success) {
+          alert('Área creada con éxito');
+          setIsModalOpen(false);
+          setFormData({});
+          setEditingId(null);
+        } else if (resultado.errors) {
+          alert(mostrarErrores());
+        }
       }
-
-      const message = editingId ? "actualizada" : "creada";
-      alert(`Área ${message} con éxito`);
-
-      const updatedAreas = await fetch("http://localhost:3002/areas").then((res) =>
-        res.json()
-      );
-      setAreas(updatedAreas);
-
-      setIsModalOpen(false);
-      setFormData({});
-      setEditingId(null);
     } catch (error) {
-      console.error("Error al guardar el área:", error);
+      console.error('Error al guardar el área:', error);
+      alert(`Error al guardar el área: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 
+  // Eliminar área
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta área?")) return;
-
     try {
-      const response = await fetch(
-        `http://localhost:3002/areas/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el área");
+      const resultado = await eliminarArea(id);
+      if (resultado.success) {
+        alert("Área eliminada con éxito");
       }
-
-      alert("Área eliminada con éxito");
-      setAreas(areas.filter((area) => area.id_area !== id));
     } catch (error) {
       console.error("Error al eliminar el área:", error);
+      alert("Error al eliminar el área");
     }
   };
 
+  // Abrir modal para crear nueva área
   const handleCreate = () => {
     setFormData({});
     setEditingId(null);
     setIsModalOpen(true);
   };
 
+  // Abrir modal para editar área existente
   const handleEdit = (area: Area) => {
     setFormData(area);
     setEditingId(area.id_area);
@@ -159,12 +128,24 @@ const Areas = () => {
           {loading ? (
             <p>Cargando áreas...</p>
           ) : (
-            <GlobalTable columns={columns} data={areas} rowsPerPage={6} />
+            <GlobalTable
+              columns={columns}
+              data={areas.map((area) => ({ ...area, key: area.id_area }))}
+              rowsPerPage={6}
+            />
           )}
 
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg relative">
+                {/* Botón X para cerrar en la esquina superior derecha */}
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                >
+                  <span className="text-gray-800 font-bold">×</span>
+                </button>
+                
                 <h2 className="text-lg font-bold mb-4 text-center">
                   {editingId ? "Editar Área" : "Crear Nueva Área"}
                 </h2>
@@ -172,15 +153,22 @@ const Areas = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
+                  initialValues={{
+                    ...formData,
+                    id_area: formData.id_area?.toString(),
+                  }}
                 />
-                <div className="flex justify-end mt-4">
-                  <Boton
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cerrar
-                  </Boton>
-                </div>
+                
+                {validationErrors && (
+                  <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                    <h3 className="font-bold">Errores de validación:</h3>
+                    <ul className="list-disc pl-5">
+                      {Object.entries(validationErrors).map(([field, error]) => (
+                        <li key={field}>{field}: {error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}

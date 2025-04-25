@@ -1,25 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-
-type Ficha = {
-  key: React.Key;
-  id_ficha: number;
-  usuario_ficha_id: number;
-  programa_id: number;
-  fecha_creacion: string;
-  fecha_modificacion: string;
-};
+import { useFichas } from '../../hooks/useFichas';
+import { Ficha } from '../../types/ficha';
 
 const Fichas = () => {
-  const [fichas, setFichas] = useState<Ficha[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { fichas, loading, crearFicha, actualizarFicha, eliminarFicha } = useFichas();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [, setFormData] = useState<Partial<Ficha>>({});
+  const [formData, setFormData] = useState<Partial<Ficha>>({});
 
   const columns: Column<Ficha>[] = [
     { key: "id_ficha", label: "ID Ficha" },
@@ -53,86 +45,48 @@ const Fichas = () => {
     { key: "programa_id", label: "ID del Programa", type: "number", required: true },
   ];
 
-  useEffect(() => {
-    fetchFichas();
-  }, []);
-
-  const fetchFichas = async () => {
-    try {
-      const response = await fetch("http://localhost:3002/fichas");
-      if (!response.ok) {
-        throw new Error("Error al obtener las fichas");
-      }
-      const data = await response.json();
-      const fichasWithKeys = data.datos.map((ficha: Ficha) => ({
-        ...ficha,
-        key: ficha.id_ficha || `temp-${Math.random()}`,
-      }));
-      setFichas(fichasWithKeys);
-    } catch (error) {
-      console.error("Error al cargar las fichas:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Crear o actualizar ficha
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/fichas/actualizar/${editingId}`
-        : "http://localhost:3002/fichas/crear/";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar la ficha");
+      if (editingId) {
+        await actualizarFicha(editingId, values);
+        alert('Ficha actualizada con éxito');
+      } else {
+        await crearFicha({
+          usuario_ficha_id: parseInt(values.usuario_ficha_id),
+          programa_id: parseInt(values.programa_id),
+          fecha_creacion: values.fecha_creacion,
+          fecha_modificacion: values.fecha_modificacion,
+        });
+        alert('Ficha creada con éxito');
       }
-
-      const message = editingId ? "actualizada" : "creada";
-      alert(`Ficha ${message} con éxito`);
-
-      fetchFichas();
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error("Error al guardar la ficha:", error);
+      console.error('Error al guardar la ficha:', error);
     }
   };
 
+  // Eliminar ficha
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta ficha?")) return;
-
     try {
-      const response = await fetch(
-        `http://localhost:3002/fichas/eliminar/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar la ficha");
-      }
-
+      await eliminarFicha(id);
       alert("Ficha eliminada con éxito");
-      setFichas(fichas.filter((ficha) => ficha.id_ficha !== id));
     } catch (error) {
       console.error("Error al eliminar la ficha:", error);
     }
   };
 
+  // Abrir modal para crear nueva ficha
   const handleCreate = () => {
     setFormData({});
     setEditingId(null);
     setIsModalOpen(true);
   };
 
+  // Abrir modal para editar ficha existente
   const handleEdit = (ficha: Ficha) => {
     setFormData(ficha);
     setEditingId(ficha.id_ficha);
@@ -157,7 +111,11 @@ const Fichas = () => {
           {loading ? (
             <p>Cargando fichas...</p>
           ) : (
-            <GlobalTable columns={columns} data={fichas} rowsPerPage={6} />
+            <GlobalTable
+              columns={columns}
+              data={fichas.map((ficha) => ({ ...ficha, key: ficha.id_ficha }))}
+              rowsPerPage={6}
+            />
           )}
 
           {isModalOpen && (
@@ -170,6 +128,9 @@ const Fichas = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
+                  initialValues={Object.fromEntries(
+                    Object.entries(formData).map(([key, value]) => [key, value?.toString() || ""])
+                  )}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton
