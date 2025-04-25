@@ -17,8 +17,8 @@ type Props<T extends Record<string, any>> = {
   className?: string;
 };
 
-const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "Enviar", className = "" }: Props<T>) => {
-  const [formData, setFormData] = useState<Partial<T>>({});
+const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, className = "" }: Props<T>) => {
+  const [formData, setFormData] = useState<Partial<T>>(initialValues);
 
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));

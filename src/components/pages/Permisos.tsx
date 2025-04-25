@@ -1,41 +1,36 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-
-type Permiso = {
-  id_permiso: number;
-  nombre: string;
-  tipo_permiso_id: number;
-  codigo_nombre: string;
-};
+import { usePermisos } from '../../hooks/usePermisos';
+import { Permiso } from '../../types/permiso';
 
 const Permisos = () => {
-  const [permisos, setPermisos] = useState<Permiso[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { permisos, loading, crearPermiso, actualizarPermiso, eliminarPermiso } = usePermisos();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Permiso>>({});
 
   const columns: Column<Permiso>[] = [
     { key: "nombre", label: "Nombre" },
-    { key: "tipo_permiso_id", label: "Tipo de Permiso" },
     { key: "codigo_nombre", label: "Código Nombre" },
+    { key: "modulo_id", label: "ID Módulo" },
+    { key: "rol_id", label: "ID Rol" },
     {
       key: "acciones",
       label: "Acciones",
       render: (permiso) => (
         <div className="flex gap-2">
           <Boton
-            onClick={() => handleEdit(permiso)}
+            onPress={() => handleEdit(permiso)}
             className="bg-yellow-500 text-white px-2 py-1"
           >
             Editar
           </Boton>
           <Boton
-            onClick={() => handleDelete(permiso.id_permiso)}
+            onPress={() => handleDelete(permiso.id_permiso)}
             className="bg-red-500 text-white px-2 py-1"
           >
             Eliminar
@@ -47,78 +42,45 @@ const Permisos = () => {
 
   const formFields: FormField[] = [
     { key: "nombre", label: "Nombre", type: "text", required: true },
-    { key: "tipo_permiso_id", label: "Tipo de Permiso ID", type: "number", required: true },
     { key: "codigo_nombre", label: "Código Nombre", type: "text", required: true },
+    { key: "modulo_id", label: "ID Módulo", type: "number", required: true },
+    { key: "rol_id", label: "ID Rol", type: "number", required: true },
   ];
-
-  useEffect(() => {
-    const fetchPermisos = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/permisos");
-        if (!response.ok) {
-          throw new Error("Error al obtener los permisos");
-        }
-        const data = await response.json();
-        setPermisos(data);
-      } catch (error) {
-        console.error("Error al cargar los permisos:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPermisos();
-  }, []);
 
   const handleSubmit = async (values: Record<string, string | number>) => {
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/permisos/actualizar/${editingId}`
-        : "http://localhost:3002/permisos/crear";
+      const datos = {
+        id_permiso: parseInt(values.id_permiso as string),
+        nombre: values.nombre as string,
+        codigo_nombre: values.codigo_nombre as string,
+        modulo_id: parseInt(values.modulo_id as string),
+        rol_id: parseInt(values.rol_id as string)
+      };
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar el permiso");
+      if (editingId) {
+        await actualizarPermiso(editingId, datos);
+        alert('Permiso actualizado con éxito');
+      } else {
+        await crearPermiso(datos);
+        alert('Permiso creado con éxito');
       }
-
-      const message = editingId ? "actualizado" : "creado";
-      alert(`Permiso ${message} con éxito`);
-
-      const updatedPermisos = await fetch("http://localhost:3002/permisos").then((res) =>
-        res.json()
-      );
-      setPermisos(updatedPermisos);
-
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error("Error al guardar el permiso:", error);
+      console.error('Error al guardar el permiso:', error);
+      alert('Error al guardar el permiso');
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este permiso?")) return;
-
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este permiso?')) return;
     try {
-      const response = await fetch(`http://localhost:3002/permisos/eliminar/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el permiso");
-      }
-
-      alert("Permiso eliminado con éxito");
-      setPermisos(permisos.filter((permiso) => permiso.id_permiso !== id));
+      await eliminarPermiso(id);
+      alert('Permiso eliminado con éxito');
     } catch (error) {
-      console.error("Error al eliminar el permiso:", error);
+      console.error('Error al eliminar el permiso:', error);
+      alert('Error al eliminar el permiso');
     }
   };
 
@@ -143,7 +105,7 @@ const Permisos = () => {
           <h1 className="text-xl font-bold mb-4">Gestión de Permisos</h1>
 
           <Boton
-            onClick={handleCreate}
+            onPress={handleCreate}
             className="bg-blue-500 text-white px-4 py-2 mb-4"
           >
             Crear Nuevo Permiso
@@ -161,7 +123,15 @@ const Permisos = () => {
 
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+                {/* Botón X para cerrar en la esquina superior derecha */}
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                >
+                  <span className="text-gray-800 font-bold">×</span>
+                </button>
+                
                 <h2 className="text-lg font-bold mb-4 text-center">
                   {editingId ? "Editar Permiso" : "Crear Nuevo Permiso"}
                 </h2>
@@ -169,16 +139,13 @@ const Permisos = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={formData}
+                  initialValues={{
+                    ...formData,
+                    id_permiso: formData.id_permiso?.toString(),
+                    modulo_id: formData.modulo_id?.toString(),
+                    rol_id: formData.rol_id?.toString()
+                  }}
                 />
-                <div className="flex justify-end mt-4">
-                  <Boton
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cerrar
-                  </Boton>
-                </div>
               </div>
             </div>
           )}

@@ -165,10 +165,11 @@ const GlobalTable = <T extends { key: React.Key }>({
             <Pagination
               showControls
               showShadow
-              color="secondary"
+              color="primary"
               page={page}
               total={pages}
               onChange={setPage}
+              className="text-blue-600 [&_button]:!bg-blue-600 [&_button.active]:!bg-blue-600 [&_button:hover]:!bg-blue-500"
             />
           </div>
         }
@@ -215,6 +216,3 @@ const GlobalTable = <T extends { key: React.Key }>({
 };
 
 export default GlobalTable;
-
-
-

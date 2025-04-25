@@ -1,24 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Boton from '../atomos/Boton';
 import Sidebar from '../organismos/Sidebar';
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
-
-type Rol = {
-  key: React.Key;
-  id_rol: number;
-  nombre_rol: string;
-  descripcion: string;
-  estado: boolean;
-  fecha_creacion: string;
-};
+import { useRoles } from '../../hooks/useRoles';
+import { Rol } from '../../types/rol';
+import AnimatedContainer from "../atomos/AnimatedContainer";
 
 const Roles = () => {
   const navigate = useNavigate();
-  const [roles, setRoles] = useState<Rol[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { roles, loading, crearRol, actualizarRol, eliminarRol, fetchRoles } = useRoles();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Rol>>({});
@@ -43,14 +36,14 @@ const Roles = () => {
       render: (rol) => (
         <div className="flex gap-2">
           <Boton
-            onClick={() => handleEdit(rol)}
-            className="bg-yellow-500 text-white px-2 py-1"
+            onPress={() => handleEdit(rol)}
+            className="bg-blue-600 text-white px-2 py-1 hover:bg-blue-700"
           >
             Editar
           </Boton>
           <Boton
-            onClick={() => handleDelete(rol.id_rol)}
-            className="bg-red-500 text-white px-2 py-1"
+            onPress={() => handleDelete(rol.id_rol)}
+            className="bg-red-500 text-white px-2 py-1 hover:bg-red-600"
           >
             Eliminar
           </Boton>
@@ -65,30 +58,6 @@ const Roles = () => {
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
   ];
 
-  // Fetch inicial de roles
-  useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/roles");
-        if (!response.ok) {
-          throw new Error("Error al obtener los roles");
-        }
-        const data = await response.json();
-        const rolesWithKeys = data.map((rol: Rol) => ({
-          ...rol,
-          key: rol.id_rol || `temp-${Math.random()}`, // Genera una clave temporal si no existe
-        }));
-        setRoles(rolesWithKeys);
-      } catch (error) {
-        console.error("Error al cargar los roles:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRoles();
-  }, []);
-
   // Crear o actualizar rol
   const handleSubmit = async (values: Record<string, string>) => {
     try {
@@ -102,43 +71,14 @@ const Roles = () => {
         fecha_creacion: values.fecha_creacion
       };
       
-      console.log("Data to submit:", dataToSubmit); // Para depuración
-      
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/roles/actualizar/${editingId}`
-        : "http://localhost:3002/roles/crear";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSubmit),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response:", errorData);
-        throw new Error(`Error al guardar el rol: ${errorData.message || response.statusText}`);
+      if (editingId) {
+        await actualizarRol(editingId, dataToSubmit);
+        alert("Rol actualizado con éxito");
+      } else {
+        await crearRol(dataToSubmit);
+        alert("Rol creado con éxito");
       }
-
-      const responseData = await response.json();
-      console.log("Success response:", responseData);
       
-      const message = editingId ? "actualizado" : "creado";
-      alert(`Rol ${message} con éxito`);
-
-      // Refrescar la lista
-      const updatedRoles = await fetch(
-        "http://localhost:3002/roles"
-      ).then((res) => res.json());
-      
-      const rolesWithKeys = updatedRoles.map((rol: Rol) => ({
-        ...rol,
-        key: rol.id_rol || `temp-${Math.random()}`,
-      }));
-      
-      setRoles(rolesWithKeys);
-
       // Cerrar modal y limpiar estado
       setIsModalOpen(false);
       setFormData({});
@@ -155,21 +95,8 @@ const Roles = () => {
       return;
 
     try {
-      const response = await fetch(
-        `http://localhost:3002/roles/eliminar/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el rol");
-      }
-
+      await eliminarRol(id);
       alert("Rol eliminado con éxito");
-
-      // Refrescar la lista
-      setRoles(roles.filter((rol) => rol.id_rol !== id));
     } catch (error) {
       console.error("Error al eliminar el rol:", error);
     }
@@ -186,9 +113,7 @@ const Roles = () => {
 
   // Abrir modal para editar rol existente
   const handleEdit = (rol: Rol) => {
-    // Omitir la propiedad 'key' para evitar problemas de tipo
-    const { key, ...rolWithoutKey } = rol;
-    setFormData(rolWithoutKey);
+    setFormData(rol);
     setEditingId(rol.id_rol);
     setIsModalOpen(true);
   };
@@ -199,48 +124,56 @@ const Roles = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-4">
-          <h1 className="text-xl font-bold mb-4">Gestión de Roles</h1>
+          <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+            <h1 className="text-xl font-bold mb-4">Gestión de Roles</h1>
+          </AnimatedContainer>
 
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
-          >
-            Crear Nuevo Rol
-          </Boton>
+          <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+            <Boton
+              onPress={handleCreate}
+              className="bg-blue-600 text-white px-4 py-2 mb-4 hover:bg-blue-700"
+            >
+              Crear Nuevo Rol
+            </Boton>
+          </AnimatedContainer>
 
           {/* Tabla de roles */}
-          {loading ? (
-            <p>Cargando roles...</p>
-          ) : (
-            <GlobalTable columns={columns} data={roles} rowsPerPage={6} />
-          )}
+          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+            {loading ? (
+              <p>Cargando roles...</p>
+            ) : (
+              <GlobalTable columns={columns} data={roles.map(rol => ({ ...rol, key: rol.id_rol }))} rowsPerPage={6} />
+            )}
+          </AnimatedContainer>
 
           {/* Modal para crear/editar */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Rol" : "Crear Nuevo Rol"}
-                </h2>
-                <Form
-                  fields={formFields}
-                  initialValues={{
-                    nombre_rol: formData.nombre_rol || '',
-                    descripcion: formData.descripcion || '',
-                    fecha_creacion: formData.fecha_creacion || ''
-                  }}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                />
-                <div className="flex justify-end mt-4">
-                  <Boton
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cerrar
-                  </Boton>
+              <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
+                <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto">
+                  <h2 className="text-lg font-bold mb-4 text-center">
+                    {editingId ? "Editar Rol" : "Crear Nuevo Rol"}
+                  </h2>
+                  <Form
+                    fields={formFields}
+                    initialValues={{
+                      nombre_rol: formData.nombre_rol || '',
+                      descripcion: formData.descripcion || '',
+                      fecha_creacion: formData.fecha_creacion || ''
+                    }}
+                    onSubmit={handleSubmit}
+                    buttonText={editingId ? "Actualizar" : "Crear"}
+                  />
+                  <div className="flex justify-end mt-4">
+                    <Boton
+                      onPress={() => setIsModalOpen(false)}
+                      className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                    >
+                      Cerrar
+                    </Boton>
+                  </div>
                 </div>
-              </div>
+              </AnimatedContainer>
             </div>
           )}
         </main>
