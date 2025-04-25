@@ -19,9 +19,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   table: {
-    display: "table",
+    display: "flex",
     width: "100%",
-    borderStyle: "solid",
+    borderStyle: "solid", 
     borderWidth: 1,
     borderColor: "#bfbfbf",
     marginBottom: 20,

@@ -1,41 +1,35 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-
-type Municipio = {
-  id_Municipio: number;
-  nombre_Municipio: string;
-  fecha_creacion: string;
-  fecha_modificacion: string;
-};
+import { useMunicipios } from '../../hooks/useMunicipios';
+import { Municipio } from '../../types/municipio';
 
 const Municipios = () => {
-  const [Municipios, setMunicipios] = useState<Municipio[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { municipios, loading, crearMunicipio, actualizarMunicipio, eliminarMunicipio } = useMunicipios();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [, setFormData] = useState<Partial<Municipio>>({});
+  const [formData, setFormData] = useState<Partial<Municipio>>({});
 
   const columns: Column<Municipio>[] = [
-    { key: "nombre_Municipio", label: "Nombre del Municipio" },
+    { key: "nombre_municipio", label: "Nombre del Municipio" },
     { key: "fecha_creacion", label: "Fecha de Creación" },
     { key: "fecha_modificacion", label: "Fecha de Modificación" },
     {
       key: "acciones",
       label: "Acciones",
-      render: (Municipio) => (
+      render: (municipio) => (
         <div className="flex gap-2">
           <Boton
-            onClick={() => handleEdit(Municipio)}
+            onPress={() => handleEdit(municipio)}
             className="bg-yellow-500 text-white px-2 py-1"
           >
             Editar
           </Boton>
           <Boton
-            onClick={() => handleDelete(Municipio.id_Municipio)}
+            onPress={() => handleDelete(municipio.id_municipio)}
             className="bg-red-500 text-white px-2 py-1"
           >
             Eliminar
@@ -46,88 +40,81 @@ const Municipios = () => {
   ];
 
   const formFields: FormField[] = [
-    { key: "nombre_Municipio", label: "Nombre del Municipio", type: "text", required: true },
+    { key: "id_municipio", label: "ID", type: "number", required: true },
+    { key: "nombre_municipio", label: "Nombre del Municipio", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
 
-  useEffect(() => {
-    const fetchMunicipios = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/municipios");
-        if (!response.ok) {
-          throw new Error("Error al obtener los Municipios");
-        }
-        const data = await response.json();
-        setMunicipios(data);
-      } catch (error) {
-        console.error("Error al cargar los Municipios:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMunicipios();
-  }, []);
-
-  const handleSubmit = async (values: Record<string, string>) => {
+  const handleSubmit = async (values: Partial<Municipio>) => {
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/municipios/actualizar/${editingId}`
-        : "http://localhost:3002/municipios/crear";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar el Municipio");
+      // Asegurarse de que todos los campos requeridos estén presentes
+      if (!values.nombre_municipio || !values.fecha_creacion || !values.fecha_modificacion) {
+        alert('Por favor complete todos los campos requeridos');
+        return;
       }
+      const datosMunicipio = {
+        id_municipio: editingId?.toString() || values.id_municipio,
+        nombre_municipio: values.nombre_municipio,
+        fecha_creacion: values.fecha_creacion,
+        fecha_modificacion: values.fecha_modificacion
+      };
 
+      if (editingId) {
+        if (values.nombre_municipio && values.fecha_creacion && values.fecha_modificacion) {
+          await actualizarMunicipio(editingId, {
+            nombre_municipio: values.nombre_municipio,
+            fecha_creacion: values.fecha_creacion,
+            fecha_modificacion: values.fecha_modificacion,
+          });
+        } else {
+          throw new Error("Campos requeridos faltantes");
+        }
+      } else {
+        await crearMunicipio(datosMunicipio);
+      }
       alert(`Municipio ${editingId ? "actualizado" : "creado"} con éxito`);
-
-      const updatedMunicipios = await fetch("http://localhost:3002/municipios").then((res) => res.json());
-      setMunicipios(updatedMunicipios);
-
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
       console.error("Error al guardar el Municipio:", error);
+      alert('Error al guardar el municipio');
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este Municipio?")) return;
-
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este municipio?')) return;
     try {
-      const response = await fetch(`http://localhost:3002/municipios/eliminar/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el Municipio");
-      }
-
-      alert("Municipio eliminado con éxito");
-      setMunicipios(Municipios.filter((Municipio) => Municipio.id_Municipio !== id));
+      await eliminarMunicipio(id);
+      alert('Municipio eliminado con éxito');
     } catch (error) {
-      console.error("Error al eliminar el Municipio:", error);
+      console.error('Error al eliminar el municipio:', error);
+      alert('Error al eliminar el municipio');
     }
   };
 
   const handleCreate = () => {
-    setFormData({});
+    // Inicializar con fechas actuales
+    const today = new Date().toISOString().split('T')[0];
+    setFormData({
+      fecha_creacion: today,
+      fecha_modificacion: today
+    });
     setEditingId(null);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (Municipio: Municipio) => {
-    setFormData(Municipio);
-    setEditingId(Municipio.id_Municipio);
+  const handleEdit = (municipio: Municipio) => {
+    // Convertir fechas a formato string para los inputs date
+    const formattedMunicipio = {
+      ...municipio,
+      fecha_creacion: municipio.fecha_creacion ? new Date(municipio.fecha_creacion).toISOString().split('T')[0] : '',
+      fecha_modificacion: new Date().toISOString().split('T')[0] // Actualizar fecha de modificación
+    };
+    
+    setFormData(formattedMunicipio);
+    setEditingId(municipio.id_municipio);
     setIsModalOpen(true);
   };
 
@@ -140,16 +127,20 @@ const Municipios = () => {
           <h1 className="text-xl font-bold mb-4">Gestión de Municipios</h1>
 
           <Boton
-            onClick={handleCreate}
+            onPress={handleCreate}
             className="bg-blue-500 text-white px-4 py-2 mb-4"
           >
             Crear Nuevo Municipio
           </Boton>
 
           {loading ? (
-            <p>Cargando Municipios...</p>
+            <p>Cargando municipios...</p>
           ) : (
-            <GlobalTable columns={columns} data={Municipios.map(m => ({ ...m, key: m.id_Municipio }))} rowsPerPage={6} />
+            <GlobalTable 
+              columns={columns} 
+              data={municipios.map(m => ({ ...m, key: m.id_municipio }))} 
+              rowsPerPage={6} 
+            />
           )}
 
           {isModalOpen && (
@@ -162,10 +153,11 @@ const Municipios = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
+                  initialValues={formData}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton
-                    onClick={() => setIsModalOpen(false)}
+                    onPress={() => setIsModalOpen(false)}
                     className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                   >
                     Cerrar

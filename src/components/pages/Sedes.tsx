@@ -1,29 +1,21 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-
-type Sede = {
-  id_sede: number;
-  nombre_sede: string;
-  direccion_sede: string;
-  fecha_creacion: string;
-  fecha_modificacion: string;
-  centro_sede_id:number ;
-};
+import { useSedes } from '../../hooks/useSedes';
+import { Sede } from '../../types/sede';
 
 const Sedes = () => {
-  const [Sedes, setSedes] = useState<Sede[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { sedes, loading, crearSede, actualizarSede, eliminarSede } = useSedes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [, setFormData] = useState<Partial<Sede>>({});
+  const [formData, setFormData] = useState<Partial<Sede>>({});
 
   const columns: Column<Sede>[] = [
     { key: "nombre_sede", label: "Nombre de la Sede" },
-    { key: "direccion_sede", label: "Diracción de la sede" },
+    { key: "direccion_sede", label: "Dirección de la sede" },
     { key: "fecha_creacion", label: "Fecha de Creación" },
     { key: "fecha_modificacion", label: "Fecha de Modificación" },
     { key: "centro_sede_id", label: "Centro ID" },
@@ -50,78 +42,54 @@ const Sedes = () => {
   ];
 
   const formFields: FormField[] = [
-    { key: "nombre_sede", label: "Nombre del Centro", type: "text", required: true },
+    { key: "id_sede", label: "ID", type: "number", required: true },
+    { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
     { key: "direccion_sede", label: "Dirección de la sede", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
-    { key: "centro_sede_id", label: "Municipio ID", type: "text", required: true },
+    { key: "centro_sede_id", label: "Centro ID", type: "number", required: true },
   ];
-
-  useEffect(() => {
-    const fetchSedes = async () => {
-      try {
-        const response = await fetch("http://localhost:3002/centros");
-        if (!response.ok) {
-          throw new Error("Error al obtener las sede");
-        }
-        const data = await response.json();
-        setSedes(data);
-      } catch (error) {
-        console.error("Error al cargar las sede:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSedes();
-  }, []);
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId
-        ? `http://localhost:3002/sedes/actualizar/${editingId}`
-        : "http://localhost:3002/sedes/crear";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar el centro");
+      if (editingId) {
+        await actualizarSede(editingId, {
+          id_sede: Number(values.id_sede),
+          nombre_sede: values.nombre_sede,
+          direccion_sede: values.direccion_sede,
+          fecha_creacion: values.fecha_creacion,
+          fecha_modificacion: values.fecha_modificacion,
+          centro_sede_id: Number(values.centro_sede_id),
+        });
+        alert('Sede actualizada con éxito');
+      } else {
+        await crearSede({
+          id_sede: Number(values.id_sede),
+          nombre_sede: values.nombre_sede,
+          direccion_sede: values.direccion_sede,
+          fecha_creacion: values.fecha_creacion,
+          fecha_modificacion: values.fecha_modificacion,
+          centro_sede_id: Number(values.centro_sede_id),
+        });
+        alert('Sede creada con éxito');
       }
-
-      alert(`Sedes ${editingId ? "actualizado" : "creado"} con éxito`);
-
-      const updatedSedes = await fetch("http://localhost:3002/centros").then((res) => res.json());
-      setSedes(updatedSedes);
-
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error("Error al guardar la sede:", error);
+      console.error('Error al guardar la sede:', error);
+      alert('Error al guardar la sede');
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este centro?")) return;
-
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta sede?')) return;
     try {
-      const response = await fetch(`http://localhost:3002/centros/eliminar/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al eliminar el centro");
-      }
-
-      alert("Sede eliminada con éxito");
-      setSedes(Sedes.filter((Sede) => Sede.id_sede !== id));
+      await eliminarSede(id);
+      alert('Sede eliminada con éxito');
     } catch (error) {
-      console.error("Error al eliminar el centro:", error);
+      console.error('Error al eliminar la sede:', error);
+      alert('Error al eliminar la sede');
     }
   };
 
@@ -155,28 +123,35 @@ const Sedes = () => {
           {loading ? (
             <p>Cargando sedes...</p>
           ) : (
-            <GlobalTable columns={columns} data={Sedes.map(sede => ({ ...sede, key: sede.id_sede }))} rowsPerPage={6} />
+            <GlobalTable columns={columns as Column<any>[]} data={sedes.map(sede => ({ ...sede, key: sede.id_sede }))} rowsPerPage={6} />
           )}
 
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                >
+                  <span className="text-gray-800 font-bold">×</span>
+                </button>
+                
                 <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Centro" : "Crear Nuevo Centro"}
+                  {editingId ? "Editar Sede" : "Crear Nueva Sede"}
                 </h2>
                 <Form
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
+                  initialValues={{
+                    id_sede: formData.id_sede?.toString() || '',
+                    nombre_sede: formData.nombre_sede || '',
+                    direccion_sede: formData.direccion_sede || '',
+                    fecha_creacion: formData.fecha_creacion || '',
+                    fecha_modificacion: formData.fecha_modificacion || '',
+                    centro_sede_id: formData.centro_sede_id?.toString() || ''
+                  }}
                 />
-                <div className="flex justify-end mt-4">
-                  <Boton
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cerrar
-                  </Boton>
-                </div>
               </div>
             </div>
           )}
