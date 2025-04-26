@@ -14,10 +14,10 @@ const Elementos = () => {
   const [formData, setFormData] = useState<Partial<CategoriaElemento>>({});
 
   const columns: Column<CategoriaElemento>[] = [
-    { key: "codigo_unpsc", label: "Código UNSPSC" },
-    { key: "nombre_categoria", label: "Nombre de la Categoría" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
+    { key: "codigo_unpsc", label: "Código UNSPSC", filterable: true },
+    { key: "nombre_categoria", label: "Nombre de la Categoría", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -40,21 +40,35 @@ const Elementos = () => {
     },
   ];
 
+  // Definir campos del formulario dinámicamente
   const formFields: FormField[] = [
     { key: "codigo_unpsc", label: "Código UNSPSC", type: "text", required: true },
     { key: "nombre_categoria", label: "Nombre de la Categoría", type: "text", required: true },
-    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
-    { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
+  if (editingId) {
+    formFields.push({ key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true });
+  } else {
+    formFields.push({ key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true });
+  }
 
   // Crear o actualizar categoría
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
       if (editingId) {
-        await actualizarCategoriaElemento(editingId, values);
+        await actualizarCategoriaElemento(editingId, {
+          codigo_unpsc: values.codigo_unpsc as string,
+          nombre_categoria: values.nombre_categoria as string,
+          fecha_modificacion: values.fecha_modificacion as string,
+          fecha_creacion: formData.fecha_creacion as string || '',
+        });
         alert('Categoría actualizada con éxito');
       } else {
-        await crearCategoriaElemento(values as Omit<CategoriaElemento, 'id_categoria_elemento'>);
+        await crearCategoriaElemento({
+          codigo_unpsc: values.codigo_unpsc as string,
+          nombre_categoria: values.nombre_categoria as string,
+          fecha_creacion: values.fecha_creacion as string,
+          fecha_modificacion: values.fecha_creacion as string,
+        } as Omit<CategoriaElemento, 'id_categoria_elemento'>);
         alert('Categoría creada con éxito');
       }
       setIsModalOpen(false);

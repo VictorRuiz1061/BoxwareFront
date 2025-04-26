@@ -6,19 +6,29 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useAreas } from '../../hooks/useAreas';
 import { Area } from '../../types/area';
-
+import { useSedes } from '../../hooks/useSedes';
 const Areas = () => {
   const { areas, loading, crearArea, actualizarArea, eliminarArea, mostrarErrores, validationErrors } = useAreas();
+  const { sedes } = useSedes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Area>>({});
 
   const columns: Column<Area>[] = [
-    { key: "nombre_area", label: "Nombre del Área" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Última Modificación" },
+    { key: "nombre_area", label: "Nombre del Área", filterable: true },
     {
-      key: "acciones",
+      key: "sede_id",
+      label: "Sede",
+      filterable: true,
+      render: (area) => {
+        const sede = sedes.find(s => s.id_sede === area.sede_id);
+        return sede ? sede.nombre_sede : area.sede_id;
+      }
+    },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Última Modificación", filterable: true },
+    {
+      key: "acciones",  
       label: "Acciones",
       render: (area) => (
         <div className="flex gap-2">
@@ -41,20 +51,24 @@ const Areas = () => {
 
   const formFields: FormField[] = [
     { key: "nombre_area", label: "Nombre del Área", type: "text", required: true },
+    { key: "sede_id", label: "Sede", type: "select", required: true, options: sedes.map(s => s.nombre_sede) },
   ];
 
   // Crear o actualizar área
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      // Preparar datos para validación
+      // Buscar la sede por nombre
+      const sedeSeleccionada = sedes.find(s => s.nombre_sede === values.sede_id);
+      if (!sedeSeleccionada) {
+        throw new Error('Sede no encontrada');
+      }
       const dataToSubmit = {
+        sede_id: sedeSeleccionada.id_sede,
         nombre_area: values.nombre_area,
         fecha_creacion: editingId ? undefined : new Date().toISOString(),
         fecha_modificacion: new Date().toISOString()
       };
-      
       let resultado;
-      
       if (editingId) {
         resultado = await actualizarArea(editingId, dataToSubmit);
         if (resultado.success) {
@@ -125,8 +139,8 @@ const Areas = () => {
             Crear Nueva Área
           </Boton>
 
-          {loading ? (
-            <p>Cargando áreas...</p>
+          {loading || sedes.length === 0 ? (
+            <p>Cargando áreas y sedes...</p>
           ) : (
             <GlobalTable
               columns={columns}
@@ -156,6 +170,7 @@ const Areas = () => {
                   initialValues={{
                     ...formData,
                     id_area: formData.id_area?.toString(),
+                    sede_id: sedes.find(s => s.id_sede === formData.sede_id)?.nombre_sede || ''
                   }}
                 />
                 

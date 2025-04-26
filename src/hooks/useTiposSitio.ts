@@ -1,50 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { TipoSitio } from '../types/tipoSitio';
 import { getTiposSitio, crearTipoSitio, actualizarTipoSitio, eliminarTipoSitio } from '../api/tiposSitioApi';
-import { z } from 'zod';
-
-// Esquema de validación integrado
-const tipoSitioSchema = z.object({
-  nombre_tipo_sitio: z.string()
-    .min(3, { message: 'El nombre del tipo de sitio debe tener al menos 3 caracteres' })
-    .max(100, { message: 'El nombre del tipo de sitio no debe exceder los 100 caracteres' }),
-  fecha_creacion: z.string()
-    .refine(date => !isNaN(Date.parse(date)), {
-      message: 'Fecha de creación inválida',
-    })
-    .optional(),
-  fecha_modificacion: z.string()
-    .refine(date => !isNaN(Date.parse(date)), {
-      message: 'Fecha de modificación inválida',
-    })
-    .optional(),
-});
-
-// Esquema para actualizaciones (todos los campos opcionales)
-const tipoSitioUpdateSchema = tipoSitioSchema.partial();
-
-// Función para validar con Zod
-const validateTipoSitio = <T>(schema: z.ZodType<T>, data: any): { success: true; data: T } | { success: false; errors: Record<string, string> } => {
-  try {
-    const validatedData = schema.parse(data);
-    return { success: true, data: validatedData };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
-        if (err.path.length > 0) {
-          const key = err.path[0].toString();
-          errors[key] = err.message;
-        }
-      });
-      return { success: false, errors };
-    }
-    return {
-      success: false,
-      errors: { general: 'Error de validación desconocido' },
-    };
-  }
-};
 
 export function useTiposSitio() {
   const [tiposSitio, setTiposSitio] = useState<TipoSitio[]>([]);
@@ -72,15 +28,8 @@ export function useTiposSitio() {
 
   const crear = async (tipoSitio: Omit<TipoSitio, 'id_tipo_sitio'>) => {
     try {
-      // Validar datos primero
-      const validation = validateTipoSitio(tipoSitioSchema, tipoSitio);
-      if (!validation.success) {
-        setValidationErrors(validation.errors);
-        return { success: false, errors: validation.errors };
-      }
-      
       setValidationErrors(null);
-      await crearTipoSitio(validation.data as Omit<TipoSitio, 'id_tipo_sitio'>);
+      await crearTipoSitio(tipoSitio);
       await fetchTiposSitio();
       return { success: true };
     } catch (error) {
@@ -92,15 +41,8 @@ export function useTiposSitio() {
 
   const actualizar = async (id: number, tipoSitio: Partial<TipoSitio>) => {
     try {
-      // Validar datos primero
-      const validation = validateTipoSitio(tipoSitioUpdateSchema, tipoSitio);
-      if (!validation.success) {
-        setValidationErrors(validation.errors);
-        return { success: false, errors: validation.errors };
-      }
-      
       setValidationErrors(null);
-      await actualizarTipoSitio(id, validation.data as Partial<TipoSitio>);
+      await actualizarTipoSitio(id, tipoSitio);
       await fetchTiposSitio();
       return { success: true };
     } catch (error) {

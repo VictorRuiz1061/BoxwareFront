@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Boton from '../atomos/Boton';
 import Sidebar from '../organismos/Sidebar';
 import Header from "../organismos/Header";
@@ -9,17 +8,16 @@ import { useTiposMovimiento } from '../../hooks/useTiposMovimiento';
 import { TipoMovimiento } from '../../types/tipoMovimiento';
 
 const TiposMovimiento = () => {
-  const navigate = useNavigate();
   const { tiposMovimiento, loading, crearTipoMovimiento, actualizarTipoMovimiento, eliminarTipoMovimiento } = useTiposMovimiento();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoMovimiento>>({});
 
   const columns: Column<TipoMovimiento>[] = [
-    { key: "id_tipo_movimiento", label: "ID" },
-    { key: "tipo_movimiento", label: "Tipo de Movimiento" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
+    { key: "id_tipo_movimiento", label: "ID", filterable: true },
+    { key: "tipo_movimiento", label: "Tipo de Movimiento", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",

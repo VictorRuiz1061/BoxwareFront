@@ -6,7 +6,7 @@ export type FormField = {
   label: string;
   type: string;
   required?: boolean;
-  options?: string[]; // Add options property for select fields
+  options?: string[];
 };
 
 type Props<T extends Record<string, any>> = {

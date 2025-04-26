@@ -18,7 +18,7 @@ export const getFichas = async (): Promise<Ficha[]> => {
   }
 };
 
-export const crearFicha = async (ficha: Omit<Ficha, 'id_ficha'>): Promise<Ficha> => {
+export const crearFicha = async (ficha: Ficha): Promise<Ficha> => {
   const response = await axiosInstance.post<Ficha>('/fichas', ficha);
   return response.data;
 };

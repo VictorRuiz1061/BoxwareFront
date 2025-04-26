@@ -15,10 +15,19 @@ const TipoMaterial = () => {
 
 
   const columns: Column<TipoMaterial>[] = [
-    { key: "tipo_elemento", label: "Tipo de Elemento" },
-    { key: "estado", label: "Estado" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
+    { key: "tipo_elemento", label: "Tipo de Elemento", filterable: true },
+    {
+      key: "estado",
+      label: "Estado",
+      filterable: true,
+      render: (tipoMaterial) => (
+        <span className={String(tipoMaterial.estado) === "true" ? "text-green-600" : "text-red-600"}>
+          {String(tipoMaterial.estado) === "true" ? "Activo" : "Inactivo"}
+        </span>
+      )
+    },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -41,27 +50,37 @@ const TipoMaterial = () => {
     },
   ];
 
+  // Definir campos del formulario dinámicamente
   const formFields: FormField[] = [
     { key: "tipo_elemento", label: "Tipo de Elemento", type: "text", required: true },
-    { key: "estado", label: "Estado", type: "text", required: true },
-    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
-    { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
+    { key: "estado", label: "Estado", type: "select", required: true, options: ["Activo", "Inactivo"] },
   ];
+  if (editingId) {
+    formFields.push({ key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true });
+  } else {
+    formFields.push({ key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true });
+  }
 
 
 
   // Crear o actualizar tipo de material
   const handleSubmit = async (values: Record<string, string | number>) => {
     try {
+      const estadoBool = values.estado === "Activo" || values.estado === "true";
       if (editingId) {
-        await actualizarTipoMaterial(editingId, values);
+        await actualizarTipoMaterial(editingId, {
+          tipo_elemento: values.tipo_elemento as string,
+          estado: String(estadoBool),
+          fecha_modificacion: values.fecha_modificacion as string,
+          fecha_creacion: formData.fecha_creacion as string || '',
+        });
         alert('Tipo de material actualizado con éxito');
       } else {
         await crearTipoMaterial({
           tipo_elemento: values.tipo_elemento as string,
-          estado: values.estado as string,
+          estado: String(estadoBool),
           fecha_creacion: values.fecha_creacion as string,
-          fecha_modificacion: values.fecha_modificacion as string,
+          fecha_modificacion: values.fecha_creacion as string,
         });
         alert('Tipo de material creado con éxito');
       }
@@ -133,11 +152,12 @@ const TipoMaterial = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={Object.fromEntries(
-                    Object.entries(formData)
-                      .filter(([key]) => key !== "key")
-                      .map(([key, value]) => [key, value as string | number | undefined])
-                  )}
+                  initialValues={{
+                    ...formData,
+                    estado: typeof formData.estado === 'boolean'
+                      ? (formData.estado ? "Activo" : "Inactivo")
+                      : (formData.estado === "true" ? "Activo" : "Inactivo")
+                  }}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton

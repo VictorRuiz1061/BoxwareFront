@@ -6,18 +6,28 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useProgramas } from '../../hooks/useProgramas';
 import { Programa } from '../../types/programa';
+import { useAreas } from '../../hooks/useAreas';
 
 const Programas = () => {
   const { programas, loading, crearPrograma, actualizarPrograma, eliminarPrograma } = useProgramas();
+  const { areas } = useAreas();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Programa>>({});
 
   const columns: Column<Programa>[] = [
-    { key: "nombre_programa", label: "Nombre del Programa" },
-    { key: "area_id", label: "ID del Área" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Última Modificación" },
+    { key: "nombre_programa", label: "Nombre del Programa", filterable: true },
+    {
+      key: "area_id",
+      label: "Área",
+      filterable: true,
+      render: (programa) => {
+        const area = areas.find(a => a.id_area === programa.area_id);
+        return area ? area.nombre_area : programa.area_id;
+      }
+    },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Última Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -42,18 +52,22 @@ const Programas = () => {
 
   const formFields: FormField[] = [
     { key: "nombre_programa", label: "Nombre del Programa", type: "text", required: true },
-    { key: "area_id", label: "ID del Área", type: "number", required: true },
+    { key: "area_id", label: "Área", type: "select", required: true, options: areas.map(a => a.nombre_area) },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
-
-
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
+      const areaSeleccionada = areas.find(a => a.nombre_area === values.area_id);
+      if (!areaSeleccionada) {
+        alert("Por favor selecciona un área válida.");
+        return;
+      }
       if (editingId) {
         await actualizarPrograma(editingId, {
           ...values,
           nombre_programa: values.nombre_programa as string,
-          area_id: parseInt(values.area_id as string, 10),
+          area_id: areaSeleccionada.id_area,
           fecha_modificacion: new Date().toISOString(),
         });
         alert('Programa actualizado con éxito');
@@ -61,7 +75,7 @@ const Programas = () => {
         await crearPrograma({
           ...values,
           nombre_programa: values.nombre_programa as string,
-          area_id: parseInt(values.area_id as string, 10),
+          area_id: areaSeleccionada.id_area,
           fecha_creacion: new Date().toISOString(),
           fecha_modificacion: new Date().toISOString(),
         });
@@ -140,7 +154,7 @@ const Programas = () => {
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     nombre_programa: formData.nombre_programa || '',
-                    area_id: formData.area_id?.toString() || ''
+                    area_id: areas.find(a => a.id_area === formData.area_id)?.nombre_area || ''
                   }}
                 />
               </div>

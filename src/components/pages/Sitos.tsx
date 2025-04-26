@@ -6,20 +6,24 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useSitios } from '../../hooks/useSitios';
 import { Sitio } from '../../types/sitio';
+import { useUsuarios } from '../../hooks/useUsuarios';
+import { useTiposSitio } from '../../hooks/useTiposSitio';
 
 
 
 const Sitios = () => {
   const { sitios, loading, crearSitio, actualizarSitio, eliminarSitio } = useSitios();
+  const { usuarios } = useUsuarios();
+  const { tiposSitio } = useTiposSitio();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Sitio>>({});
 
   const columns: Column<Sitio>[] = [
-    { key: "nombre_sitio", label: "Nombre del Sitio" },
-    { key: "ubicacion", label: "Ubicación" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
+    { key: "nombre_sitio", label: "Nombre del Sitio", filterable: true },
+    { key: "ubicacion", label: "Ubicación", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -42,35 +46,49 @@ const Sitios = () => {
     },
   ];
 
+  // Definir campos del formulario dinámicamente
   const formFields: FormField[] = [
     { key: "nombre_sitio", label: "Nombre del Sitio", type: "text", required: true },
     { key: "ubicacion", label: "Ubicación", type: "text", required: true },
-    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
-    { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
     { key: "ficha_tecnica", label: "Ficha Técnica", type: "text", required: true },
-    { key: "persona_encargada_id", label: "ID Persona Encargada", type: "number", required: true },
-    { key: "tipo_sitio_id", label: "ID Tipo Sitio", type: "number", required: true },
+    { key: "persona_encargada_id", label: "Persona Encargada", type: "select", required: true, options: usuarios.map(u => u.nombre) },
+    { key: "tipo_sitio_id", label: "Tipo de Sitio", type: "select", required: true, options: tiposSitio.map(t => t.nombre_tipo_sitio) },
   ];
+  if (editingId) {
+    formFields.push({ key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true });
+  } else {
+    formFields.push({ key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true });
+  }
 
 
 
   // Crear o actualizar sitio
   const handleSubmit = async (values: Record<string, string | number>) => {
     try {
+      const usuarioSeleccionado = usuarios.find(u => u.nombre === values.persona_encargada_id);
+      const tipoSitioSeleccionado = tiposSitio.find(t => t.nombre_tipo_sitio === values.tipo_sitio_id);
+      if (!usuarioSeleccionado || !tipoSitioSeleccionado) {
+        alert("Por favor selecciona una persona encargada y un tipo de sitio válidos.");
+        return;
+      }
       const sitioData = {
         nombre_sitio: String(values.nombre_sitio),
         ubicacion: String(values.ubicacion),
-        fecha_creacion: String(values.fecha_creacion),
-        fecha_modificacion: String(values.fecha_modificacion),
         ficha_tecnica: String(values.ficha_tecnica),
-        persona_encargada_id: Number(values.persona_encargada_id),
-        tipo_sitio_id: Number(values.tipo_sitio_id),
+        persona_encargada_id: usuarioSeleccionado.id_usuario,
+        tipo_sitio_id: tipoSitioSeleccionado.id_tipo_sitio,
+        fecha_modificacion: editingId
+          ? String(values.fecha_modificacion)
+          : String(values.fecha_creacion),
+        fecha_creacion: editingId
+          ? String(formData.fecha_creacion || "")
+          : String(values.fecha_creacion),
       };
       if (editingId) {
-        await actualizarSitio(editingId, sitioData);
+        await actualizarSitio(editingId, {...sitioData, sede_id: 1});
         alert('Sitio actualizado con éxito');
       } else {
-        await crearSitio(sitioData);
+        await crearSitio({...sitioData, sede_id: 1});
         alert('Sitio creado con éxito');
       }
       setIsModalOpen(false);
@@ -141,11 +159,13 @@ const Sitios = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={Object.fromEntries(
-                    Object.entries(formData)
-                      .filter(([key]) => key !== "key")
-                      .map(([key, value]) => [key, value as string | number | undefined])
-                  )}
+                  initialValues={{
+                    ...Object.fromEntries(
+                      Object.entries(formData).map(([key, value]) => [key, value?.toString() || ""])
+                    ),
+                    persona_encargada_id: usuarios.find(u => u.id_usuario === formData.persona_encargada_id)?.nombre || '',
+                    tipo_sitio_id: tiposSitio.find(t => t.id_tipo_sitio === formData.tipo_sitio_id)?.nombre_tipo_sitio || '',
+                  }}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton

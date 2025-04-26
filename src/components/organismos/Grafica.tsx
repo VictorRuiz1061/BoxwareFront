@@ -4,7 +4,7 @@ import { Line, Bar } from "react-chartjs-2";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
-type ChartType = "line" | "bar";
+type ChartType = "line" | "bar" | "doughnut";
 
 interface GraficaProps {
   type: ChartType;

@@ -14,10 +14,10 @@ const TiposSitio = () => {
   const [formData, setFormData] = useState<Partial<TipoSitio>>({});
 
   const columns: Column<TipoSitio>[] = [
-    { key: "id_tipo_sitio", label: "ID" },
-    { key: "nombre_tipo_sitio", label: "Nombre del Tipo de Sitio" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
+    { key: "id_tipo_sitio", label: "ID", filterable: true },
+    { key: "nombre_tipo_sitio", label: "Nombre del Tipo de Sitio", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -43,6 +43,10 @@ const TiposSitio = () => {
   const formFields: FormField[] = [
     { key: "nombre_tipo_sitio", label: "Nombre del Tipo de Sitio", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+  ];
+
+  const editFormFields: FormField[] = [
+    { key: "nombre_tipo_sitio", label: "Nombre del Tipo de Sitio", type: "text", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
 
@@ -125,9 +129,10 @@ const TiposSitio = () => {
                   {editingId ? "Editar Tipo de Sitio" : "Crear Nuevo Tipo de Sitio"}
                 </h2>
                 <Form
-                  fields={formFields}
+                  fields={editingId ? editFormFields : formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
+                  initialValues={formData as Record<string, string>}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton

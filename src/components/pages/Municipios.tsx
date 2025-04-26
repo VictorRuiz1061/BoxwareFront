@@ -14,9 +14,9 @@ const Municipios = () => {
   const [formData, setFormData] = useState<Partial<Municipio>>({});
 
   const columns: Column<Municipio>[] = [
-    { key: "nombre_municipio", label: "Nombre del Municipio" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
+    { key: "nombre_municipio", label: "Nombre del Municipio", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -40,7 +40,6 @@ const Municipios = () => {
   ];
 
   const formFields: FormField[] = [
-    { key: "id_municipio", label: "ID", type: "number", required: true },
     { key: "nombre_municipio", label: "Nombre del Municipio", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },

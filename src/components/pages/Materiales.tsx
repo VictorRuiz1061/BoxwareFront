@@ -6,20 +6,53 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useMateriales } from '../../hooks/useMateriales';
 import { Material } from '../../types/material';
+import { useCategoriaElementos } from '../../hooks/useCategoriaElementos';
+import { useTipoMateriales } from '../../hooks/useTipoMateriales';
+import { useSitios } from '../../hooks/useSitios';
 
 const Materiales = () => {
   const { materiales, loading, crearMaterial, actualizarMaterial, eliminarMaterial } = useMateriales();
+  const { categorias } = useCategoriaElementos();
+  const { tipoMateriales } = useTipoMateriales();
+  const { sitios } = useSitios();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Material>>({});
 
   const columns: Column<Material>[] = [
-    { key: "codigo_sena", label: "Código SENA" },
-    { key: "nombre_material", label: "Nombre" },
-    { key: "descripcion_material", label: "Descripción" },
-    { key: "stock", label: "Stock" },
-    { key: "unidad_medida", label: "Unidad de Medida" },
-    { key: "fecha_vencimiento", label: "Fecha de Vencimiento" },
+    { key: "codigo_sena", label: "Codigo sena", filterable: true },
+    { key: "nombre_material", label: "Nombre", filterable: true },
+    { key: "descripcion_material", label: "Descripción", filterable: true },
+    { key: "stock", label: "Stock", filterable: true },
+    { key: "unidad_medida", label: "Unidad de Medida", filterable: true },
+    {
+      key: "categoria_id",
+      label: "Categoría",
+      filterable: true,
+      render: (material) => {
+        const categoria = categorias.find(c => c.id_categoria_elemento === material.categoria_id);
+        return categoria ? categoria.nombre_categoria : material.categoria_id;
+      }
+    },
+    {
+      key: "tipo_material_id",
+      label: "Tipo de Material",
+      filterable: true,
+      render: (material) => {
+        const tipo = tipoMateriales.find(t => t.id_tipo_material === material.tipo_material_id);
+        return tipo ? tipo.tipo_elemento : material.tipo_material_id;
+      }
+    },
+    {
+      key: "sitio_id",
+      label: "Sitio",
+      filterable: true,
+      render: (material) => {
+        const sitio = sitios.find(s => s.id_sitio === material.sitio_id);
+        return sitio ? sitio.nombre_sitio : material.sitio_id;
+      }
+    },
+    { key: "fecha_vencimiento", label: "Fecha de Vencimiento", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -42,51 +75,40 @@ const Materiales = () => {
     },
   ];
 
+  // Definir campos del formulario dinámicamente
   const formFields: FormField[] = [
     { key: "codigo_sena", label: "Codigo sena ", type: "text", required: true },
     { key: "nombre_material", label: "Nombre", type: "text", required: true },
-    {
-      key: "descripcion_material",
-      label: "Descripción",
-      type: "text",
-      required: true,
-    },
+    { key: "descripcion_material", label: "Descripción", type: "text", required: true },
     { key: "stock", label: "Stock", type: "number", required: true },
-    {
-      key: "unidad_medida",
-      label: "Unidad de Medida",
-      type: "text",
-      required: true,
-    },
-    {
-      key: "fecha_vencimiento",
-      label: "Fecha de Vencimiento",
-      type: "date",
-      required: true,
-    },
-    {
-      key: "categoria_id",
-      label: "ID Categoría",
-      type: "number",
-      required: true,
-    },
-    {
-      key: "tipo_material_id",
-      label: "ID Tipo Material",
-      type: "number",
-      required: true,
-    },
-    { key: "sitio_id", label: "ID Sitio", type: "number", required: true },
+    { key: "unidad_medida", label: "Unidad de Medida", type: "text", required: true },
+    { key: "categoria_id", label: "Categoría", type: "select", required: true, options: categorias.map(c => c.nombre_categoria) },
+    { key: "tipo_material_id", label: "Tipo de Material", type: "select", required: true, options: tipoMateriales.map(t => t.tipo_elemento) },
+    { key: "sitio_id", label: "Sitio", type: "select", required: true, options: sitios.map(s => s.nombre_sitio) },
+    { key: "fecha_vencimiento", label: "Fecha de Vencimiento", type: "date", required: true },
   ];
 
   // Crear o actualizar material
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
+      const categoriaSeleccionada = categorias.find(c => c.nombre_categoria === values.categoria_id);
+      const tipoMaterialSeleccionado = tipoMateriales.find(t => t.tipo_elemento === values.tipo_material_id);
+      const sitioSeleccionado = sitios.find(s => s.nombre_sitio === values.sitio_id);
+      if (!categoriaSeleccionada || !tipoMaterialSeleccionado || !sitioSeleccionado) {
+        alert('Por favor selecciona una categoría, tipo de material y sitio válidos.');
+        return;
+      }
+      const materialData = {
+        ...values,
+        categoria_id: categoriaSeleccionada.id_categoria_elemento,
+        tipo_material_id: tipoMaterialSeleccionado.id_tipo_material,
+        sitio_id: sitioSeleccionado.id_sitio,
+      };
       if (editingId) {
-        await actualizarMaterial(editingId, values);
+        await actualizarMaterial(editingId, materialData);
         alert('Material actualizado con éxito');
       } else {
-        await crearMaterial(values as Omit<Material, 'id_material'>);
+        await crearMaterial(materialData as Omit<Material, 'id_material'>);
         alert('Material creado con éxito');
       }
       setIsModalOpen(false);
@@ -159,7 +181,12 @@ const Materiales = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={formData}
+                  initialValues={{
+                    ...formData,
+                    categoria_id: categorias.find(c => c.id_categoria_elemento === formData.categoria_id)?.nombre_categoria || '',
+                    tipo_material_id: tipoMateriales.find(t => t.id_tipo_material === formData.tipo_material_id)?.tipo_elemento || '',
+                    sitio_id: sitios.find(s => s.id_sitio === formData.sitio_id)?.nombre_sitio || '',
+                  }}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton

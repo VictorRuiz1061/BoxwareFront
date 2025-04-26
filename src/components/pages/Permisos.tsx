@@ -6,18 +6,38 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { usePermisos } from '../../hooks/usePermisos';
 import { Permiso } from '../../types/permiso';
+import { useModulos } from '../../hooks/useModulos';
+import { useRoles } from '../../hooks/useRoles';
 
 const Permisos = () => {
   const { permisos, loading, crearPermiso, actualizarPermiso, eliminarPermiso } = usePermisos();
+  const { modulos } = useModulos();
+  const { roles } = useRoles();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Permiso>>({});
 
   const columns: Column<Permiso>[] = [
-    { key: "nombre", label: "Nombre" },
-    { key: "codigo_nombre", label: "Código Nombre" },
-    { key: "modulo_id", label: "ID Módulo" },
-    { key: "rol_id", label: "ID Rol" },
+    { key: "nombre", label: "Nombre", filterable: true },
+    { key: "codigo_nombre", label: "Código Nombre", filterable: true },
+    {
+      key: "modulo_id",
+      label: "Módulo",
+      filterable: true,
+      render: (permiso) => {
+        const modulo = modulos.find(m => m.id_modulo === permiso.modulo_id);
+        return modulo ? modulo.descripcion_ruta : permiso.modulo_id;
+      }
+    },
+    {
+      key: "rol_id",
+      label: "Rol",
+      filterable: true,
+      render: (permiso) => {
+        const rol = roles.find(r => r.id_rol === permiso.rol_id);
+        return rol ? rol.nombre_rol : permiso.rol_id;
+      }
+    },
     {
       key: "acciones",
       label: "Acciones",
@@ -43,18 +63,24 @@ const Permisos = () => {
   const formFields: FormField[] = [
     { key: "nombre", label: "Nombre", type: "text", required: true },
     { key: "codigo_nombre", label: "Código Nombre", type: "text", required: true },
-    { key: "modulo_id", label: "ID Módulo", type: "number", required: true },
-    { key: "rol_id", label: "ID Rol", type: "number", required: true },
+    { key: "modulo_id", label: "Módulo", type: "select", required: true, options: modulos.map(m => m.descripcion_ruta) },
+    { key: "rol_id", label: "Rol", type: "select", required: true, options: roles.map(r => r.nombre_rol) },
   ];
 
   const handleSubmit = async (values: Record<string, string | number>) => {
     try {
+      const moduloSeleccionado = modulos.find(m => m.descripcion_ruta === values.modulo_id);
+      const rolSeleccionado = roles.find(r => r.nombre_rol === values.rol_id);
+      if (!moduloSeleccionado || !rolSeleccionado) {
+        alert("Por favor selecciona un módulo y un rol válidos.");
+        return;
+      }
       const datos = {
         id_permiso: parseInt(values.id_permiso as string),
         nombre: values.nombre as string,
         codigo_nombre: values.codigo_nombre as string,
-        modulo_id: parseInt(values.modulo_id as string),
-        rol_id: parseInt(values.rol_id as string)
+        modulo_id: moduloSeleccionado.id_modulo,
+        rol_id: rolSeleccionado.id_rol
       };
 
       if (editingId) {
@@ -142,8 +168,8 @@ const Permisos = () => {
                   initialValues={{
                     ...formData,
                     id_permiso: formData.id_permiso?.toString(),
-                    modulo_id: formData.modulo_id?.toString(),
-                    rol_id: formData.rol_id?.toString()
+                    modulo_id: modulos.find(m => m.id_modulo === formData.modulo_id)?.descripcion_ruta || '',
+                    rol_id: roles.find(r => r.id_rol === formData.rol_id)?.nombre_rol || ''
                   }}
                 />
               </div>

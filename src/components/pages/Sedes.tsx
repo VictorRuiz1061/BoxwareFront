@@ -6,19 +6,29 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useSedes } from '../../hooks/useSedes';
 import { Sede } from '../../types/sede';
+import { useCentros } from '../../hooks/useCentros';
 
 const Sedes = () => {
   const { sedes, loading, crearSede, actualizarSede, eliminarSede } = useSedes();
+  const { centros } = useCentros();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Sede>>({});
 
   const columns: Column<Sede>[] = [
-    { key: "nombre_sede", label: "Nombre de la Sede" },
-    { key: "direccion_sede", label: "Dirección de la sede" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
-    { key: "centro_sede_id", label: "Centro ID" },
+    { key: "nombre_sede", label: "Nombre de la Sede", filterable: true },
+    { key: "direccion_sede", label: "Dirección de la sede", filterable: true },
+    {
+      key: "centro_sede_id",
+      label: "Centro",
+      filterable: true,
+      render: (sede) => {
+        const centro = centros.find(c => c.id_centro === sede.centro_sede_id);
+        return centro ? centro.nombre_centro : sede.centro_sede_id;
+      }
+    },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -42,16 +52,21 @@ const Sedes = () => {
   ];
 
   const formFields: FormField[] = [
-    { key: "id_sede", label: "ID", type: "number", required: true },
     { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
     { key: "direccion_sede", label: "Dirección de la sede", type: "text", required: true },
+    { key: "centro_sede_id", label: "Centro", type: "select", required: true, options: centros.map(c => c.nombre_centro) },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
-    { key: "centro_sede_id", label: "Centro ID", type: "number", required: true },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
+      // Buscar el centro por nombre
+      const centroSeleccionado = centros.find(c => c.nombre_centro === values.centro_sede_id);
+      if (!centroSeleccionado) {
+        throw new Error('Centro no encontrado');
+      }
+
       if (editingId) {
         await actualizarSede(editingId, {
           id_sede: Number(values.id_sede),
@@ -59,17 +74,16 @@ const Sedes = () => {
           direccion_sede: values.direccion_sede,
           fecha_creacion: values.fecha_creacion,
           fecha_modificacion: values.fecha_modificacion,
-          centro_sede_id: Number(values.centro_sede_id),
+          centro_sede_id: centroSeleccionado.id_centro,
         });
         alert('Sede actualizada con éxito');
       } else {
         await crearSede({
-          id_sede: Number(values.id_sede),
           nombre_sede: values.nombre_sede,
           direccion_sede: values.direccion_sede,
           fecha_creacion: values.fecha_creacion,
           fecha_modificacion: values.fecha_modificacion,
-          centro_sede_id: Number(values.centro_sede_id),
+          centro_sede_id: centroSeleccionado.id_centro,
         });
         alert('Sede creada con éxito');
       }
@@ -149,7 +163,7 @@ const Sedes = () => {
                     direccion_sede: formData.direccion_sede || '',
                     fecha_creacion: formData.fecha_creacion || '',
                     fecha_modificacion: formData.fecha_modificacion || '',
-                    centro_sede_id: formData.centro_sede_id?.toString() || ''
+                    centro_sede_id: centros.find(c => c.id_centro === formData.centro_sede_id)?.nombre_centro || ''
                   }}
                 />
               </div>

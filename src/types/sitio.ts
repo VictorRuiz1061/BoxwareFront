@@ -1,4 +1,5 @@
 export interface Sitio {
+  sede_id: number;
   id_sitio: number;
   nombre_sitio: string;
   ubicacion: string;

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Boton from '../atomos/Boton';
 import Sidebar from '../organismos/Sidebar';
 import Header from "../organismos/Header";
@@ -10,16 +9,14 @@ import { Rol } from '../../types/rol';
 import AnimatedContainer from "../atomos/AnimatedContainer";
 
 const Roles = () => {
-  const navigate = useNavigate();
-  const { roles, loading, crearRol, actualizarRol, eliminarRol, fetchRoles } = useRoles();
+  const { roles, loading, crearRol, actualizarRol, eliminarRol } = useRoles();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Rol>>({});
 
   const columns: Column<Rol>[] = [
-    { key: "id_rol", label: "ID" },
-    { key: "nombre_rol", label: "Nombre del Rol" },
-    { key: "descripcion", label: "Descripción" },
+    { key: "nombre_rol", label: "Nombre del Rol", filterable: true },
+    { key: "descripcion", label: "Descripción", filterable: true },
     { 
       key: "estado", 
       label: "Estado",
@@ -55,19 +52,23 @@ const Roles = () => {
   const formFields: FormField[] = [
     { key: "nombre_rol", label: "Nombre del Rol", type: "text", required: true },
     { key: "descripcion", label: "Descripción", type: "text", required: true },
+    { key: "estado", label: "Estado", type: "select", required: true, options: ["Activo", "Inactivo"] },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
   ];
 
   // Crear o actualizar rol
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      console.log("Form values:", values); // Para depuración
-      
+      // Convertir estado a booleano
+      let estadoBool = true;
+      if (values.estado === "Inactivo" || values.estado === "false") {
+        estadoBool = false;
+      }
       // Asegurarse de que todos los campos requeridos estén presentes
       const dataToSubmit = {
         nombre_rol: values.nombre_rol,
         descripcion: values.descripcion,
-        estado: true, // Siempre establecer el estado como true (activo)
+        estado: estadoBool,
         fecha_creacion: values.fecha_creacion
       };
       
@@ -159,6 +160,7 @@ const Roles = () => {
                     initialValues={{
                       nombre_rol: formData.nombre_rol || '',
                       descripcion: formData.descripcion || '',
+                      estado: typeof formData.estado === 'boolean' ? (formData.estado ? "Activo" : "Inactivo") : "Activo",
                       fecha_creacion: formData.fecha_creacion || ''
                     }}
                     onSubmit={handleSubmit}

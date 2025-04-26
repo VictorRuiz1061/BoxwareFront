@@ -8,19 +8,32 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import AnimatedContainer from "../atomos/AnimatedContainer";
 import { useNavigate } from "react-router-dom";
+import { useRoles } from '../../hooks/useRoles';
+
 const Usuarios = () => {
   const navigate = useNavigate();
   const { usuarios, loading, crearUsuario, actualizarUsuario, eliminarUsuario } = useUsuarios();
+  const { roles } = useRoles();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Usuario>>({});
 
   const columns: Column<Usuario>[] = [
-    { key: "nombre", label: "Nombre" },
-    { key: "apellido", label: "Apellido" },
-    { key: "email", label: "Email" },
-    { key: "telefono", label: "Teléfono" },
-    { key: "rol_id", label: "Rol" },
+    { key: "nombre", label: "Nombre", filterable: true },
+    { key: "apellido", label: "Apellido", filterable: true },
+    { key: "edad", label: "Edad", filterable: true },
+    { key: "cedula", label: "Cédula", filterable: true },
+    { key: "email", label: "Email", filterable: true },
+    { key: "telefono", label: "Teléfono", filterable: true },
+    {
+      key: "rol_id",
+      label: "Rol",
+      filterable: true,
+      render: (usuario) => {
+        const rol = roles.find(r => r.id_rol === usuario.rol_id);
+        return rol ? rol.nombre_rol : usuario.rol_id;
+      }
+    },
     {
       key: "acciones",
       label: "Acciones",
@@ -57,17 +70,19 @@ const Usuarios = () => {
     { key: "email", label: "Email", type: "email", required: true },
     { key: "contrasena", label: "Contraseña", type: "password", required: true },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
-    { key: "rol_id", label: "Rol ID", type: "number", required: true },
+    { key: "rol_id", label: "Rol", type: "select", required: true, options: roles.map(r => r.nombre_rol) },
   ];
 
 
   // Crear o actualizar usuario
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
+      // Buscar el id del rol seleccionado por nombre
+      const rolSeleccionado = roles.find(r => r.nombre_rol === values.rol_id);
       const payload = {
         ...values,
+        rol_id: rolSeleccionado ? rolSeleccionado.id_rol : undefined,
         fecha_registro: new Date().toISOString(),
-        esta_activo: true,
       };
       if (editingId) {
         await actualizarUsuario(editingId, payload);
@@ -166,10 +181,7 @@ const Usuarios = () => {
                    buttonText={editingId ? "Actualizar" : "Crear"}
                    initialValues={{
                      ...formData,
-                     esta_activo: formData.esta_activo ? "true" : "false",
-                     ultima_sesion: formData.ultima_sesion as string
-                       ? new Date(formData.ultima_sesion as string).toISOString() 
-                       : undefined,
+                     rol_id: roles.find(r => r.id_rol === formData.rol_id)?.nombre_rol || '',
                    }}
                  />
                   <div className="flex justify-end mt-4">
