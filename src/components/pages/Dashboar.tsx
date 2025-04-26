@@ -1,32 +1,16 @@
-import { Users, BarChart2, Package, MapPin, Tag, Layers, Home, Landmark, Map, ClipboardList } from "lucide-react"; 
+import { Users, BarChart2, Package, MapPin, } from "lucide-react"; 
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import Grafica from "../organismos/Grafica";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
 import { useUsuarios } from '../../hooks/useUsuarios';
-import { useFichas } from '../../hooks/useFichas';
 import { useRoles } from '../../hooks/useRoles';
-import { useProgramas } from '../../hooks/useProgramas';
-import { useCategoriaElementos } from '../../hooks/useCategoriaElementos';
-import { useTipoMateriales } from '../../hooks/useTipoMateriales';
-import { useSedes } from '../../hooks/useSedes';
-import { useCentros } from '../../hooks/useCentros';
-import { useMunicipios } from '../../hooks/useMunicipios';
-import { useSitios } from '../../hooks/useSitios';
 import { useMateriales } from '../../hooks/useMateriales';
 
 const PaginaInicio = () => {
   const { stats, loading, error } = useDashboardStats();
   const { usuarios } = useUsuarios();
-  const { fichas } = useFichas();
   const { roles } = useRoles();
-  const { programas } = useProgramas();
-  const { categorias } = useCategoriaElementos();
-  const { tipoMateriales } = useTipoMateriales();
-  const { sedes } = useSedes();
-  const { centros } = useCentros();
-  const { municipios } = useMunicipios();
-  const { sitios } = useSitios();
   const { materiales } = useMateriales();
 
   // Opciones para gráficas
