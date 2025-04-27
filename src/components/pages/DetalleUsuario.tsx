@@ -9,6 +9,9 @@ import { useRoles } from "../../hooks/useRoles";
 import { useProgramas } from "../../hooks/useProgramas";
 import { useMateriales } from "../../hooks/useMateriales";
 import { useSitios } from "../../hooks/useSitios";
+import { useSedes } from "../../hooks/useSedes";
+import { useCentros } from "../../hooks/useCentros";
+import { useMunicipios } from "../../hooks/useMunicipios";
 import { Page, Text, View, Document, StyleSheet, PDFDownloadLink } from "@react-pdf/renderer";
 
 // Estilos para el PDF
@@ -170,6 +173,18 @@ const InformeUsuarioPDF = ({ userData }: { userData: any }) => (
               <Text style={styles.label}>Tipo de Sitio:</Text>
               <Text style={styles.value}>{userData.tipoSitio?.nombre || "N/A"}</Text>
             </View>
+            <View style={styles.field}>
+              <Text style={styles.label}>Municipio:</Text>
+              <Text style={styles.value}>{userData.municipio?.nombre || "N/A"}</Text>
+            </View>
+            <View style={styles.field}>
+              <Text style={styles.label}>Sede:</Text>
+              <Text style={styles.value}>{userData.sede?.nombre || "N/A"}</Text>
+            </View>
+            <View style={styles.field}>
+              <Text style={styles.label}>Centro:</Text>
+              <Text style={styles.value}>{userData.centro?.nombre || "N/A"}</Text>
+            </View>
           </>
         ) : (
           <Text style={styles.value}>El usuario no tiene sitio asignado</Text>
@@ -213,6 +228,9 @@ const DetalleUsuario = () => {
   const { programas } = useProgramas();
   const { materiales } = useMateriales();
   const { sitios } = useSitios();
+  const { sedes } = useSedes();
+  const { centros } = useCentros();
+  const { municipios } = useMunicipios();
   
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -255,6 +273,13 @@ const DetalleUsuario = () => {
           ? materiales.filter(m => m.sitio_id === sitio.id_sitio)
           : [];
 
+        // Encontrar la sede del sitio (si existe)
+        const sede = sitio ? sedes.find(s => s.id_sede === sitio.sede_id) : null;
+        // Encontrar el centro de la sede (si existe)
+        const centro = sede ? centros.find(c => c.id_centro === sede.centro_sede_id) : null;
+        // Encontrar el municipio del centro (si existe)
+        const municipio = centro ? municipios.find(m => m.id_municipio === centro.municipio_id) : null;
+
         // Construir objeto con todos los datos
         const userData = {
           usuario,
@@ -262,6 +287,10 @@ const DetalleUsuario = () => {
           ficha,
           programa,
           sitio,
+          tipoSitio: sitio ? sitio.tipo_sitio_id : null,
+          sede,
+          centro,
+          municipio,
           materiales: materialesRelacionados
         };
 
@@ -274,7 +303,7 @@ const DetalleUsuario = () => {
     };
 
     fetchData();
-  }, [id, usuarios, fichas, roles, programas, materiales, sitios]);
+  }, [id, usuarios, fichas, roles, programas, materiales, sitios, sedes, centros, municipios]);
 
   const handleBack = () => {
     navigate(-1);

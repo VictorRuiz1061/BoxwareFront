@@ -1,4 +1,3 @@
-import axiosInstance from './axiosConfig';
 import { getUsuarios } from './usuariosApi';
 import { getMateriales } from './materialesApi';
 import { getTipoMateriales } from './tipoMaterialApi';
@@ -6,11 +5,6 @@ import { getSitios } from './sitiosApi';
 import { getMovimientos } from './movimientosApi';
 import { getTiposMovimiento } from './tiposMovimientoApi';
 import { getCategoriasElementos } from './categoriaElementosApi';
-import { Material } from '../types/material';
-import { TipoMaterial } from '../types/tipoMaterial';
-import { Movimiento } from '../types/movimiento';
-import { TipoMovimiento } from '../types/tipoMovimiento';
-import { Sitio } from '../types/sitio';
 
 interface DashboardStats {
   totalUsuarios: number;
@@ -36,7 +30,7 @@ interface DashboardStats {
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
     // Obtener datos de las diferentes APIs
-    const [usuarios, materiales, tiposMaterial, sitios, movimientos, tiposMovimiento, categorias] = await Promise.all([
+    const [usuarios, materiales, tiposMaterial, sitios, movimientos, tiposMovimiento] = await Promise.all([
       getUsuarios(),
       getMateriales(),
       getTipoMateriales(),
@@ -91,7 +85,6 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     for (let i = 5; i >= 0; i--) {
       const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
       const mes = meses[fecha.getMonth()];
-      const anio = fecha.getFullYear();
       
       // Filtrar movimientos de este mes
       const movimientosMes = movimientos.filter(m => {
@@ -131,10 +124,6 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     }, {} as Record<number, string>);
 
     // Crear un mapa para buscar nombres de sitios
-    const mapaSitios = sitios.reduce((map, sitio) => {
-      map[sitio.id_sitio] = sitio.nombre_sitio;
-      return map;
-    }, {} as Record<number, string>);
 
     // Obtener últimos movimientos
     const movimientosRecientes = movimientos

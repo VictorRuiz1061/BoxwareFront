@@ -6,7 +6,6 @@ import { ToastProvider } from "@heroui/react"; // <--- Importar ToastProvider
 import { Provider } from "./provider.tsx";
 import App from "@/App.tsx";
 import "@/styles/globals.css";
-
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -20,7 +19,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           timeout: 2000,
           hideIcon: false,
         }}/>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Provider>
           <App />
         </Provider>

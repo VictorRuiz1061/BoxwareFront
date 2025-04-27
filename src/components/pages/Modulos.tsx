@@ -6,11 +6,12 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useModulos } from '../../hooks/useModulos';
 import { Modulo } from '../../types/modulo';
+import { Pencil, Trash } from 'lucide-react';
 
 type ModuloInput = Omit<Modulo, 'id_modulo'>;
 
 const ModulosPage = () => {
-  const { modulos, loading, crear, actualizar, eliminar } = useModulos();
+  const { modulos, loading, crearModulo, actualizarModulo, eliminarModulo } = useModulos();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Modulo>>({});
@@ -18,10 +19,10 @@ const ModulosPage = () => {
   const handleSubmit = async (values: ModuloInput) => {
     try {
       if (editingId) {
-        await actualizar(editingId, values);
+        await actualizarModulo(editingId, values);
         alert('Módulo actualizado con éxito');
       } else {
-        await crear(values);
+        await crearModulo(values);
         alert('Módulo creado con éxito');
       }
       setIsModalOpen(false);
@@ -36,7 +37,7 @@ const ModulosPage = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar este registro?")) return;
     try {
-      await eliminar(id);
+      await eliminarModulo(id);
       alert("Módulo eliminado con éxito");
     } catch (error) {
       console.error("Error al eliminar el módulo:", error);
@@ -55,33 +56,29 @@ const ModulosPage = () => {
     setEditingId(modulo.id_modulo);
     setIsModalOpen(true);
   };
-
   const formFields: FormField[] = [
-    { key: "fecha_accion", label: "Fecha", type: "date", required: true },
     { key: "rutas", label: "Ruta", type: "text", required: true },
     { key: "descripcion_ruta", label: "Descripción", type: "text", required: true },
-    { key: "bandera_accion", label: "Estado", type: "number", required: true },
     { key: "mensaje_cambio", label: "Mensaje", type: "text", required: true },
+    { key: "fecha_accion", label: "Fecha", type: "date", required: true },
   ];
 
   const columns: Column<Modulo>[] = [
-    { key: 'id_modulo', label: 'ID' },
-    { key: 'fecha_accion', label: 'Fecha' },
-    { key: 'rutas', label: 'Ruta' },
-    { key: 'descripcion_ruta', label: 'Descripción' },
-    { key: 'bandera_accion', label: 'Estado' },
-    { key: 'mensaje_cambio', label: 'Mensaje' },
+    { key: 'rutas', label: 'Ruta', filterable: true },
+    { key: 'descripcion_ruta', label: 'Descripción', filterable: true },
+    { key: 'mensaje_cambio', label: 'Mensaje', filterable: true },
+    { key: 'fecha_accion', label: 'Fecha', filterable: true },
 
     {
       key: 'acciones',
       label: 'Acciones',
       render: (row: Modulo) => (
         <div className="flex gap-2">
-          <Boton onPress={() => handleEdit(row)} className="bg-yellow-500 text-white px-2 py-1">
-            Editar
+          <Boton onPress={() => handleEdit(row)} className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center" aria-label="Editar">
+            <Pencil size={18} />
           </Boton>
-          <Boton onPress={() => handleDelete(row.id_modulo)} className="bg-red-500 text-white px-2 py-1">
-            Eliminar
+          <Boton onPress={() => handleDelete(row.id_modulo)} className="bg-red-500 text-white px-2 py-1 flex items-center justify-center" aria-label="Eliminar">
+            <Trash size={18} />
           </Boton>
         </div>
       )
@@ -89,7 +86,7 @@ const ModulosPage = () => {
   ];
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
