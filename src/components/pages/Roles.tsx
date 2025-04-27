@@ -7,6 +7,7 @@ import Form, { FormField } from "../organismos/Form";
 import { useRoles } from '../../hooks/useRoles';
 import { Rol } from '../../types/rol';
 import AnimatedContainer from "../atomos/AnimatedContainer";
+import { Pencil, Trash } from 'lucide-react';
 
 const Roles = () => {
   const { roles, loading, crearRol, actualizarRol, eliminarRol } = useRoles();
@@ -34,15 +35,17 @@ const Roles = () => {
         <div className="flex gap-2">
           <Boton
             onPress={() => handleEdit(rol)}
-            className="bg-blue-600 text-white px-2 py-1 hover:bg-blue-700"
+            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Editar"
           >
-            Editar
+            <Pencil size={18} />
           </Boton>
           <Boton
             onPress={() => handleDelete(rol.id_rol)}
-            className="bg-red-500 text-white px-2 py-1 hover:bg-red-600"
+            className="bg-red-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Eliminar"
           >
-            Eliminar
+            <Trash size={18} />
           </Boton>
         </div>
       ),
@@ -120,7 +123,7 @@ const Roles = () => {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />

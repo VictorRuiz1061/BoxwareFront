@@ -1,73 +1,93 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {  LoginFormValues, RegisterFormValues, AuthState } from '../types/auth';
+import { LoginFormValues, RegisterFormValues, AuthState } from '../types/auth';
 import { login as apiLogin, register as apiRegister } from '../api/authApi';
+import { jwtDecode } from 'jwt-decode';
 
-// Key para almacenar el token en localStorage
-const AUTH_TOKEN_KEY = 'boxware_auth_token';
+// Utilidad para manejar el token en cookies
+const TOKEN_COOKIE_KEY = 'token';
+const setTokenCookie = (token: string, maxAge = 3600) => {
+  document.cookie = `${TOKEN_COOKIE_KEY}=${token}; path=/; max-age=${maxAge}; samesite=strict`;
+};
+const removeTokenCookie = () => {
+  document.cookie = `${TOKEN_COOKIE_KEY}=; path=/; max-age=0; samesite=strict`;
+};
+const getTokenFromCookie = (): string | null => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${TOKEN_COOKIE_KEY}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+};
+
+// Utilidad para construir el estado inicial
+const initialAuthState: AuthState = {
+  isAuthenticated: false,
+  user: null,
+  loading: true,
+  error: null,
+};
+
+function isTokenValid(token: string | null): boolean {
+  if (!token) return false;
+  try {
+    const decoded: any = jwtDecode(token);
+    if (!decoded.exp) return false;
+    const now = Date.now() / 1000;
+    return decoded.exp > now;
+  } catch {
+    return false;
+  }
+}
 
 export const useAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>({
-    isAuthenticated: false,
-    user: null,
-    loading: true,
-    error: null
-  });
-  
+  const [authState, setAuthState] = useState<AuthState>(initialAuthState);
   const [validationErrors, setValidationErrors] = useState<Record<string, string> | null>(null);
   const navigate = useNavigate();
 
-  // Verificar si hay un usuario autenticado al cargar
+  // Verificar autenticación al cargar
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY);
-      if (!token) {
-        setAuthState({
-          isAuthenticated: false,
-          user: null,
-          loading: false,
-          error: null
-        });
-        return;
-      }
-
-      try {
-        // Eliminamos la simulación que automáticamente establece isAuthenticated a true
-        // En su lugar, limpiamos el localStorage para forzar un nuevo inicio de sesión
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        setAuthState({
-          isAuthenticated: false,
-          user: null,
-          loading: false,
-          error: null
-        });
-      } catch (error) {
-        // Si hay un error, el token podría ser inválido
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        setAuthState({
-          isAuthenticated: false,
-          user: null,
-          loading: false,
-          error: 'Sesión expirada. Por favor, inicia sesión nuevamente.'
-        });
-      }
-    };
-
-    checkAuthStatus();
+    const token = getTokenFromCookie();
+    const valid = isTokenValid(token);
+    console.log('[Auth] Token leído:', token);
+    console.log('[Auth] ¿Token válido?:', valid);
+    setAuthState((prev) => ({
+      ...prev,
+      isAuthenticated: valid,
+      loading: false,
+      error: !valid && token ? 'Tu sesión ha expirado o el token es inválido. Por favor, inicia sesión nuevamente.' : null,
+    }));
+    if (token && !valid) {
+      console.log('[Auth] Token inválido o expirado. Eliminando cookie.');
+      removeTokenCookie();
+    }
   }, []);
 
+  // Manejo centralizado de errores
+  const handleError = (error: any, defaultMsg: string) => {
+    const errorMessage = error?.response?.data?.message || defaultMsg;
+    setAuthState((prev) => ({
+      ...prev,
+      isAuthenticated: false,
+      user: null,
+      loading: false,
+      error: errorMessage,
+    }));
+    return { success: false, errors: { general: errorMessage } };
+  };
+
+  // Login
   const login = async (values: LoginFormValues) => {
     setValidationErrors(null);
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const response = await apiLogin({...values, contrasena: values.password});
+      const response = await apiLogin({ ...values, contrasena: values.password });
       if (response.token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+        setTokenCookie(response.token);
         setAuthState({
           isAuthenticated: true,
           user: response.user || null,
           loading: false,
-          error: null
+          error: null,
         });
         navigate('/dashboard');
         return { success: true };
@@ -75,20 +95,14 @@ export const useAuth = () => {
         throw new Error(response.message || 'Error al iniciar sesión');
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Error al iniciar sesión. Por favor, intenta nuevamente.';
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        loading: false,
-        error: errorMessage
-      });
-      return { success: false, errors: { general: errorMessage } };
+      return handleError(error, 'Error al iniciar sesión. Por favor, intenta nuevamente.');
     }
   };
 
+  // Registro
   const register = async (values: RegisterFormValues) => {
     setValidationErrors(null);
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const now = new Date().toISOString();
       const payload = {
@@ -102,16 +116,16 @@ export const useAuth = () => {
         inicio_sesion: now,
         esta_activo: true,
         fecha_registro: now,
-        rol_id: 1
+        rol_id: 1,
       };
       const response = await apiRegister(payload);
       if (response.token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+        setTokenCookie(response.token);
         setAuthState({
           isAuthenticated: true,
           user: response.user || null,
           loading: false,
-          error: null
+          error: null,
         });
         navigate('/dashboard');
         return { success: true };
@@ -119,51 +133,36 @@ export const useAuth = () => {
         response.message &&
         response.message.toLowerCase().includes('usuario registrado exitosamente')
       ) {
-        // Registro exitoso sin token, redirige a dashboard
-        setAuthState(prev => ({
-          ...prev,
-          loading: false,
-          error: null
-        }));
+        setAuthState((prev) => ({ ...prev, loading: false, error: null }));
         navigate('/dashboard');
         return { success: true };
       } else {
         throw new Error(response.message || 'Error al registrar usuario');
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Error al registrar usuario. Por favor, intenta nuevamente.';
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        loading: false,
-        error: errorMessage
-      });
-      return { success: false, errors: { general: errorMessage } };
+      return handleError(error, 'Error al registrar usuario. Por favor, intenta nuevamente.');
     }
   };
 
+  // Logout
   const logout = useCallback(() => {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    setAuthState({
-      isAuthenticated: false,
-      user: null,
-      loading: false,
-      error: null
-    });
+    removeTokenCookie();
+    setAuthState({ ...initialAuthState, loading: false });
     navigate('/iniciosesion');
   }, [navigate]);
 
-  // Función auxiliar para mostrar mensajes de error
+  // Mostrar errores de validación
   const mostrarErrores = () => {
     if (!validationErrors) return null;
-    
     let mensaje = 'Errores de validación:\n';
     Object.entries(validationErrors).forEach(([campo, error]) => {
       mensaje += `- ${campo}: ${error}\n`;
     });
-    
     return mensaje;
   };
+
+  // Permitir setear error manualmente
+  const setError = (error: string | null) => setAuthState((prev) => ({ ...prev, error }));
 
   return {
     ...authState,
@@ -172,7 +171,7 @@ export const useAuth = () => {
     login,
     register,
     logout,
-    setError: (error: string | null) => 
-      setAuthState(prev => ({ ...prev, error }))
+    setError,
+    getTokenFromCookie, // Exporta la utilidad si se necesita en otros hooks/componentes
   };
 };

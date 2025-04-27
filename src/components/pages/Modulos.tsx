@@ -6,6 +6,7 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useModulos } from '../../hooks/useModulos';
 import { Modulo } from '../../types/modulo';
+import { Pencil, Trash } from 'lucide-react';
 
 type ModuloInput = Omit<Modulo, 'id_modulo'>;
 
@@ -73,11 +74,11 @@ const ModulosPage = () => {
       label: 'Acciones',
       render: (row: Modulo) => (
         <div className="flex gap-2">
-          <Boton onPress={() => handleEdit(row)} className="bg-yellow-500 text-white px-2 py-1">
-            Editar
+          <Boton onPress={() => handleEdit(row)} className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center" aria-label="Editar">
+            <Pencil size={18} />
           </Boton>
-          <Boton onPress={() => handleDelete(row.id_modulo)} className="bg-red-500 text-white px-2 py-1">
-            Eliminar
+          <Boton onPress={() => handleDelete(row.id_modulo)} className="bg-red-500 text-white px-2 py-1 flex items-center justify-center" aria-label="Eliminar">
+            <Trash size={18} />
           </Boton>
         </div>
       )
@@ -85,7 +86,7 @@ const ModulosPage = () => {
   ];
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />

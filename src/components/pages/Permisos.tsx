@@ -8,6 +8,7 @@ import { usePermisos } from '../../hooks/usePermisos';
 import { Permiso } from '../../types/permiso';
 import { useModulos } from '../../hooks/useModulos';
 import { useRoles } from '../../hooks/useRoles';
+import { Pencil, Trash } from 'lucide-react';
 
 const Permisos = () => {
   const { permisos, loading, crearPermiso, actualizarPermiso, eliminarPermiso } = usePermisos();
@@ -45,15 +46,17 @@ const Permisos = () => {
         <div className="flex gap-2">
           <Boton
             onPress={() => handleEdit(permiso)}
-            className="bg-yellow-500 text-white px-2 py-1"
+            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Editar"
           >
-            Editar
+            <Pencil size={18} />
           </Boton>
           <Boton
             onPress={() => handleDelete(permiso.id_permiso)}
-            className="bg-red-500 text-white px-2 py-1"
+            className="bg-red-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Eliminar"
           >
-            Eliminar
+            <Trash size={18} />
           </Boton>
         </div>
       ),
@@ -123,7 +126,7 @@ const Permisos = () => {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
