@@ -9,8 +9,6 @@ import { Modulo } from '../../api/modulos/getModulos';
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
 
-type ModuloInput = Omit<Modulo, 'id_modulo'>;
-
 const ModulosPage = () => {
   const { modulos, loading, crearModulo, actualizarModulo, eliminarModulo } = useModulos();
   const [isModalOpen, setIsModalOpen] = useState(false);
