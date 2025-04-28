@@ -8,14 +8,17 @@ import { useRoles } from '../../hooks/useRoles';
 import { Rol } from '../../types/rol';
 import AnimatedContainer from "../atomos/AnimatedContainer";
 import { Pencil, Trash } from 'lucide-react';
+import { Alert } from "@heroui/react";
 
 const Roles = () => {
   const { roles, loading, crearRol, actualizarRol, eliminarRol } = useRoles();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Rol>>({});
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successAlertText, setSuccessAlertText] = useState('');
 
-  const columns: Column<Rol>[] = [
+  const columns: Column<Rol & { key: number }>[] = [
     { key: "nombre_rol", label: "Nombre del Rol", filterable: true },
     { key: "descripcion", label: "Descripción", filterable: true },
     { 
@@ -62,28 +65,23 @@ const Roles = () => {
   // Crear o actualizar rol
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      // Convertir estado a booleano
-      let estadoBool = true;
-      if (values.estado === "Inactivo" || values.estado === "false") {
-        estadoBool = false;
-      }
-      // Asegurarse de que todos los campos requeridos estén presentes
-      const dataToSubmit = {
+      const payload = {
         nombre_rol: values.nombre_rol,
         descripcion: values.descripcion,
-        estado: estadoBool,
+        estado: values.estado === "Activo" ? true : false,
         fecha_creacion: values.fecha_creacion
       };
-      
       if (editingId) {
-        await actualizarRol(editingId, dataToSubmit);
-        alert("Rol actualizado con éxito");
+        await actualizarRol(editingId, { ...payload, id: editingId });
+        setSuccessAlertText('Rol actualizado con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
-        await crearRol(dataToSubmit);
-        alert("Rol creado con éxito");
+        await crearRol({ nombre: values.nombre_rol });
+        setSuccessAlertText('Rol creado con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       }
-      
-      // Cerrar modal y limpiar estado
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
@@ -100,7 +98,9 @@ const Roles = () => {
 
     try {
       await eliminarRol(id);
-      alert("Rol eliminado con éxito");
+      setSuccessAlertText('Rol eliminado con éxito');
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     } catch (error) {
       console.error("Error al eliminar el rol:", error);
     }
@@ -181,6 +181,19 @@ const Roles = () => {
               </AnimatedContainer>
             </div>
           )}
+
+          {showSuccessAlert && (
+            <div className="fixed top-4 right-4 z-50">
+              <Alert
+                hideIconWrapper
+                color="success"
+                description={successAlertText}
+                title="¡Éxito!"
+                variant="solid"
+                onClose={() => setShowSuccessAlert(false)}
+              />
+            </div>
+          )}
         </main>
       </div>
     </div>
@@ -188,3 +201,5 @@ const Roles = () => {
 };
 
 export default Roles;
+
+

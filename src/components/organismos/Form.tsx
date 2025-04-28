@@ -6,7 +6,7 @@ export type FormField = {
   label: string;
   type: string;
   required?: boolean;
-  options?: string[];
+  options?: Array<string | { value: string | number; label: string }>;
 };
 
 type Props<T extends Record<string, any>> = {
@@ -42,12 +42,22 @@ const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "E
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleChange(field.key, e.target.value)}
               className="border p-2 rounded"
             >
-              <option value="">Seleccione...</option>
-              {field.options?.map((option: string) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-              ))}
+              <option key="default-option" value="">Seleccione...</option>
+              {field.options?.map((option, idx) => {
+                if (typeof option === 'string') {
+                  return (
+                    <option key={`str-${option}-${idx}`} value={option}>
+                      {option}
+                    </option>
+                  );
+                } else {
+                  return (
+                    <option key={`obj-${option.value}`} value={option.value}>
+                      {option.label}
+                    </option>
+                  );
+                }
+              })}
             </select>
           ) : (
             <input

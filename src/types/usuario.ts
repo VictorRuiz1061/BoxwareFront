@@ -11,3 +11,5 @@ export interface Usuario {
   fecha_registro: string;
   rol_id: number;
 }
+
+export type NuevoUsuario = Omit<Usuario, 'id_usuario' | 'esta_activo' | 'fecha_registro'>;

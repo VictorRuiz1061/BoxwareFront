@@ -1,85 +1,25 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Modulo } from '../types/modulo';
-import { getModulos, crearModulo, actualizarModulo, eliminarModulo } from '../api/modulosApi';
+import { useGetModulos } from "@/api/modulos/getModulos";
+import { usePostModulo } from "@/api/modulos/postModulo";
+import { usePutModulo } from "@/api/modulos/putModulo";
+import { useDeleteModulo } from "@/api/modulos/deleteModulo";
+import { ModuloUpdate } from "@/api/modulos/putModulo";
+import { NuevoModulo } from "@/api/modulos/postModulo";
 
 export function useModulos() {
-  const [modulos, setModulos] = useState<Modulo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string> | null>(null);
+  const { data: modulos = [], isLoading: loading } = useGetModulos();
+  const post = usePostModulo();
+  const put = usePutModulo();
+  const del = useDeleteModulo();
 
-  const fetchModulos = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getModulos();
-      setModulos(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setError('Error al cargar los módulos');
-      setModulos([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchModulos();
-  }, [fetchModulos]);
-
-  const crear = async (modulo: Omit<Modulo, 'id_modulo'>) => {
-    try {
-      setValidationErrors(null);
-      await crearModulo(modulo);
-      await fetchModulos();
-      return { success: true };
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-      return { success: false, errors: { general: 'Error al crear el módulo' } };
-    }
-  };
-
-  const actualizar = async (id: number, modulo: Partial<Modulo>) => {
-    try {
-      setValidationErrors(null);
-      await actualizarModulo(id, modulo);
-      await fetchModulos();
-      return { success: true };
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-      return { success: false, errors: { general: 'Error al actualizar el módulo' } };
-    }
-  };
-
-  const eliminar = async (id: number) => {
-    try {
-      await eliminarModulo(id);
-      setModulos((prev) => prev.filter((m) => m.id_modulo !== id));
-      return { success: true };
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Error desconocido');
-      return { success: false, errors: { general: 'Error al eliminar el módulo' } };
-    }
-  };
-
-  // Función auxiliar para mostrar mensajes de error
-  const mostrarErrores = () => {
-    if (!validationErrors) return null;
-    let mensaje = 'Errores de validación:\n';
-    Object.entries(validationErrors).forEach(([campo, error]) => {
-      mensaje += `- ${campo}: ${error}\n`;
-    });
-    return mensaje;
-  };
+  const crearModulo = async (data: NuevoModulo) => post.mutateAsync(data);
+  const actualizarModulo = async (id: number, data: ModuloUpdate) => put.mutateAsync({ ...data, id });
+  const eliminarModulo = async (id: number) => del.mutateAsync(id);
 
   return {
     modulos,
     loading,
-    error,
-    validationErrors,
-    mostrarErrores,
-    fetchModulos,
-    crearModulo: crear,
-    actualizarModulo: actualizar,
-    eliminarModulo: eliminar,
+    crearModulo,
+    actualizarModulo,
+    eliminarModulo,
   };
 }
