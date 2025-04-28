@@ -1,4 +1,6 @@
 export interface Rol {
+  nombre: ReactNode;
+  id: number;
   id_rol: number;
   nombre_rol: string;
   descripcion: string;

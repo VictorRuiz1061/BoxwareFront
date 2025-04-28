@@ -1,4 +1,4 @@
-import { getUsuarios } from './usuariosApi';
+import { getUsuarios } from '@/api/usuario/getUsuarios';
 import { getMateriales } from './materialesApi';
 import { getTipoMateriales } from './tipoMaterialApi';
 import { getSitios } from './sitiosApi';

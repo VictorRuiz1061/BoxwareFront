@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert } from "@heroui/react";
+import AlertDialog from '@/components/atomos/AlertDialog';
 import { Pencil, Trash, Eye } from 'lucide-react'; // Importar iconos de lucide-react
 import { useUsuarios } from '../../hooks/useUsuarios';
 import { Usuario } from '../../types/usuario';
@@ -10,8 +11,7 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import AnimatedContainer from "../atomos/AnimatedContainer";
 import { useNavigate } from "react-router-dom";
-import { useRoles } from '../../hooks/useRoles';
-import AlertDialog from '../atomos/AlertDialog';
+import { useRoles } from '@/hooks/useRoles';
 
 const Usuarios = () => {
   const navigate = useNavigate();
@@ -42,8 +42,8 @@ const Usuarios = () => {
       label: "Rol",
       filterable: true,
       render: (usuario) => {
-        const rol = roles.find(r => r.id_rol === usuario.rol_id);
-        return rol ? rol.nombre_rol : usuario.rol_id;
+        const rol = roles.find(r => r.id === usuario.rol_id);
+        return rol ? rol.nombre : usuario.rol_id;
       }
     },
     {
@@ -85,22 +85,22 @@ const Usuarios = () => {
     { key: "email", label: "Email", type: "email", required: true },
     { key: "contrasena", label: "Contraseña", type: "password", required: true },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
-    { key: "rol_id", label: "Rol", type: "select", required: true, options: roles.map(r => r.nombre_rol) },
+    { key: "rol_id", label: "Rol", type: "number", required: true}
   ];
 
 
   // Crear o actualizar usuario
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
-      // Buscar el id del rol seleccionado por nombre
-      const rolSeleccionado = roles.find(r => r.nombre_rol === values.rol_id);
+      // Buscar el rol seleccionado por id
+      const rolSeleccionado = roles.find(r => r.id === Number(values.rol_id));
       const payload = {
         ...values,
-        rol_id: rolSeleccionado ? rolSeleccionado.id_rol : undefined,
+        rol_id: rolSeleccionado ? rolSeleccionado.id : undefined,
         fecha_registro: new Date().toISOString(),
       };
       if (editingId) {
-        await actualizarUsuario(editingId, payload);
+        await actualizarUsuario(editingId, { ...payload, id: editingId });
         setSuccessAlertText('El usuario fue actualizado correctamente.');
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
@@ -226,15 +226,19 @@ const Usuarios = () => {
                   <h2 className="text-lg font-bold mb-4 text-center">
                     {editingId ? "Editar Usuario" : "Crear Nuevo Usuario"}
                   </h2>
-                  <Form
-                   fields={formFields}
-                   onSubmit={handleSubmit}
-                   buttonText={editingId ? "Actualizar" : "Crear"}
-                   initialValues={{
-                     ...formData,
-                     rol_id: roles.find(r => r.id_rol === formData.rol_id)?.nombre_rol || '',
-                   }}
-                 />
+                  {roles.length === 0 ? (
+                    <div className="text-center py-8">Cargando roles...</div>
+                  ) : (
+                    <Form
+                      fields={formFields}
+                      onSubmit={handleSubmit}
+                      buttonText={editingId ? "Actualizar" : "Crear"}
+                      initialValues={{
+                        ...formData,
+                        rol_id: formData.rol_id ?? '',
+                      }}
+                    />
+                  )}
                   <div className="flex justify-end mt-4">
                   </div>
                 </div>
