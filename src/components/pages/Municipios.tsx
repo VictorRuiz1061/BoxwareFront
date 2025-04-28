@@ -6,6 +6,7 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useMunicipios } from '../../hooks/useMunicipios';
 import { Municipio } from '../../types/municipio';
+import { municipioSchema } from '@/schemas/municipio.schema';
 
 const Municipios = () => {
   const { municipios, loading, crearMunicipio, actualizarMunicipio, eliminarMunicipio } = useMunicipios();
@@ -14,9 +15,9 @@ const Municipios = () => {
   const [formData, setFormData] = useState<Partial<Municipio>>({});
 
   const columns: Column<Municipio>[] = [
-    { key: "nombre_municipio", label: "Nombre del Municipio" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
+    { key: "nombre_municipio", label: "Nombre del Municipio", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -40,7 +41,6 @@ const Municipios = () => {
   ];
 
   const formFields: FormField[] = [
-    { key: "id_municipio", label: "ID", type: "number", required: true },
     { key: "nombre_municipio", label: "Nombre del Municipio", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
@@ -154,6 +154,7 @@ const Municipios = () => {
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={formData}
+                  schema={municipioSchema}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton

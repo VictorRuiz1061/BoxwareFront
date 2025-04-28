@@ -6,21 +6,32 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useCentros } from '../../hooks/useCentros';
 import { Centro } from '../../types/centro';
+import { useMunicipios } from '../../hooks/useMunicipios';
+import { centroSchema } from '@/schemas/centro.schema';
 
 const Centros = () => {
   const { centros, loading, crearCentro, actualizarCentro, eliminarCentro } = useCentros();
+  const { municipios } = useMunicipios();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Centro>>({});
 
   const columns: Column<Centro>[] = [
-    { key: "nombre_centro", label: "Nombre del Centro" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Fecha de Modificación" },
-    { key: "municipio_id" as keyof Centro, label: "Municipio ID" },
+    { key: "nombre_centro", label: "Nombre del Centro", filterable: true },
+    {
+      key: "municipio_id",
+      label: "Municipio",
+      filterable: true,
+      render: (centro) => {
+        const municipio = municipios.find(m => m.id_municipio === centro.municipio_id);
+        return municipio ? municipio.nombre_municipio : centro.municipio_id;
+      }
+    },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
-      label: "Acciones", 
+      label: "Acciones",
       render: (centro) => (
         <div className="flex gap-2">
           <Boton
@@ -41,21 +52,24 @@ const Centros = () => {
   ];
 
   const formFields: FormField[] = [
-    { key: "id_centro", label: "ID del Centro", type: "number", required: true },
     { key: "nombre_centro", label: "Nombre del Centro", type: "text", required: true },
-    { key: "municipio_id", label: "ID del Municipio", type: "number", required: true },
-    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+    { key: "municipio_id", label: "Municipio", type: "select", required: true, options: municipios.map(m => ({ label: m.nombre_municipio, value: m.id_municipio })) },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
+      const municipioSeleccionado = municipios.find(m => m.id_municipio === Number(values.municipio_id));
+      if (!municipioSeleccionado) {
+        throw new Error('Municipio no encontrado');
+      }
+      const hoy = new Date().toISOString().slice(0, 10);
       const datosParaEnviar = {
-        id_centro: editingId || parseInt(values.id_centro),
+        id_centro: editingId ?? undefined,
         nombre_centro: values.nombre_centro,
-        municipio_id: parseInt(values.municipio_id),
-        fecha_creacion: values.fecha_creacion,
-        fecha_modificacion: values.fecha_modificacion
+        municipio_id: municipioSeleccionado.id_municipio,
+        fecha_creacion: editingId ? values.fecha_creacion : hoy,
+        fecha_modificacion: hoy
       };
 
       if (editingId) {
@@ -84,7 +98,8 @@ const Centros = () => {
   };
 
   const handleCreate = () => {
-    setFormData({});
+    const hoy = new Date().toISOString().slice(0, 10);
+    setFormData({ fecha_creacion: hoy, fecha_modificacion: hoy });
     setEditingId(null);
     setIsModalOpen(true);
   };
@@ -137,8 +152,11 @@ const Centros = () => {
                   initialValues={{
                     ...formData,
                     id_centro: formData.id_centro?.toString(),
-                    municipio_id: formData.municipio_id?.toString()
+                    municipio_id: formData.municipio_id ? String(formData.municipio_id) : '',
+                    fecha_creacion: formData.fecha_creacion,
+                    fecha_modificacion: formData.fecha_modificacion
                   }}
+                  schema={centroSchema}
                 />
                 </div>
               </div> 
