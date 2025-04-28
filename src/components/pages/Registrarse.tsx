@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import AnimatedContainer from '../atomos/AnimatedContainer';
 
@@ -12,11 +12,24 @@ const Registro = () => {
     apellido: '',
     email: '',
     telefono: '',
-    edad: 0,
+    edad: '',
     cedula: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    id_rol: 1
   });
+  const [localError, setLocalError] = useState('');
+
+  const inputRefs = [
+    useRef<HTMLInputElement>(null), // nombre
+    useRef<HTMLInputElement>(null), // apellido
+    useRef<HTMLInputElement>(null), // email
+    useRef<HTMLInputElement>(null), // telefono
+    useRef<HTMLInputElement>(null), // edad
+    useRef<HTMLInputElement>(null), // cedula
+    useRef<HTMLInputElement>(null), // password
+    useRef<HTMLInputElement>(null)  // confirmPassword
+  ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,6 +37,53 @@ const Registro = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (idx < inputRefs.length - 1) {
+        inputRefs[idx + 1].current?.focus();
+      } else {
+        // Último campo, enviar formulario
+        (document.activeElement as HTMLElement).blur();
+        handleRegister();
+      }
+    }
+  };
+
+  const handleRegister = () => {
+    setLocalError('');
+    if (formData.password !== formData.confirmPassword) {
+      setLocalError('Las contraseñas no coinciden.');
+      return;
+    }
+    register({
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      edad: formData.edad ? Number(formData.edad) : undefined,
+      cedula: formData.cedula,
+      email: formData.email,
+      telefono: formData.telefono,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword
+    })
+    .then(response => {
+      if (response.success) {
+        navigate('/iniciosesion');
+      } else {
+        setLocalError(response.errors?.general || 'Error al registrar usuario. Por favor, intenta nuevamente.');
+      }
+    })
+    .catch(error => {
+      let errorMessage = 'Error al registrar usuario. Por favor, intenta nuevamente.';
+      if (error.response?.status === 409) {
+        errorMessage = 'El correo electrónico o la cédula ya están registrados.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      setLocalError(errorMessage);
+    });
   };
 
   return (
@@ -65,6 +125,8 @@ const Registro = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     value={formData.nombre}
                     onChange={handleChange}
+                    ref={inputRefs[0]}
+                    onKeyDown={e => handleKeyDown(e, 0)}
                   />
                 </div>
                 <div>
@@ -75,6 +137,8 @@ const Registro = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     value={formData.apellido}
                     onChange={handleChange}
+                    ref={inputRefs[1]}
+                    onKeyDown={e => handleKeyDown(e, 1)}
                   />
                 </div>
                 <div className="col-span-2">
@@ -85,6 +149,8 @@ const Registro = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     value={formData.email}
                     onChange={handleChange}
+                    ref={inputRefs[2]}
+                    onKeyDown={e => handleKeyDown(e, 2)}
                   />
                 </div>
                 <div>
@@ -95,6 +161,8 @@ const Registro = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     value={formData.telefono}
                     onChange={handleChange}
+                    ref={inputRefs[3]}
+                    onKeyDown={e => handleKeyDown(e, 3)}
                   />
                 </div>
                 <div>
@@ -104,7 +172,9 @@ const Registro = () => {
                     name="edad"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     value={formData.edad}
-                    onChange={(e) => setFormData({...formData, edad: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setFormData({...formData, edad: e.target.value})}
+                    ref={inputRefs[4]}
+                    onKeyDown={e => handleKeyDown(e, 4)}
                   />
                 </div>
                 <div>
@@ -115,6 +185,8 @@ const Registro = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     value={formData.cedula}
                     onChange={handleChange}
+                    ref={inputRefs[5]}
+                    onKeyDown={e => handleKeyDown(e, 5)}
                   />
                 </div>
                 <div className="col-span-2">
@@ -125,6 +197,8 @@ const Registro = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     value={formData.password}
                     onChange={handleChange}
+                    ref={inputRefs[6]}
+                    onKeyDown={e => handleKeyDown(e, 6)}
                   />
                 </div>
                 <div className="col-span-2">
@@ -135,15 +209,22 @@ const Registro = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500" 
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    ref={inputRefs[7]}
+                    onKeyDown={e => handleKeyDown(e, 7)}
                   />
                 </div>
               </div>
               <button 
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200 mt-2"
-                onClick={() => register(formData)}
+                onClick={handleRegister}
               >
                 Registrarse
               </button>
+              {localError && (
+                <div className="mb-4 p-2 text-center text-red-600 text-sm font-medium bg-red-50 rounded-lg border border-red-200">
+                  {localError}
+                </div>
+              )}
             </div>
 
             <div className="text-center mt-4">

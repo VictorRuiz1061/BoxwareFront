@@ -6,19 +6,31 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useAreas } from '../../hooks/useAreas';
 import { Area } from '../../types/area';
+import { useSedes } from '../../hooks/useSedes';
+import { areaSchema } from '@/schemas/area.schema';
 
 const Areas = () => {
-  const { areas, loading, crearArea, actualizarArea, eliminarArea, mostrarErrores, validationErrors } = useAreas();
+  const { areas, loading, crearArea, actualizarArea, eliminarArea } = useAreas();
+  const { sedes } = useSedes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Area>>({});
 
   const columns: Column<Area>[] = [
-    { key: "nombre_area", label: "Nombre del Área" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Última Modificación" },
+    { key: "nombre_area", label: "Nombre del Área", filterable: true },
     {
-      key: "acciones",
+      key: "sede_id",
+      label: "Sede",
+      filterable: true,
+      render: (area) => {
+        const sede = sedes.find(s => s.id_sede === area.sede_id);
+        return sede ? sede.nombre_sede : area.sede_id;
+      }
+    },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Última Modificación", filterable: true },
+    {
+      key: "acciones",  
       label: "Acciones",
       render: (area) => (
         <div className="flex gap-2">
@@ -41,44 +53,39 @@ const Areas = () => {
 
   const formFields: FormField[] = [
     { key: "nombre_area", label: "Nombre del Área", type: "text", required: true },
+    { key: "sede_id", label: "Sede", type: "select", required: true, options: sedes.map(s => ({ label: s.nombre_sede, value: s.id_sede })) },
   ];
 
   // Crear o actualizar área
-  const handleSubmit = async (values: Record<string, string>) => {
+  const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
-      // Preparar datos para validación
-      const dataToSubmit = {
-        nombre_area: values.nombre_area,
-        fecha_creacion: editingId ? undefined : new Date().toISOString(),
-        fecha_modificacion: new Date().toISOString()
-      };
-      
-      let resultado;
-      
-      if (editingId) {
-        resultado = await actualizarArea(editingId, dataToSubmit);
-        if (resultado.success) {
-          alert('Área actualizada con éxito');
-          setIsModalOpen(false);
-          setFormData({});
-          setEditingId(null);
-        } else if (resultado.errors) {
-          alert(mostrarErrores());
-        }
-      } else {
-        resultado = await crearArea(dataToSubmit as Omit<Area, 'id_area'>);
-        if (resultado.success) {
-          alert('Área creada con éxito');
-          setIsModalOpen(false);
-          setFormData({});
-          setEditingId(null);
-        } else if (resultado.errors) {
-          alert(mostrarErrores());
-        }
+      // Validar con zod
+      const parsed = areaSchema.safeParse(values);
+      if (!parsed.success) {
+        alert(parsed.error.errors.map(e => e.message).join('\n'));
+        return;
       }
+      // Buscar la sede seleccionada por id
+      const sedeSeleccionada = sedes.find(s => s.id_sede === Number(values.sede_id));
+      const payload = {
+        ...values,
+        sede_id: sedeSeleccionada ? sedeSeleccionada.id_sede : undefined,
+        fecha_creacion: editingId ? (values as any).fecha_creacion : new Date().toISOString(),
+        fecha_modificacion: new Date().toISOString(),
+      };
+      if (editingId) {
+        await actualizarArea(editingId, { ...payload, id_area: editingId });
+        alert('Área actualizada con éxito');
+      } else {
+        await crearArea(payload as Omit<Area, 'id_area'>);
+        alert('Área creada con éxito');
+      }
+      setIsModalOpen(false);
+      setFormData({});
+      setEditingId(null);
     } catch (error) {
       console.error('Error al guardar el área:', error);
-      alert(`Error al guardar el área: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      alert('Error al guardar el área');
     }
   };
 
@@ -86,10 +93,8 @@ const Areas = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta área?")) return;
     try {
-      const resultado = await eliminarArea(id);
-      if (resultado.success) {
-        alert("Área eliminada con éxito");
-      }
+      await eliminarArea(id);
+      alert("Área eliminada con éxito");
     } catch (error) {
       console.error("Error al eliminar el área:", error);
       alert("Error al eliminar el área");
@@ -125,8 +130,8 @@ const Areas = () => {
             Crear Nueva Área
           </Boton>
 
-          {loading ? (
-            <p>Cargando áreas...</p>
+          {loading || sedes.length === 0 ? (
+            <p>Cargando áreas y sedes...</p>
           ) : (
             <GlobalTable
               columns={columns}
@@ -156,19 +161,10 @@ const Areas = () => {
                   initialValues={{
                     ...formData,
                     id_area: formData.id_area?.toString(),
+                    sede_id: formData.sede_id ? String(formData.sede_id) : ''
                   }}
+                  schema={areaSchema}
                 />
-                
-                {validationErrors && (
-                  <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                    <h3 className="font-bold">Errores de validación:</h3>
-                    <ul className="list-disc pl-5">
-                      {Object.entries(validationErrors).map(([field, error]) => (
-                        <li key={field}>{field}: {error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import AnimatedContainer from '../atomos/AnimatedContainer';
 
@@ -9,6 +9,20 @@ const InicioSesion = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, field: 'email' | 'password') => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (field === 'email') {
+        passwordRef.current?.focus();
+      } else if (field === 'password') {
+        login({ email, password });
+      }
+    }
+  };
 
   return (
     <div
@@ -49,6 +63,8 @@ const InicioSesion = () => {
                   placeholder=""
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  ref={emailRef}
+                  onKeyDown={e => handleKeyDown(e, 'email')}
                 />
               </div>
               <div>
@@ -59,6 +75,8 @@ const InicioSesion = () => {
                   placeholder=""
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  ref={passwordRef}
+                  onKeyDown={e => handleKeyDown(e, 'password')}
                 />
               </div>
               <button 

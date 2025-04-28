@@ -6,17 +6,40 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useFichas } from '../../hooks/useFichas';
 import { Ficha } from '../../types/ficha';
+import { useUsuarios } from '../../hooks/useUsuarios';
+import { useProgramas } from '../../hooks/useProgramas';
+import { fichaSchema } from '@/schemas/ficha.schema';
 
 const Fichas = () => {
   const { fichas, loading, crearFicha, actualizarFicha, eliminarFicha } = useFichas();
+  const { usuarios } = useUsuarios();
+  const { programas } = useProgramas();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Ficha>>({});
 
   const columns: Column<Ficha>[] = [
-    { key: "id_ficha", label: "ID Ficha" },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
-    { key: "fecha_modificacion", label: "Última Modificación" },
+    { key: "id_ficha", label: "ID Ficha", filterable: true },
+    {
+      key: "usuario_ficha_id",
+      label: "Usuario",
+      filterable: true,
+      render: (ficha) => {
+        const usuario = usuarios.find(u => u.id_usuario === ficha.usuario_ficha_id);
+        return usuario ? usuario.nombre : ficha.usuario_ficha_id;
+      }
+    },
+    {
+      key: "programa_id",
+      label: "Programa",
+      filterable: true,
+      render: (ficha) => {
+        const programa = programas.find(p => p.id_programa === ficha.programa_id);
+        return programa ? programa.nombre_programa : ficha.programa_id;
+      }
+    },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Última Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -41,20 +64,31 @@ const Fichas = () => {
 
   const formFields: FormField[] = [
     { key: "id_ficha", label: "ID Ficha", type: "number", required: true },
-    { key: "usuario_ficha_id", label: "ID del Usuario", type: "number", required: true },
-    { key: "programa_id", label: "ID del Programa", type: "number", required: true },
+    { key: "usuario_ficha_id", label: "Usuario", type: "select", required: true, options: usuarios.map(u => ({ label: u.nombre, value: u.id_usuario })) },
+    { key: "programa_id", label: "Programa", type: "select", required: true, options: programas.map(p => ({ label: p.nombre_programa, value: p.id_programa })) },
   ];
 
   // Crear o actualizar ficha
   const handleSubmit = async (values: Record<string, string>) => {
     try {
+      const usuarioSeleccionado = usuarios.find(u => u.id_usuario === Number(values.usuario_ficha_id));
+      const programaSeleccionado = programas.find(p => p.id_programa === Number(values.programa_id));
+      if (!usuarioSeleccionado || !programaSeleccionado) {
+        alert("Por favor selecciona un usuario y un programa válidos.");
+        return;
+      }
       if (editingId) {
-        await actualizarFicha(editingId, values);
+        await actualizarFicha(editingId, {
+          ...values,
+          usuario_ficha_id: usuarioSeleccionado.id_usuario,
+          programa_id: programaSeleccionado.id_programa,
+        });
         alert('Ficha actualizada con éxito');
       } else {
         await crearFicha({
-          usuario_ficha_id: parseInt(values.usuario_ficha_id),
-          programa_id: parseInt(values.programa_id),
+          id_ficha: Number(values.id_ficha),
+          usuario_ficha_id: usuarioSeleccionado.id_usuario,
+          programa_id: programaSeleccionado.id_programa,
           fecha_creacion: values.fecha_creacion,
           fecha_modificacion: values.fecha_modificacion,
         });
@@ -128,9 +162,14 @@ const Fichas = () => {
                   fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={Object.fromEntries(
-                    Object.entries(formData).map(([key, value]) => [key, value?.toString() || ""])
-                  )}
+                  initialValues={{
+                    ...Object.fromEntries(
+                      Object.entries(formData).map(([key, value]) => [key, value?.toString() || ""])
+                    ),
+                    usuario_ficha_id: formData.usuario_ficha_id ? String(formData.usuario_ficha_id) : '',
+                    programa_id: formData.programa_id ? String(formData.programa_id) : '',
+                  }}
+                  schema={fichaSchema}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton
