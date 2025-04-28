@@ -7,6 +7,7 @@ import Boton from "../atomos/Boton";
 import { useProgramas } from '../../hooks/useProgramas';
 import { Programa } from '../../types/programa';
 import { useAreas } from '../../hooks/useAreas';
+import { programaSchema } from '@/schemas/programa.schema';
 
 const Programas = () => {
   const { programas, loading, crearPrograma, actualizarPrograma, eliminarPrograma } = useProgramas();
@@ -52,13 +53,13 @@ const Programas = () => {
 
   const formFields: FormField[] = [
     { key: "nombre_programa", label: "Nombre del Programa", type: "text", required: true },
-    { key: "area_id", label: "Área", type: "select", required: true, options: areas.map(a => a.nombre_area) },
+    { key: "area_id", label: "Área", type: "select", required: true, options: areas.map(a => ({ label: a.nombre_area, value: a.id_area })) },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const areaSeleccionada = areas.find(a => a.nombre_area === values.area_id);
+      const areaSeleccionada = areas.find(a => a.id_area === Number(values.area_id));
       if (!areaSeleccionada) {
         alert("Por favor selecciona un área válida.");
         return;
@@ -69,6 +70,8 @@ const Programas = () => {
           nombre_programa: values.nombre_programa as string,
           area_id: areaSeleccionada.id_area,
           fecha_modificacion: new Date().toISOString(),
+          id_programa: editingId,
+          fecha_creacion: ""
         });
         alert('Programa actualizado con éxito');
       } else {
@@ -154,8 +157,9 @@ const Programas = () => {
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     nombre_programa: formData.nombre_programa || '',
-                    area_id: areas.find(a => a.id_area === formData.area_id)?.nombre_area || ''
+                    area_id: formData.area_id ? String(formData.area_id) : ''
                   }}
+                  schema={programaSchema}
                 />
               </div>
             </div>

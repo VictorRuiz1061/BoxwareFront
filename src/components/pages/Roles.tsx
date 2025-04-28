@@ -9,6 +9,7 @@ import { Rol } from '../../types/rol';
 import AnimatedContainer from "../atomos/AnimatedContainer";
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from "@heroui/react";
+import { rolSchema } from '@/schemas/rol.schema';
 
 const Roles = () => {
   const { roles, loading, crearRol, actualizarRol, eliminarRol } = useRoles();
@@ -65,19 +66,21 @@ const Roles = () => {
   // Crear o actualizar rol
   const handleSubmit = async (values: Record<string, string>) => {
     try {
+      console.log('Valores del formulario:', values);
       const payload = {
-        nombre_rol: values.nombre_rol,
-        descripcion: values.descripcion,
-        estado: values.estado === "Activo" ? true : false,
-        fecha_creacion: values.fecha_creacion
+        nombre: values.nombre_rol.trim(),
+        descripcion: values.descripcion.trim(),
+        estado: values.estado === "Activo",
+        fecha_creacion: new Date(values.fecha_creacion).toISOString()
       };
+      console.log('Payload preparado para enviar:', payload);
       if (editingId) {
         await actualizarRol(editingId, { ...payload, id: editingId });
         setSuccessAlertText('Rol actualizado con éxito');
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
-        await crearRol({ nombre: values.nombre_rol });
+        await crearRol(payload);
         setSuccessAlertText('Rol creado con éxito');
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
@@ -168,6 +171,7 @@ const Roles = () => {
                     }}
                     onSubmit={handleSubmit}
                     buttonText={editingId ? "Actualizar" : "Crear"}
+                    schema={rolSchema}
                   />
                   <div className="flex justify-end mt-4">
                     <Boton

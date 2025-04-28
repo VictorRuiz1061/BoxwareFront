@@ -6,6 +6,7 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useMunicipios } from '../../hooks/useMunicipios';
 import { Municipio } from '../../types/municipio';
+import { municipioSchema } from '@/schemas/municipio.schema';
 
 const Municipios = () => {
   const { municipios, loading, crearMunicipio, actualizarMunicipio, eliminarMunicipio } = useMunicipios();
@@ -153,6 +154,7 @@ const Municipios = () => {
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={formData}
+                  schema={municipioSchema}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton

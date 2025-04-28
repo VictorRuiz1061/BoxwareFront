@@ -10,6 +10,7 @@ import { useModulos } from '../../hooks/useModulos';
 import { useRoles } from '../../hooks/useRoles';
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
+import { permisoSchema } from '@/schemas/permiso.schema';
 
 const Permisos = () => {
   const { permisos, loading, crearPermiso, actualizarPermiso, eliminarPermiso } = usePermisos();
@@ -185,6 +186,7 @@ const Permisos = () => {
                     modulo_id: modulos.find(m => m.id_modulo === formData.modulo_id)?.descripcion_ruta || '',
                     rol_id: roles.find(r => r.id_rol === formData.rol_id)?.nombre_rol || '',
                   }}
+                  schema={permisoSchema}
                 />
               </div>
             </div>

@@ -1,7 +1,7 @@
-import { useGetPermisos } from "@/api/permisos/getPermisos";
-import { usePostPermiso } from "@/api/permisos/postPermiso";
-import { usePutPermiso } from "@/api/permisos/putPermiso";
-import { useDeletePermiso } from "@/api/permisos/deletePermiso";
+import { useGetPermisos } from "@/hooks/permisos/useGetPermisos";
+import { usePostPermiso } from "@/hooks/permisos/usePostPermiso";
+import { usePutPermiso } from "@/hooks/permisos/usePutPermiso";
+import { useDeletePermiso } from "@/hooks/permisos/useDeletePermiso";
 import { PermisoUpdate } from "@/api/permisos/putPermiso";
 import { NuevoPermiso } from "@/api/permisos/postPermiso";
 

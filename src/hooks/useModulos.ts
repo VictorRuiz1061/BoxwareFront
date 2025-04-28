@@ -1,7 +1,7 @@
-import { useGetModulos } from "@/api/modulos/getModulos";
-import { usePostModulo } from "@/api/modulos/postModulo";
-import { usePutModulo } from "@/api/modulos/putModulo";
-import { useDeleteModulo } from "@/api/modulos/deleteModulo";
+import { useGetModulos } from "@/hooks/modulos/useGetModulos";
+import { usePostModulo } from "@/hooks/modulos/usePostModulo";
+import { usePutModulo } from "@/hooks/modulos/usePutModulo";
+import { useDeleteModulo } from "@/hooks/modulos/useDeleteModulo";
 import { ModuloUpdate } from "@/api/modulos/putModulo";
 import { NuevoModulo } from "@/api/modulos/postModulo";
 

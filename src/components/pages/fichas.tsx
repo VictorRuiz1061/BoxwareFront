@@ -8,6 +8,7 @@ import { useFichas } from '../../hooks/useFichas';
 import { Ficha } from '../../types/ficha';
 import { useUsuarios } from '../../hooks/useUsuarios';
 import { useProgramas } from '../../hooks/useProgramas';
+import { fichaSchema } from '@/schemas/ficha.schema';
 
 const Fichas = () => {
   const { fichas, loading, crearFicha, actualizarFicha, eliminarFicha } = useFichas();
@@ -63,15 +64,15 @@ const Fichas = () => {
 
   const formFields: FormField[] = [
     { key: "id_ficha", label: "ID Ficha", type: "number", required: true },
-    { key: "usuario_ficha_id", label: "Usuario", type: "select", required: true, options: usuarios.map(u => u.nombre) },
-    { key: "programa_id", label: "Programa", type: "select", required: true, options: programas.map(p => p.nombre_programa) },
+    { key: "usuario_ficha_id", label: "Usuario", type: "select", required: true, options: usuarios.map(u => ({ label: u.nombre, value: u.id_usuario })) },
+    { key: "programa_id", label: "Programa", type: "select", required: true, options: programas.map(p => ({ label: p.nombre_programa, value: p.id_programa })) },
   ];
 
   // Crear o actualizar ficha
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const usuarioSeleccionado = usuarios.find(u => u.nombre === values.usuario_ficha_id);
-      const programaSeleccionado = programas.find(p => p.nombre_programa === values.programa_id);
+      const usuarioSeleccionado = usuarios.find(u => u.id_usuario === Number(values.usuario_ficha_id));
+      const programaSeleccionado = programas.find(p => p.id_programa === Number(values.programa_id));
       if (!usuarioSeleccionado || !programaSeleccionado) {
         alert("Por favor selecciona un usuario y un programa válidos.");
         return;
@@ -165,9 +166,10 @@ const Fichas = () => {
                     ...Object.fromEntries(
                       Object.entries(formData).map(([key, value]) => [key, value?.toString() || ""])
                     ),
-                    usuario_ficha_id: usuarios.find(u => u.id_usuario === formData.usuario_ficha_id)?.nombre || '',
-                    programa_id: programas.find(p => p.id_programa === formData.programa_id)?.nombre_programa || '',
+                    usuario_ficha_id: formData.usuario_ficha_id ? String(formData.usuario_ficha_id) : '',
+                    programa_id: formData.programa_id ? String(formData.programa_id) : '',
                   }}
+                  schema={fichaSchema}
                 />
                 <div className="flex justify-end mt-4">
                   <Boton

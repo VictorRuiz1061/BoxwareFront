@@ -7,6 +7,7 @@ import Boton from "../atomos/Boton";
 import { useCentros } from '../../hooks/useCentros';
 import { Centro } from '../../types/centro';
 import { useMunicipios } from '../../hooks/useMunicipios';
+import { centroSchema } from '@/schemas/centro.schema';
 
 const Centros = () => {
   const { centros, loading, crearCentro, actualizarCentro, eliminarCentro } = useCentros();
@@ -52,13 +53,13 @@ const Centros = () => {
 
   const formFields: FormField[] = [
     { key: "nombre_centro", label: "Nombre del Centro", type: "text", required: true },
-    { key: "municipio_id", label: "Municipio", type: "select", required: true, options: municipios.map(m => m.nombre_municipio) },
+    { key: "municipio_id", label: "Municipio", type: "select", required: true, options: municipios.map(m => ({ label: m.nombre_municipio, value: m.id_municipio })) },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const municipioSeleccionado = municipios.find(m => m.nombre_municipio === values.municipio_id);
+      const municipioSeleccionado = municipios.find(m => m.id_municipio === Number(values.municipio_id));
       if (!municipioSeleccionado) {
         throw new Error('Municipio no encontrado');
       }
@@ -151,10 +152,11 @@ const Centros = () => {
                   initialValues={{
                     ...formData,
                     id_centro: formData.id_centro?.toString(),
-                    municipio_id: formData.municipio_id?.toString(),
+                    municipio_id: formData.municipio_id ? String(formData.municipio_id) : '',
                     fecha_creacion: formData.fecha_creacion,
                     fecha_modificacion: formData.fecha_modificacion
                   }}
+                  schema={centroSchema}
                 />
                 </div>
               </div> 

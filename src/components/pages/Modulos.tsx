@@ -8,6 +8,7 @@ import { useModulos } from '../../hooks/useModulos';
 import { Modulo } from '../../api/modulos/getModulos';
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
+import { moduloSchema } from '@/schemas/modulo.schema';
 
 const ModulosPage = () => {
   const { modulos, loading, crearModulo, actualizarModulo, eliminarModulo } = useModulos();
@@ -146,6 +147,7 @@ const ModulosPage = () => {
                     id_modulo: formData.id_modulo?.toString(),
                     bandera_accion: formData.bandera_accion ?? ''
                   }}
+                  schema={moduloSchema}
                 />
                 <div className="flex justify-end mt-4"></div>
               </div>

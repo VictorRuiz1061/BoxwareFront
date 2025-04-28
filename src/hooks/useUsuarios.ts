@@ -1,7 +1,7 @@
-import { useGetUsuarios } from "@/api/usuario/getUsuarios";
-import { usePostUsuario } from "@/api/usuario/postUsuario";
-import { usePutUsuario } from "@/api/usuario/putUsuario";
-import { useDeleteUsuario } from "@/api/usuario/deleteUsuario";
+import { useGetUsuarios } from "@/hooks/usuario/useGetUsuarios";
+import { usePostUsuario } from "@/hooks/usuario/usePostUsuario";
+import { usePutUsuario } from "@/hooks/usuario/usePutUsuario";
+import { useDeleteUsuario } from "@/hooks/usuario/useDeleteUsuario";
 import { Usuario } from "@/types/usuario";
 import { UsuarioUpdate } from "@/api/usuario/putUsuario";
 import { NuevoUsuario } from "@/types/usuario";

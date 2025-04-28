@@ -1,7 +1,7 @@
-import { useGetRoles } from "@/api/rol/getRoles";
-import { usePostRol } from "@/api/rol/postRol";
-import { usePutRol } from "@/api/rol/putRol";
-import { useDeleteRol } from "@/api/rol/deleteRol";
+import { useGetRoles } from "@/hooks/roles/useGetRoles";
+import { usePostRol } from "@/hooks/roles/usePostRol";
+import { usePutRol } from "@/hooks/roles/usePutRol";
+import { useDeleteRol } from "@/hooks/roles/useDeleteRol";
 import { RolUpdate } from "@/api/rol/putRol";
 import { NuevoRol } from "@/api/rol/postRol";
 
