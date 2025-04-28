@@ -8,8 +8,7 @@ import { useModulos } from '../../hooks/useModulos';
 import { Modulo } from '../../api/modulos/getModulos';
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
-
-type ModuloInput = Omit<Modulo, 'id_modulo'>;
+import { moduloSchema } from '@/schemas/modulo.schema';
 
 const ModulosPage = () => {
   const { modulos, loading, crearModulo, actualizarModulo, eliminarModulo } = useModulos();
@@ -24,7 +23,6 @@ const ModulosPage = () => {
     { key: 'descripcion_ruta', label: 'Descripción', filterable: true },
     { key: 'mensaje_cambio', label: 'Mensaje', filterable: true },
     { key: 'fecha_accion', label: 'Fecha', filterable: true },
-    { key: 'bandera_accion', label: 'Bandera', filterable: true },
     {
       key: 'acciones',
       label: 'Acciones',
@@ -45,7 +43,6 @@ const ModulosPage = () => {
     { key: 'rutas', label: 'Ruta', type: 'text', required: true },
     { key: 'descripcion_ruta', label: 'Descripción', type: 'text', required: true },
     { key: 'mensaje_cambio', label: 'Mensaje', type: 'text', required: true },
-    { key: 'bandera_accion', label: 'Bandera', type: 'text', required: false },
     { key: 'fecha_accion', label: 'Fecha', type: 'date', required: true },
   ];
 
@@ -150,6 +147,7 @@ const ModulosPage = () => {
                     id_modulo: formData.id_modulo?.toString(),
                     bandera_accion: formData.bandera_accion ?? ''
                   }}
+                  schema={moduloSchema} // Ensure schema is now a valid prop
                 />
                 <div className="flex justify-end mt-4"></div>
               </div>

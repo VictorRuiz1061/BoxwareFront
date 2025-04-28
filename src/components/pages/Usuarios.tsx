@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert } from "@heroui/react";
 import AlertDialog from '@/components/atomos/AlertDialog';
-import { Pencil, Trash, Eye } from 'lucide-react'; // Importar iconos de lucide-react
+import { Pencil, Trash, Eye } from 'lucide-react';
 import { useUsuarios } from '../../hooks/useUsuarios';
 import { Usuario } from '../../types/usuario';
 import Sidebar from "../organismos/Sidebar";
@@ -12,6 +12,7 @@ import Boton from "../atomos/Boton";
 import AnimatedContainer from "../atomos/AnimatedContainer";
 import { useNavigate } from "react-router-dom";
 import { useRoles } from '@/hooks/useRoles';
+import { usuarioSchema } from '@/schemas/usuario.schema';
 
 const Usuarios = () => {
   const navigate = useNavigate();
@@ -42,8 +43,8 @@ const Usuarios = () => {
       label: "Rol",
       filterable: true,
       render: (usuario) => {
-        const rol = roles.find(r => r.id === usuario.rol_id);
-        return rol ? rol.nombre : usuario.rol_id;
+        const rol = roles.find(r => r.id_rol === usuario.rol_id);
+        return rol ? rol.nombre_rol : usuario.rol_id;
       }
     },
     {
@@ -85,18 +86,35 @@ const Usuarios = () => {
     { key: "email", label: "Email", type: "email", required: true },
     { key: "contrasena", label: "Contraseña", type: "password", required: true },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
-    { key: "rol_id", label: "Rol", type: "number", required: true}
+    {
+      key: "rol_id",
+      label: "Rol",
+      type: "select",
+      required: true,
+      options: roles.map(r => ({ label: r.nombre_rol, value: r.id_rol }))
+    }
   ];
 
 
   // Crear o actualizar usuario
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
-      // Buscar el rol seleccionado por id
-      const rolSeleccionado = roles.find(r => r.id === Number(values.rol_id));
+      // Validar con zod
+      const parsed = usuarioSchema.safeParse(values);
+      if (!parsed.success) {
+        setAlert({
+          isOpen: true,
+          title: 'Error de validación',
+          message: parsed.error.errors.map(e => e.message).join('\n'),
+          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        });
+        return;
+      }
+      // Buscar el rol seleccionado por id_rol
+      const rolSeleccionado = roles.find(r => r.id_rol === Number(values.rol_id));
       const payload = {
         ...values,
-        rol_id: rolSeleccionado ? rolSeleccionado.id : undefined,
+        rol_id: rolSeleccionado ? rolSeleccionado.id_rol : undefined,
         fecha_registro: new Date().toISOString(),
       };
       if (editingId) {
@@ -237,6 +255,7 @@ const Usuarios = () => {
                         ...formData,
                         rol_id: formData.rol_id ?? '',
                       }}
+                      schema={usuarioSchema}
                     />
                   )}
                   <div className="flex justify-end mt-4">

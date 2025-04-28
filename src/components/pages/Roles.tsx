@@ -9,6 +9,7 @@ import { Rol } from '../../types/rol';
 import AnimatedContainer from "../atomos/AnimatedContainer";
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from "@heroui/react";
+import { rolSchema } from '@/schemas/rol.schema';
 
 const Roles = () => {
   const { roles, loading, crearRol, actualizarRol, eliminarRol } = useRoles();
@@ -168,6 +169,7 @@ const Roles = () => {
                     }}
                     onSubmit={handleSubmit}
                     buttonText={editingId ? "Actualizar" : "Crear"}
+                    schema={rolSchema}
                   />
                   <div className="flex justify-end mt-4">
                     <Boton
