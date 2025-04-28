@@ -22,7 +22,6 @@ const ModulosPage = () => {
     { key: 'descripcion_ruta', label: 'Descripción', filterable: true },
     { key: 'mensaje_cambio', label: 'Mensaje', filterable: true },
     { key: 'fecha_accion', label: 'Fecha', filterable: true },
-    { key: 'bandera_accion', label: 'Bandera', filterable: true },
     {
       key: 'acciones',
       label: 'Acciones',
@@ -43,7 +42,6 @@ const ModulosPage = () => {
     { key: 'rutas', label: 'Ruta', type: 'text', required: true },
     { key: 'descripcion_ruta', label: 'Descripción', type: 'text', required: true },
     { key: 'mensaje_cambio', label: 'Mensaje', type: 'text', required: true },
-    { key: 'bandera_accion', label: 'Bandera', type: 'text', required: false },
     { key: 'fecha_accion', label: 'Fecha', type: 'date', required: true },
   ];
 

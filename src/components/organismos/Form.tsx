@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Boton from "../atomos/Boton";
+import { ZodSchema } from "zod";
 
 export type FormField = {
   key: string;
@@ -15,18 +16,37 @@ type Props<T extends Record<string, any>> = {
   buttonText: string;
   initialValues?: Partial<T>;
   className?: string;
+  schema?: ZodSchema<any>;
 };
 
-const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, className = "" }: Props<T>) => {
+const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, className = "", schema }: Props<T>) => {
   const [formData, setFormData] = useState<Partial<T>>(initialValues);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[key];
+      return newErrors;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Datos del formulario:", formData); // Verifica los datos aquí
+    if (schema) {
+      const parsed = schema.safeParse(formData);
+      if (!parsed.success) {
+        const fieldErrors: Record<string, string> = {};
+        parsed.error.errors.forEach(err => {
+          if (err.path && err.path[0]) {
+            fieldErrors[err.path[0]] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        return;
+      }
+    }
     onSubmit(formData as T);
   };
 
@@ -67,6 +87,9 @@ const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "E
               onChange={(e) => handleChange(field.key, e.target.value)}
               className="border p-2 rounded"
             />
+          )}
+          {errors[field.key] && (
+            <span className="text-red-600 text-xs mt-1">{errors[field.key]}</span>
           )}
         </div>
       ))}
