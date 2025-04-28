@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Centro } from '../types/centro';
 import { useGetCentros } from "@/hooks/centros/useGetCentros";
 import { usePostCentro } from "@/hooks/centros/usePostCentro";
 import { usePutCentro } from "@/hooks/centros/usePutCentro";
