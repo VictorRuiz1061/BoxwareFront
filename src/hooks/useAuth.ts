@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginFormValues, RegisterFormValues, AuthState } from '../types/auth';
-import { login as apiLogin, register as apiRegister } from '../api/authApi';
+import { login as apiLogin, register as apiRegister } from '../api/auth/token';
 import { jwtDecode } from 'jwt-decode';
 
 // Utilidad para manejar el token en cookies
