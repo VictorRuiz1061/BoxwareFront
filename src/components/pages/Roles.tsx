@@ -4,17 +4,28 @@ import Sidebar from '../organismos/Sidebar';
 import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
-import { useRoles } from '../../hooks/useRoles';
+import { useGetRoles } from '../../hooks/roles/useGetRoles';
+import { usePostRol } from '../../hooks/roles/usePostRol';
+import { usePutRol } from '../../hooks/roles/usePutRol';
+import { useDeleteRol } from '../../hooks/roles/useDeleteRol';
 import { Rol } from '../../types/rol';
 import AnimatedContainer from "../atomos/AnimatedContainer";
+import { Pencil, Trash } from 'lucide-react';
+import { Alert } from "@heroui/react";
+import { rolSchema } from '@/schemas/rol.schema';
 
 const Roles = () => {
-  const { roles, loading, crearRol, actualizarRol, eliminarRol } = useRoles();
+  const { roles, loading } = useGetRoles();
+  const { crearRol } = usePostRol();
+  const { actualizarRol } = usePutRol();
+  const { eliminarRol } = useDeleteRol();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Rol>>({});
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successAlertText, setSuccessAlertText] = useState('');
 
-  const columns: Column<Rol>[] = [
+  const columns: Column<Rol & { key: number }>[] = [
     { key: "nombre_rol", label: "Nombre del Rol", filterable: true },
     { key: "descripcion", label: "Descripción", filterable: true },
     { 
@@ -34,15 +45,17 @@ const Roles = () => {
         <div className="flex gap-2">
           <Boton
             onPress={() => handleEdit(rol)}
-            className="bg-blue-600 text-white px-2 py-1 hover:bg-blue-700"
+            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Editar"
           >
-            Editar
+            <Pencil size={18} />
           </Boton>
           <Boton
             onPress={() => handleDelete(rol.id_rol)}
-            className="bg-red-500 text-white px-2 py-1 hover:bg-red-600"
+            className="bg-red-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Eliminar"
           >
-            Eliminar
+            <Trash size={18} />
           </Boton>
         </div>
       ),
@@ -59,28 +72,25 @@ const Roles = () => {
   // Crear o actualizar rol
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      // Convertir estado a booleano
-      let estadoBool = true;
-      if (values.estado === "Inactivo" || values.estado === "false") {
-        estadoBool = false;
-      }
-      // Asegurarse de que todos los campos requeridos estén presentes
-      const dataToSubmit = {
-        nombre_rol: values.nombre_rol,
-        descripcion: values.descripcion,
-        estado: estadoBool,
-        fecha_creacion: values.fecha_creacion
+      console.log('Valores del formulario:', values);
+      const payload = {
+        nombre: values.nombre_rol.trim(),
+        descripcion: values.descripcion.trim(),
+        estado: values.estado === "Activo",
+        fecha_creacion: new Date(values.fecha_creacion).toISOString()
       };
-      
+      console.log('Payload preparado para enviar:', payload);
       if (editingId) {
-        await actualizarRol(editingId, dataToSubmit);
-        alert("Rol actualizado con éxito");
+        await actualizarRol(editingId, { ...payload, id: editingId });
+        setSuccessAlertText('Rol actualizado con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
-        await crearRol(dataToSubmit);
-        alert("Rol creado con éxito");
+        await crearRol(payload);
+        setSuccessAlertText('Rol creado con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       }
-      
-      // Cerrar modal y limpiar estado
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
@@ -97,7 +107,9 @@ const Roles = () => {
 
     try {
       await eliminarRol(id);
-      alert("Rol eliminado con éxito");
+      setSuccessAlertText('Rol eliminado con éxito');
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     } catch (error) {
       console.error("Error al eliminar el rol:", error);
     }
@@ -120,7 +132,7 @@ const Roles = () => {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
@@ -165,6 +177,7 @@ const Roles = () => {
                     }}
                     onSubmit={handleSubmit}
                     buttonText={editingId ? "Actualizar" : "Crear"}
+                    schema={rolSchema}
                   />
                   <div className="flex justify-end mt-4">
                     <Boton
@@ -178,6 +191,19 @@ const Roles = () => {
               </AnimatedContainer>
             </div>
           )}
+
+          {showSuccessAlert && (
+            <div className="fixed top-4 right-4 z-50">
+              <Alert
+                hideIconWrapper
+                color="success"
+                description={successAlertText}
+                title="¡Éxito!"
+                variant="solid"
+                onClose={() => setShowSuccessAlert(false)}
+              />
+            </div>
+          )}
         </main>
       </div>
     </div>
@@ -185,3 +211,5 @@ const Roles = () => {
 };
 
 export default Roles;
+
+

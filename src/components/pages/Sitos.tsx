@@ -6,14 +6,14 @@ import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
 import { useSitios } from '../../hooks/useSitios';
 import { Sitio } from '../../types/sitio';
-import { useUsuarios } from '../../hooks/useUsuarios';
+import { useGetUsuarios } from '../../hooks/usuario/useGetUsuarios';
 import { useTiposSitio } from '../../hooks/useTiposSitio';
 
 
 
 const Sitios = () => {
   const { sitios, loading, crearSitio, actualizarSitio, eliminarSitio } = useSitios();
-  const { usuarios } = useUsuarios();
+  const { usuarios } = useGetUsuarios();
   const { tiposSitio } = useTiposSitio();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);

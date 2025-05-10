@@ -4,4 +4,5 @@ export interface Rol {
   descripcion: string;
   estado: boolean;
   fecha_creacion: string;
+  fecha_modificacion: string;
 }

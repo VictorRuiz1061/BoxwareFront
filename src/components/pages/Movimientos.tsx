@@ -6,12 +6,12 @@ import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import { useMovimientos } from '../../hooks/useMovimientos';
 import { Movimiento } from '../../types/movimiento';
-import { useUsuarios } from '../../hooks/useUsuarios';
+import { useGetUsuarios } from '../../hooks/usuario/useGetUsuarios';
 import { useTiposMovimiento } from '../../hooks/useTiposMovimiento';
 
 const Movimientos = () => {
   const { movimientos, loading, crearMovimiento, actualizarMovimiento, eliminarMovimiento } = useMovimientos();
-  const { usuarios } = useUsuarios();
+  const { usuarios } = useGetUsuarios();
   const { tiposMovimiento } = useTiposMovimiento();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);

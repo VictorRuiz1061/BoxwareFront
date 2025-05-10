@@ -1,22 +1,41 @@
 import { useState } from "react";
-import { useUsuarios } from '../../hooks/useUsuarios';
-import { Usuario } from '../../types/usuario';
-import Sidebar from "../organismos/Sidebar";
-import Header from "../organismos/Header";
-import GlobalTable, { Column } from "../organismos/Table";
-import Form, { FormField } from "../organismos/Form";
-import Boton from "../atomos/Boton";
-import AnimatedContainer from "../atomos/AnimatedContainer";
+import { Alert } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
-import { useRoles } from '../../hooks/useRoles';
+import { Pencil, Trash, Eye } from 'lucide-react';
+import { usuarioSchema } from '@/schemas/usuario.schema';
+import { useGetUsuarios } from '@/hooks/usuario/useGetUsuarios';
+import { usePostUsuario } from '@/hooks/usuario/usePostUsuario';
+import { usePutUsuario } from '@/hooks/usuario/usePutUsuario';
+import { useDeleteUsuario } from '@/hooks/usuario/useDeleteUsuario';
+import { useGetRoles } from '@/hooks/roles/useGetRoles';
+import { Usuario } from '@/types/usuario';
+import AnimatedContainer from "@/components/atomos/AnimatedContainer";
+import AlertDialog from '@/components/atomos/AlertDialog';
+import Boton from "@/components/atomos/Boton";
+import Sidebar from "@/components/organismos/Sidebar";
+import Header from "@/components/organismos/Header";
+import GlobalTable, { Column } from "@/components/organismos/Table";
+import Form, { FormField } from "@/components/organismos/Form";
 
 const Usuarios = () => {
   const navigate = useNavigate();
-  const { usuarios, loading, crearUsuario, actualizarUsuario, eliminarUsuario } = useUsuarios();
-  const { roles } = useRoles();
+  const { usuarios, loading } = useGetUsuarios();
+  const { crearUsuario } = usePostUsuario();
+  const { actualizarUsuario } = usePutUsuario();
+  const { eliminarUsuario } = useDeleteUsuario();
+  const { roles } = useGetRoles();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Usuario>>({});
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+  });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean, id: number | null }>({ open: false, id: null });
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successAlertText, setSuccessAlertText] = useState('');
 
   const columns: Column<Usuario>[] = [
     { key: "nombre", label: "Nombre", filterable: true },
@@ -40,22 +59,25 @@ const Usuarios = () => {
       render: (usuario) => (
         <div className="flex gap-2">
           <Boton
-            onClick={() => handleEdit(usuario)}
-            className="bg-yellow-500 text-white px-2 py-1"
+            onPress={() => handleEdit(usuario)}
+            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Editar"
           >
-            Editar
+            <Pencil size={18} />
           </Boton>
           <Boton
-            onClick={() => handleDelete(usuario.id_usuario)}
-            className="bg-red-500 text-white px-2 py-1"
+            onPress={() => handleDeleteClick(usuario.id_usuario)}
+            className="bg-red-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Eliminar"
           >
-            Eliminar
+            <Trash size={18} />
           </Boton>
           <Boton
-            onClick={() => handleViewDetails(usuario.id_usuario)}
-            className="bg-blue-500 text-white px-2 py-1"
+            onPress={() => handleViewDetails(usuario.id_usuario)}
+            className="bg-blue-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Detalles"
           >
-            Detalles
+            <Eye size={18} />
           </Boton>
         </div>
       ),
@@ -70,43 +92,89 @@ const Usuarios = () => {
     { key: "email", label: "Email", type: "email", required: true },
     { key: "contrasena", label: "Contraseña", type: "password", required: true },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
-    { key: "rol_id", label: "Rol", type: "select", required: true, options: roles.map(r => r.nombre_rol) },
+    {
+      key: "rol_id",
+      label: "Rol",
+      type: "select",
+      required: true,
+      options: roles.map(r => ({ label: r.nombre_rol, value: r.id_rol }))
+    }
   ];
 
 
   // Crear o actualizar usuario
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
-      // Buscar el id del rol seleccionado por nombre
-      const rolSeleccionado = roles.find(r => r.nombre_rol === values.rol_id);
+      // Validar con zod
+      const parsed = usuarioSchema.safeParse(values);
+      if (!parsed.success) {
+        setAlert({
+          isOpen: true,
+          title: 'Error de validación',
+          message: parsed.error.errors.map(e => e.message).join('\n'),
+          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        });
+        return;
+      }
+      // Buscar el rol seleccionado por id_rol
+      const rolSeleccionado = roles.find(r => r.id_rol === Number(values.rol_id));
       const payload = {
         ...values,
         rol_id: rolSeleccionado ? rolSeleccionado.id_rol : undefined,
         fecha_registro: new Date().toISOString(),
       };
       if (editingId) {
-        await actualizarUsuario(editingId, payload);
-        alert('Usuario actualizado con éxito');
+        await actualizarUsuario(editingId, { ...payload, id: editingId });
+        setSuccessAlertText('El usuario fue actualizado correctamente.');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
         await crearUsuario(payload as Omit<Usuario, 'id_usuario'>);
-        alert('Usuario creado con éxito');
+        setSuccessAlertText('El usuario fue creado correctamente.');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       }
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
       console.error('Error al guardar el usuario:', error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: 'Ocurrió un error al guardar el usuario.',
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
-  // Eliminar usuario
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este usuario?")) return;
+  // Eliminar usuario con confirmación personalizada
+  const handleDeleteClick = (id: number) => {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      await eliminarUsuario(id);
-      alert("Usuario eliminado con éxito");
+      await eliminarUsuario(deleteConfirm.id);
+      setSuccessAlertText('El usuario fue eliminado correctamente.');
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      setAlert({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     } catch (error) {
-      console.error("Error al eliminar el usuario:", error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: 'Ocurrió un error al eliminar el usuario.',
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
+    } finally {
+      setDeleteConfirm({ open: false, id: null });
     }
   };
 
@@ -130,7 +198,7 @@ const Usuarios = () => {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ backgroundColor: '#ECF5FF' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
@@ -141,13 +209,13 @@ const Usuarios = () => {
 
           <AnimatedContainer animation="slideUp" delay={100} duration={400}>
             <Boton
-              onClick={handleCreate}
+              onPress={handleCreate}
               className="bg-blue-600 text-white px-4 py-2 mb-4 hover:bg-blue-700"
             >
               Crear Nuevo Usuario
             </Boton>
             <Boton
-              onClick={() => navigate('/detalle-usuario')}
+              onPress={() => navigate('/detalle-usuario')}
               className="bg-green-500 text-white px-4 py-2"
             >
               Generar Informe de Usuario
@@ -171,26 +239,32 @@ const Usuarios = () => {
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-                <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto">
+                <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
+                  {/* Botón X para cerrar en la esquina superior derecha */}
+                  <button 
+                    onClick={() => setIsModalOpen(false)} 
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                  >
+                    <span className="text-gray-800 font-bold">×</span>
+                  </button>
                   <h2 className="text-lg font-bold mb-4 text-center">
                     {editingId ? "Editar Usuario" : "Crear Nuevo Usuario"}
                   </h2>
-                  <Form
-                   fields={formFields}
-                   onSubmit={handleSubmit}
-                   buttonText={editingId ? "Actualizar" : "Crear"}
-                   initialValues={{
-                     ...formData,
-                     rol_id: roles.find(r => r.id_rol === formData.rol_id)?.nombre_rol || '',
-                   }}
-                 />
+                  {roles.length === 0 ? (
+                    <div className="text-center py-8">Cargando roles...</div>
+                  ) : (
+                    <Form
+                      fields={formFields}
+                      onSubmit={handleSubmit}
+                      buttonText={editingId ? "Actualizar" : "Crear"}
+                      initialValues={{
+                        ...formData,
+                        rol_id: formData.rol_id ?? '',
+                      }}
+                      schema={usuarioSchema}
+                    />
+                  )}
                   <div className="flex justify-end mt-4">
-                    <Boton
-                      onClick={() => setIsModalOpen(false)}
-                      className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                    >
-                      Cerrar
-                    </Boton>
                   </div>
                 </div>
               </AnimatedContainer>
@@ -198,6 +272,36 @@ const Usuarios = () => {
           )}
         </main>
       </div>
+      {showSuccessAlert && (
+        <div className="fixed top-4 right-4 z-50">
+          <Alert
+            hideIconWrapper
+            color="success"
+            description={successAlertText}
+            title="¡Éxito!"
+            variant="solid"
+            onClose={() => setShowSuccessAlert(false)}
+          />
+        </div>
+      )}
+      <AlertDialog
+        isOpen={alert.isOpen}
+        title={alert.title}
+        message={alert.message}
+        onConfirm={alert.onConfirm}
+        onCancel={alert.onConfirm}
+        confirmText="Aceptar"
+        cancelText=""
+      />
+      <AlertDialog
+        isOpen={deleteConfirm.open}
+        title="¿Eliminar usuario?"
+        message="¿Estás seguro de que deseas eliminar este usuario?"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ open: false, id: null })}
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+      />
     </div>
   );
 };
