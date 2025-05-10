@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Page, Text, View, Document, StyleSheet, PDFDownloadLink } from "@react-pdf/renderer";
+import { useGetUsuarios } from "../../hooks/usuario/useGetUsuarios";
+import { useGetFichas } from "../../hooks/fichas/useGetFichas";
+import { useGetRoles } from "../../hooks/roles/useGetRoles";
+import { useGetProgramas } from "../../hooks/programas/useGetProgramas";
+import { useMateriales } from "../../hooks/useMateriales";
+import { useSitios } from "../../hooks/useSitios";
+import { useGetSedes } from "../../hooks/sedes/useGetSedes";
+import { useGetCentros } from "../../hooks/centros/useGetCentros";
+import { useGetMunicipios } from "../../hooks/municipios/useGetMunicipios";
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import Boton from "../atomos/Boton";
-import { useUsuarios } from "../../hooks/useUsuarios";
-import { useFichas } from "../../hooks/useFichas";
-import { useRoles } from "../../hooks/useRoles";
-import { useProgramas } from "../../hooks/useProgramas";
-import { useMateriales } from "../../hooks/useMateriales";
-import { useSitios } from "../../hooks/useSitios";
-import { useSedes } from "../../hooks/useSedes";
-import { useCentros } from "../../hooks/useCentros";
-import { useMunicipios } from "../../hooks/useMunicipios";
-import { Page, Text, View, Document, StyleSheet, PDFDownloadLink } from "@react-pdf/renderer";
 
 // Estilos para el PDF
 const styles = StyleSheet.create({
@@ -222,15 +222,15 @@ const InformeUsuarioPDF = ({ userData }: { userData: any }) => (
 const DetalleUsuario = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { usuarios } = useUsuarios();
-  const { fichas } = useFichas();
-  const { roles } = useRoles();
-  const { programas } = useProgramas();
+  const { usuarios } = useGetUsuarios();
+  const { fichas } = useGetFichas();
+  const { roles } = useGetRoles();
+  const { programas } = useGetProgramas();
   const { materiales } = useMateriales();
   const { sitios } = useSitios();
-  const { sedes } = useSedes();
-  const { centros } = useCentros();
-  const { municipios } = useMunicipios();
+  const { sedes } = useGetSedes();
+  const { centros } = useGetCentros();
+  const { municipios } = useGetMunicipios();
   
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);

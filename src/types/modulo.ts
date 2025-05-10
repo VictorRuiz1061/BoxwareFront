@@ -4,4 +4,6 @@ export interface Modulo {
   rutas: string;
   descripcion_ruta: string;
   mensaje_cambio: string;
+  estado: boolean;
+  fecha_creacion: string;
 }

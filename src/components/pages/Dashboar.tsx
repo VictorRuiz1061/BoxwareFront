@@ -2,15 +2,15 @@ import { Users, BarChart2, Package, MapPin, } from "lucide-react";
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import Grafica from "../organismos/Grafica";
-import { useDashboardStats } from "../../hooks/useDashboardStats";
-import { useUsuarios } from '../../hooks/useUsuarios';
-import { useRoles } from '../../hooks/useRoles';
+import { useGetDashboardStats } from "../../hooks/dashboard/useGetDashboardStats";
+import { useGetUsuarios } from '../../hooks/usuario/useGetUsuarios';
+import { useGetRoles } from '../../hooks/roles/useGetRoles';
 import { useMateriales } from '../../hooks/useMateriales';
 
 const PaginaInicio = () => {
-  const { stats, loading, error } = useDashboardStats();
-  const { usuarios } = useUsuarios();
-  const { roles } = useRoles();
+  const { stats, loading, error } = useGetDashboardStats();
+  const { usuarios } = useGetUsuarios();
+  const { roles } = useGetRoles();
   const { materiales } = useMateriales();
 
   // Opciones para gráficas

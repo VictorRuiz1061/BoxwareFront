@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useGetAuth } from '../../hooks/auth/useGetAuth';
+import { usePostAuth } from '../../hooks/auth/usePostAuth';
 import AnimatedContainer from '../atomos/AnimatedContainer';
 
 const InicioSesion = () => {
   const navigate = useNavigate(); 
-  const { login, error } = useAuth();
+  const { isAuthenticated, loading, error } = useGetAuth();
+  const { login, validationErrors } = usePostAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

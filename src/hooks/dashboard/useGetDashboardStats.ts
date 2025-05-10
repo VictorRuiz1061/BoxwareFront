@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getDashboardStats } from '../api/dashboardApi';
+import { getDashboardStats } from '../../api/dashboardApi';
 
 interface DashboardStats {
   totalUsuarios: number;
@@ -22,7 +22,7 @@ interface DashboardStats {
   }[];
 }
 
-export function useDashboardStats() {
+export function useGetDashboardStats() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

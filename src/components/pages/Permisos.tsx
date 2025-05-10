@@ -1,21 +1,27 @@
 import { useState } from "react";
-import Sidebar from "../organismos/Sidebar";
-import Header from "../organismos/Header";
-import GlobalTable, { Column } from "../organismos/Table";
-import Form, { FormField } from "../organismos/Form";
-import Boton from "../atomos/Boton";
-import { usePermisos } from '../../hooks/usePermisos';
-import { Permiso } from '../../api/permisos/getPermisos';
-import { useModulos } from '../../hooks/useModulos';
-import { useRoles } from '../../hooks/useRoles';
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
+import { useGetPermisos } from '@/hooks/permisos/useGetPermisos';
+import { usePostPermiso } from '@/hooks/permisos/usePostPermiso';
+import { usePutPermiso } from '@/hooks/permisos/usePutPermiso';
+import { useDeletePermiso } from '@/hooks/permisos/useDeletePermiso';
+import { useGetRoles } from '@/hooks/roles/useGetRoles';
+import Boton from "@/components/atomos/Boton";
+import { useGetModulos } from '@/hooks/modulos/useGetModulos';
+import Sidebar from "@/components/organismos/Sidebar";
+import Header from "@/components/organismos/Header";
+import GlobalTable, { Column } from "@/components/organismos/Table";
+import Form, { FormField } from "@/components/organismos/Form";
+import { Permiso } from '@/api/permisos/getPermisos';
 import { permisoSchema } from '@/schemas/permiso.schema';
 
 const Permisos = () => {
-  const { permisos, loading, crearPermiso, actualizarPermiso, eliminarPermiso } = usePermisos();
-  const { modulos } = useModulos();
-  const { roles } = useRoles();
+  const { permisos, loading } = useGetPermisos();
+  const { crearPermiso } = usePostPermiso();
+  const { actualizarPermiso } = usePutPermiso();
+  const { eliminarPermiso } = useDeletePermiso();
+  const { roles } = useGetRoles();
+  const { modulos } = useGetModulos();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Permiso>>({});
@@ -70,35 +76,52 @@ const Permisos = () => {
   const formFields: FormField[] = [
     { key: "nombre", label: "Nombre", type: "text", required: true },
     { key: "codigo_nombre", label: "Código Nombre", type: "text", required: true },
-    { key: "modulo_id", label: "Módulo", type: "select", required: true, options: modulos.map(m => m.descripcion_ruta) },
-    { key: "rol_id", label: "Rol", type: "select", required: true, options: roles.map(r => r.nombre_rol) },
+    { 
+      key: "modulo_id", 
+      label: "Módulo", 
+      type: "select", 
+      required: true, 
+      options: modulos?.map(m => ({ label: m.descripcion_ruta, value: m.id_modulo })) ?? [] 
+    },
+    { 
+      key: "rol_id", 
+      label: "Rol", 
+      type: "select", 
+      required: true, 
+      options: roles?.map(r => ({ label: r.nombre_rol, value: r.id_rol })) ?? [] 
+    },
   ];
 
   const handleSubmit = async (values: Record<string, string | number>) => {
     try {
-      const moduloSeleccionado = modulos.find(m => m.descripcion_ruta === values.modulo_id);
-      const rolSeleccionado = roles.find(r => r.nombre_rol === values.rol_id);
+      const moduloId = Number(values.modulo_id);
+      const rolId = Number(values.rol_id);
+
+      const moduloSeleccionado = modulos.find(m => m.id_modulo === moduloId);
+      const rolSeleccionado = roles.find(r => r.id_rol === rolId);
+
       if (!moduloSeleccionado || !rolSeleccionado) {
         alert("Por favor selecciona un módulo y un rol válidos.");
         return;
       }
+
       const payload = {
         nombre: values.nombre as string,
         codigo_nombre: values.codigo_nombre as string,
         modulo_id: moduloSeleccionado.id_modulo,
         rol_id: rolSeleccionado.id_rol
       };
+
       if (editingId) {
         await actualizarPermiso(editingId, { id: editingId, ...payload });
         setSuccessAlertText('Permiso actualizado con éxito');
-        setShowSuccessAlert(true);
-        setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
         await crearPermiso(payload);
         setSuccessAlertText('Permiso creado con éxito');
-        setShowSuccessAlert(true);
-        setTimeout(() => setShowSuccessAlert(false), 3000);
       }
+      
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
@@ -181,10 +204,10 @@ const Permisos = () => {
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
-                    nombre: formData.nombre || '',
-                    codigo_nombre: formData.codigo_nombre || '',
-                    modulo_id: modulos.find(m => m.id_modulo === formData.modulo_id)?.descripcion_ruta || '',
-                    rol_id: roles.find(r => r.id_rol === formData.rol_id)?.nombre_rol || '',
+                    nombre: formData?.nombre ?? '',
+                    codigo_nombre: formData?.codigo_nombre ?? '',
+                    modulo_id: modulos.find(m => m.id_modulo === formData?.modulo_id)?.descripcion_ruta ?? '',
+                    rol_id: roles.find(r => r.id_rol === formData?.rol_id)?.nombre_rol ?? '',
                   }}
                   schema={permisoSchema}
                 />
