@@ -1,11 +1,17 @@
-import { Users, BarChart2, Package, MapPin } from "lucide-react"; 
+import { Users, BarChart2, Package, MapPin, } from "lucide-react"; 
 import Sidebar from "../organismos/Sidebar";
 import Header from "../organismos/Header";
 import Grafica from "../organismos/Grafica";
-import { useDashboardStats } from "../../hooks/useDashboardStats";
+import { useGetDashboardStats } from "../../hooks/dashboard/useGetDashboardStats";
+import { useGetUsuarios } from '../../hooks/usuario/useGetUsuarios';
+import { useGetRoles } from '../../hooks/roles/useGetRoles';
+import { useMateriales } from '../../hooks/useMateriales';
 
 const PaginaInicio = () => {
-  const { stats, loading, error } = useDashboardStats();
+  const { stats, loading, error } = useGetDashboardStats();
+  const { usuarios } = useGetUsuarios();
+  const { roles } = useGetRoles();
+  const { materiales } = useMateriales();
 
   // Opciones para gráficas
   const lineChartOptions = {
@@ -105,33 +111,46 @@ const PaginaInicio = () => {
     ],
   } : null;
 
+  // Usuarios por rol
+  const usuariosPorRol = roles.map(rol => ({
+    rol: rol.nombre_rol,
+    cantidad: usuarios.filter(u => u.rol_id === rol.id_rol).length
+  }));
+  const usuariosPorRolChartData = {
+    labels: usuariosPorRol.map(item => item.rol),
+    datasets: [{
+      label: 'Usuarios',
+      data: usuariosPorRol.map(item => item.cantidad),
+      backgroundColor: ['#6366f1', '#f59e42', '#10b981', '#ef4444', '#f472b6', '#facc15', '#38bdf8', '#a3e635'],
+    }]
+  };
+  // Materiales con bajo stock (ejemplo: stock <= 5)
+  const materialesBajoStock = materiales.filter(m => m.stock <= 5);
+
   // Datos para las tarjetas
-  const statsCards = stats ? [
+  const statsCards = [
     {
       title: "Usuarios",
-      value: stats.totalUsuarios.toLocaleString(),
-      icon: <Users size={20} className="text-blue-500" />,
-      color: "bg-blue-100",
+      value: usuarios.length.toLocaleString(),
+      icon: <Users size={20} className="text-blue-500" />, color: "bg-blue-100",
     },
     {
       title: "Movimientos",
-      value: stats.totalMovimientos.toLocaleString(),
-      icon: <BarChart2 size={20} className="text-green-500" />,
-      color: "bg-green-100",
+      value: stats?.totalMovimientos?.toLocaleString() || "-",
+      icon: <BarChart2 size={20} className="text-green-500" />, color: "bg-green-100",
     },
     {
       title: "Materiales",
-      value: stats.totalMateriales.toLocaleString(),
-      icon: <Package size={20} className="text-amber-500" />,
-      color: "bg-amber-100",
+      value: materiales.length.toLocaleString(),
+      icon: <Package size={20} className="text-amber-500" />, color: "bg-amber-100",
     },
     {
-      title: "Sitios",
-      value: stats.totalSitios.toLocaleString(),
+      title: "Sitios", 
+      value: stats?.totalSitios?.toLocaleString() || "-",
       icon: <MapPin size={20} className="text-purple-500" />,
       color: "bg-purple-100",
     },
-  ] : [];
+  ];
 
   return (
     <div className="flex h-screen">
@@ -206,7 +225,7 @@ const PaginaInicio = () => {
                   <div className="bg-white rounded-lg shadow-md p-6">
                     <h2 className="text-lg font-semibold mb-4">Distribución de Materiales</h2>
                     <div className="h-80">
-                      {pieChartData && <Grafica type="pie" data={pieChartData} options={pieChartOptions} />}
+                      {pieChartData && <Grafica type="doughnut" data={pieChartData} options={pieChartOptions} />}
                     </div>
                   </div>
 
@@ -242,6 +261,42 @@ const PaginaInicio = () => {
                       </tbody>
                     </table>
                   </div>
+                </div>
+
+                {/* Gráfica de usuarios por rol */}
+                <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                  <h2 className="text-lg font-semibold mb-4">Usuarios por Rol</h2>
+                  <div className="h-80">
+                    {usuariosPorRolChartData && <Grafica type="bar" data={usuariosPorRolChartData} options={barChartOptions} />}
+                  </div>
+                </div>
+                {/* Tabla de materiales con bajo stock */}
+                <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                  <h2 className="text-lg font-semibold mb-4">Materiales con Bajo Stock (≤ 5)</h2>
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2">Código</th>
+                        <th className="text-left py-2">Nombre</th>
+                        <th className="text-left py-2">Stock</th>
+                        <th className="text-left py-2">Unidad</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {materialesBajoStock.length === 0 ? (
+                        <tr><td colSpan={4} className="text-center py-4 text-gray-400">No hay materiales con bajo stock</td></tr>
+                      ) : (
+                        materialesBajoStock.map((mat, idx) => (
+                          <tr key={mat.id_material} className={idx !== materialesBajoStock.length - 1 ? 'border-b' : ''}>
+                            <td className="py-3">{mat.codigo_sena}</td>
+                            <td className="py-3">{mat.nombre_material}</td>
+                            <td className="py-3">{mat.stock}</td>
+                            <td className="py-3">{mat.unidad_medida}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </>
             )}

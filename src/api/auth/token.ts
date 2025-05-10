@@ -14,16 +14,8 @@ const postRequest = async <T, R>(url: string, data: T): Promise<R> => {
   }
 };
 
-/**
- * Iniciar sesión
- */
 export const login = (credentials: LoginCredentials): Promise<AuthResponse> =>
   postRequest<LoginCredentials, AuthResponse>('/validacion', credentials);
 
-/**
- * Registrar un nuevo usuario
- */
 export const register = (userData: RegisterData): Promise<AuthResponse> =>
   postRequest<RegisterData, AuthResponse>('/registrar', userData);
-
-

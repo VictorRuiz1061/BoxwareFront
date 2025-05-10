@@ -4,14 +4,20 @@ import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-import { useProgramas } from '../../hooks/useProgramas';
+import { useGetProgramas } from '../../hooks/programas/useGetProgramas';
+import { usePostPrograma } from '../../hooks/programas/usePostPrograma';
+import { usePutPrograma } from '../../hooks/programas/usePutPrograma';
+import { useDeletePrograma } from '../../hooks/programas/useDeletePrograma';
 import { Programa } from '../../types/programa';
-import { useAreas } from '../../hooks/useAreas';
+import { useGetAreas } from '../../hooks/areas/useGetAreas';
 import { programaSchema } from '@/schemas/programa.schema';
 
 const Programas = () => {
-  const { programas, loading, crearPrograma, actualizarPrograma, eliminarPrograma } = useProgramas();
-  const { areas } = useAreas();
+  const { programas, loading } = useGetProgramas();
+  const { crearPrograma } = usePostPrograma();
+  const { actualizarPrograma } = usePutPrograma();
+  const { eliminarPrograma } = useDeletePrograma();
+  const { areas } = useGetAreas();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Programa>>({});
@@ -71,7 +77,8 @@ const Programas = () => {
           area_id: areaSeleccionada.id_area,
           fecha_modificacion: new Date().toISOString(),
           id_programa: editingId,
-          fecha_creacion: ""
+          fecha_creacion: "2025-05-10",
+          estado: ""
         });
         alert('Programa actualizado con éxito');
       } else {
@@ -81,6 +88,7 @@ const Programas = () => {
           area_id: areaSeleccionada.id_area,
           fecha_creacion: new Date().toISOString(),
           fecha_modificacion: new Date().toISOString(),
+          estado: ""
         });
         alert('Programa creado con éxito');
       }

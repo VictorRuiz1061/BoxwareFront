@@ -4,16 +4,22 @@ import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-import { useFichas } from '../../hooks/useFichas';
+import { useGetFichas } from '../../hooks/fichas/useGetFichas';
+import { usePostFicha } from '../../hooks/fichas/usePostFicha';
+import { usePutFicha } from '../../hooks/fichas/usePutFicha';
+import { useDeleteFicha } from '../../hooks/fichas/useDeleteFicha';
 import { Ficha } from '../../types/ficha';
-import { useUsuarios } from '../../hooks/useUsuarios';
-import { useProgramas } from '../../hooks/useProgramas';
+import { useGetUsuarios } from '../../hooks/usuario/useGetUsuarios';
+import { useGetProgramas } from '../../hooks/programas/useGetProgramas';
 import { fichaSchema } from '@/schemas/ficha.schema';
 
 const Fichas = () => {
-  const { fichas, loading, crearFicha, actualizarFicha, eliminarFicha } = useFichas();
-  const { usuarios } = useUsuarios();
-  const { programas } = useProgramas();
+  const { fichas, loading } = useGetFichas();
+  const { crearFicha } = usePostFicha();
+  const { actualizarFicha } = usePutFicha();
+  const { eliminarFicha } = useDeleteFicha();
+  const { usuarios } = useGetUsuarios();
+  const { programas } = useGetProgramas();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Ficha>>({});
