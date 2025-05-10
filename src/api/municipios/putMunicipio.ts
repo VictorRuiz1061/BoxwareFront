@@ -8,7 +8,7 @@ export interface MunicipioUpdate {
 }
 
 export async function putMunicipio(id: number, data: Omit<Municipio, 'id_municipio'>): Promise<Municipio> {
-  const response = await axiosInstance.put(`/municipios/actualizar/${id}`, data);
+  const response = await axiosInstance.put(`/municipios/${id}`, data);
   return response.data;
 }
 

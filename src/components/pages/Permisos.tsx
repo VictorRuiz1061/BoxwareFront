@@ -6,13 +6,13 @@ import { usePostPermiso } from '@/hooks/permisos/usePostPermiso';
 import { usePutPermiso } from '@/hooks/permisos/usePutPermiso';
 import { useDeletePermiso } from '@/hooks/permisos/useDeletePermiso';
 import { useGetRoles } from '@/hooks/roles/useGetRoles';
-import Boton from "@/components/atomos/Boton";
 import { useGetModulos } from '@/hooks/modulos/useGetModulos';
+import { Permiso } from '@/types/permiso';
+import Boton from "@/components/atomos/Boton";
 import Sidebar from "@/components/organismos/Sidebar";
 import Header from "@/components/organismos/Header";
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
-import { Permiso } from '@/types/permiso';
 import { permisoSchema } from '@/schemas/permiso.schema';
 
 const Permisos = () => {
