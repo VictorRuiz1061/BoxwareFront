@@ -21,7 +21,15 @@ const Roles = () => {
   const { eliminarRol } = useDeleteRol();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Partial<Rol>>({});
+  // Usamos string para los valores del formulario para evitar problemas de tipo
+  type RolFormValues = {
+    nombre_rol: string;
+    descripcion: string;
+    estado?: string; // 'Activo' | 'Inactivo'
+    fecha_creacion: string;
+    fecha_modificacion?: string;
+  };
+  const [formData, setFormData] = useState<Partial<RolFormValues>>({});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
 
@@ -62,39 +70,48 @@ const Roles = () => {
     },
   ];
 
-  const formFields: FormField[] = [
+  // Campos base para ambos formularios
+  const baseFields: FormField[] = [
     { key: "nombre_rol", label: "Nombre del Rol", type: "text", required: true },
     { key: "descripcion", label: "Descripción", type: "text", required: true },
-    { key: "estado", label: "Estado", type: "select", required: true, options: ["Activo", "Inactivo"] },
-    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
   ];
+  // Campos adicionales sólo para edición
+  const editFields: FormField[] = [
+    {
+      key: "estado",
+      label: "Estado",
+      type: "select",
+      required: true,
+      options: [
+        { value: "Activo", label: "Activo" },
+        { value: "Inactivo", label: "Inactivo" }
+      ]
+    },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
+  ];
+  // Selección dinámica de campos
+  const formFields: FormField[] = editingId ? [...baseFields, ...editFields] : baseFields;
 
   // Crear o actualizar rol
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      console.log('Valores del formulario:', values);
+      // Estado: sólo se toma del form si es edición, si no siempre es 'Activo'
+      const hoy = new Date().toISOString().split('T')[0];
+      const estadoValue = editingId ? values.estado : 'Activo';
       const payload = {
-        nombre: values.nombre_rol.trim(),
+        nombre_rol: values.nombre_rol.trim(),
         descripcion: values.descripcion.trim(),
-        estado: values.estado === "Activo",
-        fecha_creacion: new Date(values.fecha_creacion).toISOString()
+        estado: estadoValue === "Activo",
+        fecha_creacion: values.fecha_creacion,
+        fecha_modificacion: editingId ? (values.fecha_modificacion || hoy) : hoy,
       };
-      console.log('Payload preparado para enviar:', payload);
       if (editingId) {
-        await actualizarRol(editingId, {
-          ...payload, id: editingId,
-          nombre_rol: '',
-          fecha_modificacion: ''
-        });
+        await actualizarRol(editingId, { id: editingId, ...payload });
         setSuccessAlertText('Rol actualizado con éxito');
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
-        await crearRol({
-          ...payload,
-          nombre_rol: payload.nombre,
-          fecha_modificacion: new Date().toISOString()
-        });
+        await crearRol(payload);
         setSuccessAlertText('Rol creado con éxito');
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
@@ -134,7 +151,10 @@ const Roles = () => {
 
   // Abrir modal para editar rol existente
   const handleEdit = (rol: Rol) => {
-    setFormData(rol);
+    setFormData({
+      ...rol,
+      estado: rol.estado ? "Activo" : "Inactivo",
+    });
     setEditingId(rol.id_rol);
     setIsModalOpen(true);
   };

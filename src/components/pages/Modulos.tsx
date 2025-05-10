@@ -119,7 +119,7 @@ const ModulosPage = () => {
   const handleEdit = (modulo: Modulo) => {
     setFormData({
       ...modulo,
-      estado: modulo.estado ? "Activo" : "Inactivo"
+      estado: modulo.estado
     });
     setEditingId(modulo.id_modulo);
     setIsModalOpen(true);
@@ -170,6 +170,7 @@ const ModulosPage = () => {
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     ...formData,
+                    id_modulo: formData.id_modulo?.toString(),
                     estado: formData.estado ? "Activo" : "Inactivo",
                     fecha_creacion: formData.fecha_creacion ?? new Date().toISOString().split('T')[0]
                   }}

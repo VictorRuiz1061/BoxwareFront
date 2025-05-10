@@ -11,6 +11,7 @@ export const rolSchema = z.object({
     errorMap: () => ({ message: 'Debe seleccionar un estado válido' })
   }),
   fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación'),
+  fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación').optional(),
 });
 
 export type RolSchema = z.infer<typeof rolSchema>;
