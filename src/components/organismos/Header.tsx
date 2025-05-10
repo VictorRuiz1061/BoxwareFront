@@ -1,14 +1,8 @@
-import { Bell, User, Settings, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Bell, User, Settings } from "lucide-react"; 
 import AnimatedContainer from "../atomos/AnimatedContainer";
 
-const Header = ({ userName = "Usuario" }) => {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("auth-token");
-    navigate("/iniciosecion");
-  };
+const Header = ({ userName = "Usuario" }) => { 
+ 
   return (
     <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
       <header className="bg-white shadow-lg h-16 relative z-10">
@@ -40,20 +34,6 @@ const Header = ({ userName = "Usuario" }) => {
                   className="group-hover:scale-110 transition-transform duration-300"
                 />
               </a>
-            </AnimatedContainer>
-
-            {/* Botón de cerrar sesión */}
-            <AnimatedContainer animation="slideUp" delay={250} duration={400}>
-              <button
-                onClick={handleLogout}
-                className="relative p-2 text-white hover:bg-blue-500 rounded-lg transition-all duration-300 group"
-                title="Cerrar sesión"
-              >
-                <LogOut
-                  size={20}
-                  className="group-hover:scale-110 transition-transform duration-300"
-                />
-              </button>
             </AnimatedContainer>
 
             {/* Separador */}

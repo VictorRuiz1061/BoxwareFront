@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Select, SelectItem, Input } from "@heroui/react";
 import { ChevronUp, ChevronDown, Search } from 'lucide-react';
+import { format } from 'date-fns';
 
 // Tipo genérico para cualquier estructura de datos
 export type Column<T> = {
@@ -68,12 +69,18 @@ const GlobalTable = <T extends { key: React.Key }>({
   const filterData = (data: T[], value: string): T[] => {
     if (!value) return data;
     const searchValue = value.toLowerCase();
-    
     return data.filter(item => 
       columns.some(column => {
         if (column.key === 'acciones' || !column.filterable) return false;
         const val = item[column.key as keyof T];
-        return val !== undefined && String(val).toLowerCase().includes(searchValue);
+        if (val === undefined) return false;
+        // Si es fecha ISO, comparar contra ISO y contra formateada
+        if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(val)) {
+          const date = new Date(val);
+          const formatted = format(date, 'dd/MM/yyyy');
+          return val.toLowerCase().includes(searchValue) || formatted.includes(searchValue);
+        }
+        return String(val).toLowerCase().includes(searchValue);
       })
     );
   };
@@ -204,7 +211,17 @@ const GlobalTable = <T extends { key: React.Key }>({
             <TableRow key={String(item.key)}>
               {columns.map((col) => (
                 <TableCell key={String(col.key)}>
-                  {col.render ? col.render(item) : String(item[col.key as keyof T])}
+                  {col.render ? col.render(item) :
+                    (() => {
+                      const value = item[col.key as keyof T];
+                      // Detectar si es una fecha ISO
+                      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d+)?Z$/.test(value)) {
+                        const date = new Date(value);
+                        return format(date, 'dd/MM/yyyy');
+                      }
+                      return String(value);
+                    })()
+                  }
                 </TableCell>
               ))}
             </TableRow>

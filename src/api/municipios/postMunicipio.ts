@@ -5,7 +5,7 @@ import { Municipio } from "@/types/municipio";
 export type NuevoMunicipio = Omit<Municipio, "id_municipio">;
 
 export async function postMunicipio(data: NuevoMunicipio): Promise<Municipio> {
-  const response = await axiosInstance.post("/municipios/crear", data);
+  const response = await axiosInstance.post("/municipios", data);
   return response.data;
 }
 

@@ -1,5 +1,7 @@
 import { useDeleteCentro as useApiDeleteCentro } from "@/api/centros/deleteCentro";
 
 export function useDeleteCentro() {
-  return useApiDeleteCentro();
+  const del = useApiDeleteCentro();
+  const eliminarCentro = async (id_centro: number) => del.mutateAsync(id_centro);
+  return { eliminarCentro };
 } 

@@ -4,28 +4,52 @@ import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-import { useSedes } from '../../hooks/useSedes';
-import { Sede } from '../../types/sede';
-import { useCentros } from '../../hooks/useCentros';
+import { useGetSedes } from '../../hooks/sedes/useGetSedes';
+import { usePostSede } from '../../hooks/sedes/usePostSede';
+import { usePutSede } from '../../hooks/sedes/usePutSede';
+import { useDeleteSede } from '../../hooks/sedes/useDeleteSede';
+import { useGetCentros } from '../../hooks/centros/useGetCentros';
 import { sedeSchema } from '@/schemas/sede.schema';
+import { Sede } from "@/types/sede";
 
 const Sedes = () => {
-  const { sedes, loading, crearSede, actualizarSede, eliminarSede } = useSedes();
-  const { centros } = useCentros();
+  const { sedes, loading } = useGetSedes();
+  const { crearSede } = usePostSede();
+  const { actualizarSede } = usePutSede();
+  const { eliminarSede } = useDeleteSede();
+  const { centros } = useGetCentros();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Partial<Sede>>({});
+  // Usamos string para todos los campos del formulario para evitar errores de tipo
+  type SedeFormValues = {
+    nombre_sede: string;
+    direccion_sede: string;
+    centro_id: string;
+    fecha_creacion: string;
+    fecha_modificacion?: string;
+    estado?: string; // 'Activo' | 'Inactivo'
+  };
+  const [formData, setFormData] = useState<Partial<SedeFormValues>>({});
 
-  const columns: Column<Sede>[] = [
+  const columns: Column<Sede & { key: number }>[]= [
     { key: "nombre_sede", label: "Nombre de la Sede", filterable: true },
     { key: "direccion_sede", label: "Dirección de la sede", filterable: true },
     {
-      key: "centro_sede_id",
+      key: "estado",
+      label: "Estado",
+      render: (sede) => (
+        <span className={sede.estado ? "text-green-600" : "text-red-600"}>
+          {sede.estado ? "Activo" : "Inactivo"}
+        </span>
+      )
+    },
+    {
+      key: "centro_id",
       label: "Centro",
       filterable: true,
       render: (sede) => {
-        const centro = centros.find(c => c.id_centro === sede.centro_sede_id);
-        return centro ? centro.nombre_centro : sede.centro_sede_id;
+        const centro = centros.find(c => c.id_centro === sede.centro_id);
+        return centro ? centro.nombre_centro : sede.centro_id;
       }
     },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
@@ -52,50 +76,80 @@ const Sedes = () => {
     },
   ];
 
-  const formFields: FormField[] = [
+  // Campos base para ambos formularios
+  const baseFields: FormField[] = [
     { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
     { key: "direccion_sede", label: "Dirección de la sede", type: "text", required: true },
-    { key: "centro_sede_id", label: "Centro", type: "select", required: true, options: centros.map(c => ({ label: c.nombre_centro, value: c.id_centro })) },
+    { key: "centro_id", label: "Centro", type: "select", required: true, options: centros.map(c => ({ label: c.nombre_centro, value: c.id_centro.toString() })) },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+  ];
+  // Campos adicionales sólo para edición
+  const editFields: FormField[] = [
+    {
+      key: "estado",
+      label: "Estado",
+      type: "select",
+      required: true,
+      options: [
+        { value: "Activo", label: "Activo" },
+        { value: "Inactivo", label: "Inactivo" }
+      ]
+    },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
+  // Selección dinámica de campos
+  const formFields: FormField[] = editingId ? [...baseFields, ...editFields] : baseFields;
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      // Buscar el centro por id
-      const centroSeleccionado = centros.find(c => c.id_centro === Number(values.centro_sede_id));
-      if (!centroSeleccionado) {
-        throw new Error('Centro no encontrado');
+      // Validar con zod
+      const parsed = sedeSchema.safeParse(values);
+      if (!parsed.success) {
+        alert(parsed.error.errors.map(e => e.message).join('\n'));
+        return;
       }
-
+      // Validar que todos los campos requeridos estén presentes
+      if (!values.nombre_sede || !values.direccion_sede || !values.centro_id || !values.fecha_creacion) {
+        alert('Todos los campos son requeridos');
+        return;
+      }
+      const hoy = new Date().toISOString().split('T')[0];
+      // Estado: sólo se toma del form si es edición, si no siempre es 'Activo'
+      const estadoValue = editingId ? values.estado : 'Activo';
+      // Preparar los datos
+      const sedeData = {
+        nombre_sede: values.nombre_sede.trim(),
+        direccion_sede: values.direccion_sede.trim(),
+        fecha_creacion: values.fecha_creacion,
+        fecha_modificacion: editingId ? (values.fecha_modificacion || hoy) : hoy,
+        centro_sede_id: Number(values.centro_id), // Map centro_id to centro_sede_id
+        estado: estadoValue === 'Activo', // true para 'Activo', false para 'Inactivo'
+      };
       if (editingId) {
-        await actualizarSede(editingId, {
-          id_sede: Number(values.id_sede),
-          nombre_sede: values.nombre_sede,
-          direccion_sede: values.direccion_sede,
-          fecha_creacion: values.fecha_creacion,
-          fecha_modificacion: values.fecha_modificacion,
-          centro_sede_id: centroSeleccionado.id_centro,
-        });
+        await actualizarSede(editingId, sedeData);
         alert('Sede actualizada con éxito');
       } else {
-        await crearSede({
-          nombre_sede: values.nombre_sede,
-          direccion_sede: values.direccion_sede,
-          fecha_creacion: values.fecha_creacion,
-          fecha_modificacion: values.fecha_modificacion,
-          centro_sede_id: centroSeleccionado.id_centro,
-        });
+        await crearSede(sedeData);
         alert('Sede creada con éxito');
       }
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
-    } catch (error) {
-      console.error('Error al guardar la sede:', error);
-      alert('Error al guardar la sede');
+    } catch (error: any) {
+      // Manejo seguro del error
+      let errorMessage = 'Error desconocido';
+      if (error && typeof error === 'object') {
+        if ('response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
+          errorMessage = (error.response.data as any).message;
+        } else if ('message' in error) {
+          errorMessage = (error as any).message;
+        }
+      }
+      console.error('Error detallado al guardar la sede:', error);
+      alert(`Error al guardar la sede: ${errorMessage}`);
     }
   };
+
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar esta sede?')) return;
@@ -109,13 +163,27 @@ const Sedes = () => {
   };
 
   const handleCreate = () => {
-    setFormData({});
+    const hoy = new Date().toISOString().split('T')[0];
+    setFormData({
+      nombre_sede: '',
+      direccion_sede: '',
+      centro_id: '',
+      fecha_creacion: hoy,
+      estado: 'Activo', // Valor por defecto para creación
+    });
     setEditingId(null);
     setIsModalOpen(true);
   };
 
   const handleEdit = (sede: Sede) => {
-    setFormData(sede);
+    setFormData({
+      nombre_sede: sede.nombre_sede,
+      direccion_sede: sede.direccion_sede,
+      centro_id: String(sede.centro_id),
+      fecha_creacion: sede.fecha_creacion?.split('T')[0],
+      fecha_modificacion: sede.fecha_modificacion?.split('T')[0],
+      estado: sede.estado ? 'Activo' : 'Inactivo',
+    });
     setEditingId(sede.id_sede);
     setIsModalOpen(true);
   };
@@ -159,12 +227,12 @@ const Sedes = () => {
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
-                    id_sede: formData.id_sede?.toString() || '',
                     nombre_sede: formData.nombre_sede || '',
                     direccion_sede: formData.direccion_sede || '',
+                    centro_id: formData.centro_id || '',
                     fecha_creacion: formData.fecha_creacion || '',
-                    fecha_modificacion: formData.fecha_modificacion || '',
-                    centro_sede_id: formData.centro_sede_id ? String(formData.centro_sede_id) : ''
+                    // Solo pasamos fecha_modificacion y estado si es edición
+                    ...(editingId ? { fecha_modificacion: formData.fecha_modificacion || '', estado: formData.estado || 'Activo' } : {}),
                   }}
                   schema={sedeSchema}
                 />

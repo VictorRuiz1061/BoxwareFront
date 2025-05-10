@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Auth Pages
 import Inicio from "./components/pages/Inicio";
@@ -31,6 +32,7 @@ import TiposSitio from "./components/pages/TiposSitio";
 // Education Pages
 import Programas from "./components/pages/programas";
 import Fichas from "./components/pages/fichas";
+import NotFound from "./components/pages/Not404";
 
 function App() {
   return (
@@ -39,33 +41,28 @@ function App() {
       <Route path="/" element={<Inicio />} />
       <Route path="/iniciosesion" element={<InicioSecion />} />
       <Route path="/registrarse" element={<Registrarse />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-
-      {/* Administracion Routes */}
-      <Route path="/modulos" element={<Modulos />} />
-      <Route path="/usuarios" element={<Usuarios />} />
-      <Route path="/detalle-usuario/:id?" element={<DetalleUsuario />} />
-      <Route path="/roles" element={<Roles />} />
-      <Route path="/permisos" element={<Permisos />} />
-
-      {/* Inventario Routes */}
-      <Route path="/materiales" element={<Materiales />} />
-      <Route path="/elementos" element={<Elementos />} />
-      <Route path="/tipo_materiales" element={<TipoMaterial />} />
-      <Route path="/movimientos" element={<Movimientos />} />
-      <Route path="/tipos_movimiento" element={<TiposMovimiento />} />
-
-      {/* Localizacion Routes */}
-      <Route path="/sedes" element={<Sedes />} />
-      <Route path="/centros" element={<Centros />} />
-      <Route path="/municipios" element={<Municipios />} />
-      <Route path="/area" element={<Areas />} />
-      <Route path="/sitios" element={<Sitios />} />
-      <Route path="/tipos_sitio" element={<TiposSitio />} />
-
-      {/* Education Routes */}
-      <Route path="/programas" element={<Programas />} />
-      <Route path="/fichas" element={<Fichas />} />
+      {/* Rutas protegidas */}
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/modulos" element={<ProtectedRoute><Modulos /></ProtectedRoute>} />
+      <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
+      <Route path="/detalle-usuario/:id?" element={<ProtectedRoute><DetalleUsuario /></ProtectedRoute>} />
+      <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
+      <Route path="/permisos" element={<ProtectedRoute><Permisos /></ProtectedRoute>} />
+      <Route path="/materiales" element={<ProtectedRoute><Materiales /></ProtectedRoute>} />
+      <Route path="/elementos" element={<ProtectedRoute><Elementos /></ProtectedRoute>} />
+      <Route path="/tipo_materiales" element={<ProtectedRoute><TipoMaterial /></ProtectedRoute>} />
+      <Route path="/movimientos" element={<ProtectedRoute><Movimientos /></ProtectedRoute>} />
+      <Route path="/tipos_movimiento" element={<ProtectedRoute><TiposMovimiento /></ProtectedRoute>} />
+      <Route path="/sedes" element={<ProtectedRoute><Sedes /></ProtectedRoute>} />
+      <Route path="/centros" element={<ProtectedRoute><Centros /></ProtectedRoute>} />
+      <Route path="/municipios" element={<ProtectedRoute><Municipios /></ProtectedRoute>} />
+      <Route path="/area" element={<ProtectedRoute><Areas /></ProtectedRoute>} />
+      <Route path="/sitios" element={<ProtectedRoute><Sitios /></ProtectedRoute>} />
+      <Route path="/tipos_sitio" element={<ProtectedRoute><TiposSitio /></ProtectedRoute>} />
+      <Route path="/programas" element={<ProtectedRoute><Programas /></ProtectedRoute>} />
+      <Route path="/fichas" element={<ProtectedRoute><Fichas /></ProtectedRoute>} />
+      {/* Ruta 404 */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

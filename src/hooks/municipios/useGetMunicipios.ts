@@ -1,5 +1,6 @@
 import { useGetMunicipios as useApiGetMunicipios } from "@/api/municipios/getMunicipios";
 
 export function useGetMunicipios() {
-  return useApiGetMunicipios();
+  const { data: municipios = [], isLoading: loading } = useApiGetMunicipios();
+  return { municipios, loading };
 } 

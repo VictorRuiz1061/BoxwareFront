@@ -34,6 +34,9 @@ const Sidebar = () => {
   
   const handleLogout = () => {
     localStorage.removeItem('auth-token');
+    // Eliminar la cookie del token
+    document.cookie = 'token=; path=/; max-age=0; samesite=strict';
+    document.cookie = 'token=; max-age=0; samesite=strict';
     navigate('/iniciosesion');
   };
 
@@ -114,14 +117,14 @@ const Sidebar = () => {
       <AnimatedContainer
         animation="slideFromLeft"
         duration={400}
-        className={`bg-gray-300 text-black h-screen ${collapsed ? 'w-20' : 'w-64'} transition-all duration-300 shadow-md flex flex-col overflow-hidden`}
+        className={`bg-white text-black h-screen ${collapsed ? 'w-20' : 'w-64'} transition-all duration-300 shadow-md flex flex-col overflow-hidden rounded-t-2xl rounded-b-2xl`}
       >
         {/* Encabezado del sidebar */}
         <AnimatedContainer
           animation="fadeIn"
           duration={600}
           delay={200}
-          className="flex items-center justify-between p-4 border-b border-gray-300 bg-gray-300">
+          className="flex items-center justify-between p-4 border-b border-gray-300 bg-white">
 
           {!collapsed && <span className="text-xl font-bold text-blue-600">BoxWare</span>}
           <button 
@@ -155,7 +158,7 @@ const Sidebar = () => {
                 <div>
                   <div
                     onClick={() => !collapsed && toggleGroup(group.label)}
-                    className={`flex items-center px-4 py-3 ${isGroupActive(group.items) ? 'bg-blue-500 text-black' : 'hover:bg-gray-400 text-black hover:text-blue-600'} hover:pl-5 transition-all duration-300 rounded-md cursor-pointer font-medium`}
+                    className={`flex items-center px-4 py-3 ${isGroupActive(group.items) ? 'bg-blue-500 text-black' : 'hover:bg-gray-400 text-black hover:text-blue-600'} hover:pl-5 transition-all duration-300 rounded-md cursor-pointer font-medium bg-white`}
                   >
                     <div className="mr-3">{group.icon}</div>
                     {!collapsed && (
@@ -173,7 +176,7 @@ const Sidebar = () => {
 
                   {/* Submenú con animación */}
                   <div
-                    className={`pl-4 bg-gray-300 transition-all duration-300 ease-in-out overflow-hidden ${
+                    className={`pl-4 bg-white transition-all duration-300 ease-in-out overflow-hidden ${
                       expandedGroups.includes(group.label) ? 'max-h-96' : 'max-h-0'
                     }`}
                   >
@@ -207,7 +210,7 @@ const Sidebar = () => {
           animation="slideUp"
           delay={500}
           duration={400}
-          className="mt-auto border-t border-gray-300 bg-gray-300"
+          className="mt-auto border-t border-gray-300 bg-white"
         >
           <div className="px-3 py-3">
             <button 
