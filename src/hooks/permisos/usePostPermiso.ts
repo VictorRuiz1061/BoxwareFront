@@ -1,5 +1,7 @@
-import { usePostPermiso as useApiPostPermiso } from "@/api/permisos/postPermiso";
+import { usePostPermiso as useApiPostPermiso, NuevoPermiso } from "@/api/permisos/postPermiso";
 
 export function usePostPermiso() {
-  return useApiPostPermiso();
+  const post = useApiPostPermiso();
+  const crearPermiso = async (data: NuevoPermiso) => post.mutateAsync(data);
+  return { crearPermiso };
 } 

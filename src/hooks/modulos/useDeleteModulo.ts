@@ -1,5 +1,7 @@
 import { useDeleteModulo as useApiDeleteModulo } from "@/api/modulos/deleteModulo";
 
 export function useDeleteModulo() {
-  return useApiDeleteModulo();
+  const del = useApiDeleteModulo();
+  const eliminarModulo = async (id: number) => del.mutateAsync(id);
+  return { eliminarModulo };
 } 

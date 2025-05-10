@@ -4,12 +4,18 @@ import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-import { useMunicipios } from '../../hooks/useMunicipios';
+import { useGetMunicipios } from '../../hooks/municipios/useGetMunicipios';
+import { usePostMunicipio } from '../../hooks/municipios/usePostMunicipio';
+import { usePutMunicipio } from '../../hooks/municipios/usePutMunicipio';
+import { useDeleteMunicipio } from '../../hooks/municipios/useDeleteMunicipio';
 import { Municipio } from '../../types/municipio';
 import { municipioSchema } from '@/schemas/municipio.schema';
 
 const Municipios = () => {
-  const { municipios, loading, crearMunicipio, actualizarMunicipio, eliminarMunicipio } = useMunicipios();
+  const { municipios, loading } = useGetMunicipios();
+  const { crearMunicipio } = usePostMunicipio();
+  const { actualizarMunicipio } = usePutMunicipio();
+  const { eliminarMunicipio } = useDeleteMunicipio();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Municipio>>({});
@@ -66,12 +72,16 @@ const Municipios = () => {
             nombre_municipio: values.nombre_municipio,
             fecha_creacion: values.fecha_creacion,
             fecha_modificacion: values.fecha_modificacion,
+            estado: ""
           });
         } else {
           throw new Error("Campos requeridos faltantes");
         }
       } else {
-        await crearMunicipio(datosMunicipio);
+        await crearMunicipio({
+          ...datosMunicipio,
+          estado: ""
+        });
       }
       alert(`Municipio ${editingId ? "actualizado" : "creado"} con éxito`);
       setIsModalOpen(false);

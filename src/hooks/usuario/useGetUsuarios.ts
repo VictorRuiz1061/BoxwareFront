@@ -1,5 +1,6 @@
 import { useGetUsuarios as useApiGetUsuarios } from "@/api/usuario/getUsuarios";
 
 export function useGetUsuarios() {
-  return useApiGetUsuarios();
+  const { data: usuarios = [], isLoading: loading } = useApiGetUsuarios();
+  return { usuarios, loading };
 } 

@@ -1,5 +1,9 @@
 import { usePutRol as useApiPutRol } from "@/api/rol/putRol";
+import { RolUpdate } from "@/api/rol/putRol";
 
 export function usePutRol() {
-  return useApiPutRol();
+  const put = useApiPutRol();
+  const actualizarRol = async (id: number, data: RolUpdate) => 
+    put.mutateAsync({ ...data, id });
+  return { actualizarRol };
 } 

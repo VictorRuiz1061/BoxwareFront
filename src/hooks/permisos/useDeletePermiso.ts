@@ -1,5 +1,7 @@
 import { useDeletePermiso as useApiDeletePermiso } from "@/api/permisos/deletePermiso";
 
 export function useDeletePermiso() {
-  return useApiDeletePermiso();
+  const del = useApiDeletePermiso();
+  const eliminarPermiso = async (id: number) => del.mutateAsync(id);
+  return { eliminarPermiso };
 } 

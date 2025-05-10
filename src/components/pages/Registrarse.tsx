@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useGetAuth } from '../../hooks/auth/useGetAuth';
+import { useRegisterAuth } from '../../hooks/auth/useRegisterAuth';
 import AnimatedContainer from '../atomos/AnimatedContainer';
 
-const Registro = () => {
+const Registrarse = () => {
   const navigate = useNavigate();
-  const { error, register } = useAuth();
+  const { error } = useGetAuth();
+  const { register } = useRegisterAuth();
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -249,4 +251,4 @@ const Registro = () => {
   );
 };
 
-export default Registro;
+export default Registrarse;

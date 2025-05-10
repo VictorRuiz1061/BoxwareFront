@@ -1,5 +1,7 @@
 import { useDeleteFicha as useApiDeleteFicha } from "@/api/fichas/deleteFicha";
 
 export function useDeleteFicha() {
-  return useApiDeleteFicha();
+  const del = useApiDeleteFicha();
+  const eliminarFicha = async (id_ficha: number) => del.mutateAsync(id_ficha);
+  return { eliminarFicha };
 } 

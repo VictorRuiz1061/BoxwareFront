@@ -4,14 +4,20 @@ import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-import { useModulos } from '../../hooks/useModulos';
+import { useGetModulos } from '../../hooks/modulos/useGetModulos';
+import { usePostModulo } from '../../hooks/modulos/usePostModulo';
+import { usePutModulo } from '../../hooks/modulos/usePutModulo';
+import { useDeleteModulo } from '../../hooks/modulos/useDeleteModulo';
 import { Modulo } from '../../api/modulos/getModulos';
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
 import { moduloSchema } from '@/schemas/modulo.schema';
 
 const ModulosPage = () => {
-  const { modulos, loading, crearModulo, actualizarModulo, eliminarModulo } = useModulos();
+  const { modulos, loading } = useGetModulos();
+  const { crearModulo } = usePostModulo();
+  const { actualizarModulo } = usePutModulo();
+  const { eliminarModulo } = useDeleteModulo();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Modulo>>({});

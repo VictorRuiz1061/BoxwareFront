@@ -1,5 +1,6 @@
 import { useGetPermisos as useApiGetPermisos } from "@/api/permisos/getPermisos";
 
 export function useGetPermisos() {
-  return useApiGetPermisos();
+  const { data: permisos = [], isLoading: loading } = useApiGetPermisos();
+  return { permisos, loading };
 } 

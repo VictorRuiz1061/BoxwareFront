@@ -1,5 +1,6 @@
 import { useGetRoles as useApiGetRoles } from "@/api/rol/getRoles";
 
 export function useGetRoles() {
-  return useApiGetRoles();
+  const { data: roles = [], isLoading: loading } = useApiGetRoles();
+  return { roles, loading };
 } 

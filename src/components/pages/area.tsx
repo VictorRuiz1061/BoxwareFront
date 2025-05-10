@@ -4,14 +4,20 @@ import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-import { useAreas } from '../../hooks/useAreas';
+import { useGetAreas } from '../../hooks/areas/useGetAreas';
+import { usePostArea } from '../../hooks/areas/usePostArea';
+import { usePutArea } from '../../hooks/areas/usePutArea';
+import { useDeleteArea } from '../../hooks/areas/useDeleteArea';
 import { Area } from '../../types/area';
-import { useSedes } from '../../hooks/useSedes';
+import { useGetSedes } from '../../hooks/sedes/useGetSedes';
 import { areaSchema } from '@/schemas/area.schema';
 
 const Areas = () => {
-  const { areas, loading, crearArea, actualizarArea, eliminarArea } = useAreas();
-  const { sedes } = useSedes();
+  const { areas, loading } = useGetAreas();
+  const { crearArea } = usePostArea();
+  const { actualizarArea } = usePutArea();
+  const { eliminarArea } = useDeleteArea();
+  const { sedes } = useGetSedes();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Area>>({});

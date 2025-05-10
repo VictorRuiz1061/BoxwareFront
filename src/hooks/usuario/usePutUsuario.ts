@@ -1,5 +1,8 @@
 import { usePutUsuario as useApiPutUsuario } from "@/api/usuario/putUsuario";
+import { Usuario as UsuarioUpdate } from "@/types/usuario";
 
 export function usePutUsuario() {
-  return useApiPutUsuario();
+  const put = useApiPutUsuario();
+  const actualizarUsuario = async (id: number, data: UsuarioUpdate) => put.mutateAsync({ ...data, id });
+  return { actualizarUsuario };
 } 

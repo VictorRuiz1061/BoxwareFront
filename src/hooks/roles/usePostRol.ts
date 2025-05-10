@@ -1,5 +1,7 @@
-import { usePostRol as useApiPostRol } from "@/api/rol/postRol";
+import { usePostRol as useApiPostRol, NuevoRol } from "@/api/rol/postRol";
 
 export function usePostRol() {
-  return useApiPostRol();
+  const post = useApiPostRol();
+  const crearRol = async (data: NuevoRol) => post.mutateAsync(data);
+  return { crearRol };
 } 

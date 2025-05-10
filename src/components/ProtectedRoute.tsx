@@ -1,13 +1,22 @@
+import { useGetAuth } from '../hooks/auth/useGetAuth';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import React from 'react';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, loading } = useAuth();
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
 
-  if (loading) return null; // O un loader/spinner
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  const { isAuthenticated, loading } = useGetAuth();
 
-  return isAuthenticated ? <>{children}</> : <Navigate to="/iniciosesion" replace />;
+  if (loading) {
+    return <div>Cargando...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/iniciosesion" />;
+  }
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoute; 

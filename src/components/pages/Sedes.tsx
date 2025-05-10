@@ -4,14 +4,20 @@ import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-import { useSedes } from '../../hooks/useSedes';
-import { Sede } from '../../types/sede';
-import { useCentros } from '../../hooks/useCentros';
+import { useGetSedes } from '../../hooks/sedes/useGetSedes';
+import { usePostSede } from '../../hooks/sedes/usePostSede';
+import { usePutSede } from '../../hooks/sedes/usePutSede';
+import { useDeleteSede } from '../../hooks/sedes/useDeleteSede';
+import { useGetCentros } from '../../hooks/centros/useGetCentros';
 import { sedeSchema } from '@/schemas/sede.schema';
+import { Sede } from "@/types/sede";
 
 const Sedes = () => {
-  const { sedes, loading, crearSede, actualizarSede, eliminarSede } = useSedes();
-  const { centros } = useCentros();
+  const { sedes, loading } = useGetSedes();
+  const { crearSede } = usePostSede();
+  const { actualizarSede } = usePutSede();
+  const { eliminarSede } = useDeleteSede();
+  const { centros } = useGetCentros();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Sede>>({});

@@ -4,14 +4,20 @@ import Header from "../organismos/Header";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
-import { useCentros } from '../../hooks/useCentros';
+import { useGetCentros } from '../../hooks/centros/useGetCentros';
+import { usePostCentro } from '../../hooks/centros/usePostCentro';
+import { usePutCentro } from '../../hooks/centros/usePutCentro';
+import { useDeleteCentro } from '../../hooks/centros/useDeleteCentro';
+import { useGetMunicipios } from '../../hooks/municipios/useGetMunicipios';
 import { Centro } from '../../types/centro';
-import { useMunicipios } from '../../hooks/useMunicipios';
 import { centroSchema } from '@/schemas/centro.schema';
 
 const Centros = () => {
-  const { centros, loading, crearCentro, actualizarCentro, eliminarCentro } = useCentros();
-  const { municipios } = useMunicipios();
+  const { centros, loading } = useGetCentros();
+  const { crearCentro } = usePostCentro();
+  const { actualizarCentro } = usePutCentro();
+  const { eliminarCentro } = useDeleteCentro();
+  const { municipios } = useGetMunicipios();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Centro>>({});
@@ -71,11 +77,20 @@ const Centros = () => {
         fecha_creacion: editingId ? values.fecha_creacion : hoy,
         fecha_modificacion: hoy
       };
-
       if (editingId) {
-        await actualizarCentro(editingId, datosParaEnviar);
+        const datosActualizar = {
+          nombre_centro: datosParaEnviar.nombre_centro,
+          municipio_id: datosParaEnviar.municipio_id,
+          fecha_modificacion: datosParaEnviar.fecha_modificacion,
+          id_centro: editingId
+        };
+        await actualizarCentro(editingId, datosActualizar);
       } else {
-        await crearCentro(datosParaEnviar);
+        const datosCrear = {
+          ...datosParaEnviar,
+          codigo_centro: `C${Date.now()}` // Genera un código único
+        };
+        await crearCentro(datosCrear);
       }
       alert(`Centro ${editingId ? "actualizado" : "creado"} con éxito`);
       setIsModalOpen(false);
