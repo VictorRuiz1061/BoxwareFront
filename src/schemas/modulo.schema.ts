@@ -11,7 +11,10 @@ export const moduloSchema = z.object({
     .min(5, 'El mensaje debe tener al menos 5 caracteres')
     .max(200, 'El mensaje no puede tener más de 200 caracteres'),
   fecha_accion: z.string().min(4, 'Debe ingresar una fecha'),
-  bandera_accion: z.string().optional(),
+  estado: z.enum(['Activo', 'Inactivo'], {
+    errorMap: () => ({ message: 'Debe seleccionar un estado válido' })
+  }),
+  fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación'),
 });
 
 export type ModuloSchema = z.infer<typeof moduloSchema>;

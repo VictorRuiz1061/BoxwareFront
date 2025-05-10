@@ -74,7 +74,7 @@ const Registrarse = () => {
       if (response.success) {
         navigate('/iniciosesion');
       } else {
-        setLocalError(response.errors?.general || 'Error al registrar usuario. Por favor, intenta nuevamente.');
+        setLocalError('Error al registrar usuario. Por favor, intenta nuevamente.');
       }
     })
     .catch(error => {

@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { Alert } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Trash, Eye } from 'lucide-react';
-import { usuarioSchema } from '@/schemas/usuario.schema';
-import { useGetUsuarios } from '@/hooks/usuario/useGetUsuarios';
-import { usePostUsuario } from '@/hooks/usuario/usePostUsuario';
-import { usePutUsuario } from '@/hooks/usuario/usePutUsuario';
-import { useDeleteUsuario } from '@/hooks/usuario/useDeleteUsuario';
-import { useGetRoles } from '@/hooks/roles/useGetRoles';
-import { Usuario } from '@/types/usuario';
+import { Pencil, Trash, Eye } from "lucide-react";
+import { usuarioSchema } from "@/schemas/usuario.schema";
+import { useGetUsuarios } from "@/hooks/usuario/useGetUsuarios";
+import { usePostUsuario } from "@/hooks/usuario/usePostUsuario";
+import { usePutUsuario } from "@/hooks/usuario/usePutUsuario";
+import { useDeleteUsuario } from "@/hooks/usuario/useDeleteUsuario";
+import { useGetRoles } from "@/hooks/roles/useGetRoles";
+import { Usuario } from "@/types/usuario";
 import AnimatedContainer from "@/components/atomos/AnimatedContainer";
-import AlertDialog from '@/components/atomos/AlertDialog';
+import AlertDialog from "@/components/atomos/AlertDialog";
 import Boton from "@/components/atomos/Boton";
 import Sidebar from "@/components/organismos/Sidebar";
 import Header from "@/components/organismos/Header";
@@ -29,13 +29,16 @@ const Usuarios = () => {
   const [formData, setFormData] = useState<Partial<Usuario>>({});
   const [alert, setAlert] = useState({
     isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+    title: "",
+    message: "",
+    onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
   });
-  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean, id: number | null }>({ open: false, id: null });
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    id: number | null;
+  }>({ open: false, id: null });
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [successAlertText, setSuccessAlertText] = useState('');
+  const [successAlertText, setSuccessAlertText] = useState("");
 
   const columns: Column<Usuario>[] = [
     { key: "nombre", label: "Nombre", filterable: true },
@@ -44,14 +47,28 @@ const Usuarios = () => {
     { key: "cedula", label: "Cédula", filterable: true },
     { key: "email", label: "Email", filterable: true },
     { key: "telefono", label: "Teléfono", filterable: true },
+    { 
+      key: "estado", 
+      label: "Estado", 
+      filterable: true,
+      render: (usuario) => (
+        <span className={`px-2 py-1 rounded-full text-sm ${
+          usuario.estado 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-red-100 text-red-800'
+        }`}>
+          {usuario.estado ? 'Activo' : 'Inactivo'}
+        </span>
+      )
+    },
     {
       key: "rol_id",
       label: "Rol",
       filterable: true,
       render: (usuario) => {
-        const rol = roles.find(r => r.id_rol === usuario.rol_id);
+        const rol = roles.find((r) => r.id_rol === usuario.rol_id);
         return rol ? rol.nombre_rol : usuario.rol_id;
-      }
+      },
     },
     {
       key: "acciones",
@@ -90,47 +107,80 @@ const Usuarios = () => {
     { key: "edad", label: "Edad", type: "number", required: true },
     { key: "cedula", label: "Cédula", type: "text", required: true },
     { key: "email", label: "Email", type: "email", required: true },
-    { key: "contrasena", label: "Contraseña", type: "password", required: true },
+    {
+      key: "contrasena",
+      label: "Contraseña",
+      type: "password",
+      required: true,
+    },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
+    {
+      key: "estado",
+      label: "Estado",
+      type: "select",
+      required: true,
+      options: [
+        { label: "Activo", value: "true" },
+        { label: "Inactivo", value: "false" }
+      ],
+    },
     {
       key: "rol_id",
       label: "Rol",
       type: "select",
       required: true,
-      options: roles.map(r => ({ label: r.nombre_rol, value: r.id_rol }))
-    }
+      options: roles.map((r) => ({ label: r.nombre_rol, value: r.id_rol })),
+    },
   ];
 
-
   // Crear o actualizar usuario
-  const handleSubmit = async (values: Record<string, string | number | boolean>) => {
+  const handleSubmit = async (
+    values: Record<string, string | number | boolean>
+  ) => {
     try {
       // Validar con zod
       const parsed = usuarioSchema.safeParse(values);
       if (!parsed.success) {
         setAlert({
           isOpen: true,
-          title: 'Error de validación',
-          message: parsed.error.errors.map(e => e.message).join('\n'),
-          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+          title: "Error de validación",
+          message: parsed.error.errors.map((e) => e.message).join("\n"),
+          onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
         });
         return;
       }
       // Buscar el rol seleccionado por id_rol
-      const rolSeleccionado = roles.find(r => r.id_rol === Number(values.rol_id));
+      const rolSeleccionado = roles.find(
+        (r) => r.id_rol === Number(values.rol_id)
+      );
       const payload = {
         ...values,
         rol_id: rolSeleccionado ? rolSeleccionado.id_rol : undefined,
         fecha_registro: new Date().toISOString(),
+        estado: values.estado === "true" ? true : false,
       };
       if (editingId) {
-        await actualizarUsuario(editingId, { ...payload, id: editingId });
-        setSuccessAlertText('El usuario fue actualizado correctamente.');
+        // Construir objeto Usuario completo para actualización
+        const usuarioActualizado: Usuario = {
+          id_usuario: editingId,
+          nombre: String(values.nombre),
+          apellido: String(values.apellido),
+          edad: Number(values.edad),
+          cedula: String(values.cedula),
+          email: String(values.email),
+          contrasena: String(values.contrasena),
+          telefono: String(values.telefono),
+          estado: values.estado === "true" ? true : false,
+          fecha_registro: payload.fecha_registro,
+          rol_id: Number(payload.rol_id),
+        };
+        await actualizarUsuario(editingId, usuarioActualizado);
+        setSuccessAlertText("El usuario fue actualizado correctamente.");
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
-        await crearUsuario(payload as Omit<Usuario, 'id_usuario'>);
-        setSuccessAlertText('El usuario fue creado correctamente.');
+        await crearUsuario(payload as Omit<Usuario, "id_usuario">);
+        setSuccessAlertText("El usuario fue creado correctamente.");
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
       }
@@ -138,12 +188,12 @@ const Usuarios = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el usuario:', error);
+      console.error("Error al guardar el usuario:", error);
       setAlert({
         isOpen: true,
-        title: 'Error',
-        message: 'Ocurrió un error al guardar el usuario.',
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        title: "Error",
+        message: "Ocurrió un error al guardar el usuario.",
+        onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
       });
     }
   };
@@ -157,21 +207,21 @@ const Usuarios = () => {
     if (!deleteConfirm.id) return;
     try {
       await eliminarUsuario(deleteConfirm.id);
-      setSuccessAlertText('El usuario fue eliminado correctamente.');
+      setSuccessAlertText("El usuario fue eliminado correctamente.");
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
       setAlert({
         isOpen: false,
-        title: '',
-        message: '',
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        title: "",
+        message: "",
+        onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
       });
     } catch (error) {
       setAlert({
         isOpen: true,
-        title: 'Error',
-        message: 'Ocurrió un error al eliminar el usuario.',
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        title: "Error",
+        message: "Ocurrió un error al eliminar el usuario.",
+        onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
       });
     } finally {
       setDeleteConfirm({ open: false, id: null });
@@ -198,12 +248,16 @@ const Usuarios = () => {
   };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#ECF5FF' }}>
+    <div className="flex h-screen" style={{ backgroundColor: "#ECF5FF" }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-4">
-          <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+          <AnimatedContainer
+            animation="fadeIn"
+            duration={400}
+            className="w-full"
+          >
             <h1 className="text-xl font-bold mb-4">Gestión de Usuarios</h1>
           </AnimatedContainer>
 
@@ -215,7 +269,7 @@ const Usuarios = () => {
               Crear Nuevo Usuario
             </Boton>
             <Boton
-              onPress={() => navigate('/detalle-usuario')}
+              onPress={() => navigate("/detalle-usuario")}
               className="bg-green-500 text-white px-4 py-2"
             >
               Generar Informe de Usuario
@@ -223,13 +277,21 @@ const Usuarios = () => {
           </AnimatedContainer>
 
           {/* Tabla de usuarios */}
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <AnimatedContainer
+            animation="slideUp"
+            delay={200}
+            duration={500}
+            className="w-full"
+          >
             {loading ? (
               <p>Cargando usuarios...</p>
             ) : (
               <GlobalTable
                 columns={columns}
-                data={usuarios.map((usuario) => ({ ...usuario, key: usuario.id_usuario }))}
+                data={usuarios.map((usuario) => ({
+                  ...usuario,
+                  key: usuario.id_usuario,
+                }))}
                 rowsPerPage={6}
               />
             )}
@@ -238,11 +300,15 @@ const Usuarios = () => {
           {/* Modal para crear/editar */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
+              <AnimatedContainer
+                animation="scaleIn"
+                duration={300}
+                className="w-full max-w-lg"
+              >
                 <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
                   {/* Botón X para cerrar en la esquina superior derecha */}
-                  <button 
-                    onClick={() => setIsModalOpen(false)} 
+                  <button
+                    onClick={() => setIsModalOpen(false)}
                     className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
                   >
                     <span className="text-gray-800 font-bold">×</span>
@@ -259,13 +325,12 @@ const Usuarios = () => {
                       buttonText={editingId ? "Actualizar" : "Crear"}
                       initialValues={{
                         ...formData,
-                        rol_id: formData.rol_id ?? '',
+                        rol_id: formData.rol_id ?? "",
                       }}
                       schema={usuarioSchema}
                     />
                   )}
-                  <div className="flex justify-end mt-4">
-                  </div>
+                  <div className="flex justify-end mt-4"></div>
                 </div>
               </AnimatedContainer>
             </div>

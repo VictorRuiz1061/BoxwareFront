@@ -8,11 +8,12 @@ export interface ModuloUpdate {
   descripcion_ruta?: string;
   mensaje_cambio?: string;
   fecha_accion?: string;
-  bandera_accion?: string | null;
+  estado?: boolean;
+  fecha_creacion?: string;
 }
 
 export async function putModulo(data: ModuloUpdate): Promise<Modulo> {
-  const response = await axiosInstance.put(`/modulo/${data.id}`, data);
+  const response = await axiosInstance.put(`/modulos/${data.id}`, data);
   return response.data;
 }
 

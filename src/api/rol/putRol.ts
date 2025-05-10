@@ -1,10 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-import { Rol } from "./getRoles";
+import { Rol } from "@/types/rol";
 
 export interface RolUpdate {
   id: number;
-  nombre?: string;
+  nombre_rol: string;
+  descripcion: string;
+  estado: boolean;
+  fecha_creacion: string;
+  fecha_modificacion: string;
 }
 
 export async function putRol(data: RolUpdate): Promise<Rol> {

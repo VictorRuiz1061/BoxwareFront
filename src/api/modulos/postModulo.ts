@@ -7,11 +7,12 @@ export interface NuevoModulo {
   descripcion_ruta: string;
   mensaje_cambio: string;
   fecha_accion: string;
-  bandera_accion?: string | null;
+  estado: boolean;
+  fecha_creacion: string;
 }
 
 export async function postModulo(data: NuevoModulo): Promise<Modulo> {
-  const response = await axiosInstance.post("/modulo", data);
+  const response = await axiosInstance.post("/modulos", data);
   return response.data;
 }
 

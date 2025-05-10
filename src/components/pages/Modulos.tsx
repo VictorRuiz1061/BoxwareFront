@@ -8,7 +8,7 @@ import { useGetModulos } from '../../hooks/modulos/useGetModulos';
 import { usePostModulo } from '../../hooks/modulos/usePostModulo';
 import { usePutModulo } from '../../hooks/modulos/usePutModulo';
 import { useDeleteModulo } from '../../hooks/modulos/useDeleteModulo';
-import { Modulo } from '../../api/modulos/getModulos';
+import { Modulo } from '@/types/modulo';
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
 import { moduloSchema } from '@/schemas/modulo.schema';
@@ -30,6 +30,16 @@ const ModulosPage = () => {
     { key: 'mensaje_cambio', label: 'Mensaje', filterable: true },
     { key: 'fecha_accion', label: 'Fecha', filterable: true },
     {
+      key: 'estado',
+      label: 'Estado',
+      render: (modulo) => (
+        <span className={modulo.estado ? "text-green-600" : "text-red-600"}>
+          {modulo.estado ? "Activo" : "Inactivo"}
+        </span>
+      )
+    },
+    { key: 'fecha_creacion', label: 'Fecha de Creación' },
+    {
       key: 'acciones',
       label: 'Acciones',
       render: (modulo) => (
@@ -49,7 +59,9 @@ const ModulosPage = () => {
     { key: 'rutas', label: 'Ruta', type: 'text', required: true },
     { key: 'descripcion_ruta', label: 'Descripción', type: 'text', required: true },
     { key: 'mensaje_cambio', label: 'Mensaje', type: 'text', required: true },
+    { key: 'estado', label: 'Estado', type: 'select', required: true, options: ["Activo", "Inactivo"] },
     { key: 'fecha_accion', label: 'Fecha', type: 'date', required: true },
+    { key: 'fecha_creacion', label: 'Fecha de Creación', type: 'date', required: true },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
@@ -59,7 +71,8 @@ const ModulosPage = () => {
         descripcion_ruta: values.descripcion_ruta,
         mensaje_cambio: values.mensaje_cambio,
         fecha_accion: values.fecha_accion,
-        bandera_accion: values.bandera_accion ? values.bandera_accion : null,
+        estado: values.estado === "Activo",
+        fecha_creacion: new Date(values.fecha_creacion).toISOString()
       };
 
       if (editingId) {
@@ -94,13 +107,20 @@ const ModulosPage = () => {
   };
 
   const handleCreate = () => {
-    setFormData({});
+    const today = new Date().toISOString().split('T')[0];
+    setFormData({ 
+      fecha_creacion: today,
+      estado: true
+    });
     setEditingId(null);
     setIsModalOpen(true);
   };
 
   const handleEdit = (modulo: Modulo) => {
-    setFormData(modulo);
+    setFormData({
+      ...modulo,
+      estado: modulo.estado ? "Activo" : "Inactivo"
+    });
     setEditingId(modulo.id_modulo);
     setIsModalOpen(true);
   };
@@ -150,8 +170,8 @@ const ModulosPage = () => {
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     ...formData,
-                    id_modulo: formData.id_modulo?.toString(),
-                    bandera_accion: formData.bandera_accion ?? ''
+                    estado: formData.estado ? "Activo" : "Inactivo",
+                    fecha_creacion: formData.fecha_creacion ?? new Date().toISOString().split('T')[0]
                   }}
                   schema={moduloSchema}
                 />
