@@ -81,12 +81,20 @@ const Roles = () => {
       };
       console.log('Payload preparado para enviar:', payload);
       if (editingId) {
-        await actualizarRol(editingId, { ...payload, id: editingId });
+        await actualizarRol(editingId, {
+          ...payload, id: editingId,
+          nombre_rol: '',
+          fecha_modificacion: ''
+        });
         setSuccessAlertText('Rol actualizado con éxito');
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
-        await crearRol(payload);
+        await crearRol({
+          ...payload,
+          nombre_rol: payload.nombre,
+          fecha_modificacion: new Date().toISOString()
+        });
         setSuccessAlertText('Rol creado con éxito');
         setShowSuccessAlert(true);
         setTimeout(() => setShowSuccessAlert(false), 3000);
@@ -211,5 +219,3 @@ const Roles = () => {
 };
 
 export default Roles;
-
-

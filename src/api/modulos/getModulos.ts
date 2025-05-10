@@ -7,11 +7,12 @@ export interface Modulo {
   rutas: string;
   descripcion_ruta: string;
   mensaje_cambio: string;
-  bandera_accion: string | null;
+  estado: boolean;
+  fecha_creacion: string;
 }
 
 export async function getModulos(): Promise<Modulo[]> {
-  const response = await axiosInstance.get("/modulo");
+  const response = await axiosInstance.get("/modulos");
   return response.data;
 }
 

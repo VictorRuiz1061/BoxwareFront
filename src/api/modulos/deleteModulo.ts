@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 
 export async function deleteModulo(id: number): Promise<void> {
-  await axiosInstance.delete(`/modulo/${id}`);
+  await axiosInstance.delete(`/modulos/${id}`);
 }
 
 export function useDeleteModulo() {

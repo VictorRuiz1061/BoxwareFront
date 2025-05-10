@@ -47,6 +47,20 @@ const Usuarios = () => {
     { key: "cedula", label: "Cédula", filterable: true },
     { key: "email", label: "Email", filterable: true },
     { key: "telefono", label: "Teléfono", filterable: true },
+    { 
+      key: "estado", 
+      label: "Estado", 
+      filterable: true,
+      render: (usuario) => (
+        <span className={`px-2 py-1 rounded-full text-sm ${
+          usuario.estado 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-red-100 text-red-800'
+        }`}>
+          {usuario.estado ? 'Activo' : 'Inactivo'}
+        </span>
+      )
+    },
     {
       key: "rol_id",
       label: "Rol",
@@ -101,6 +115,16 @@ const Usuarios = () => {
     },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
     {
+      key: "estado",
+      label: "Estado",
+      type: "select",
+      required: true,
+      options: [
+        { label: "Activo", value: "true" },
+        { label: "Inactivo", value: "false" }
+      ],
+    },
+    {
       key: "rol_id",
       label: "Rol",
       type: "select",
@@ -133,6 +157,7 @@ const Usuarios = () => {
         ...values,
         rol_id: rolSeleccionado ? rolSeleccionado.id_rol : undefined,
         fecha_registro: new Date().toISOString(),
+        estado: values.estado === "true" ? true : false,
       };
       if (editingId) {
         // Construir objeto Usuario completo para actualización
@@ -145,8 +170,7 @@ const Usuarios = () => {
           email: String(values.email),
           contrasena: String(values.contrasena),
           telefono: String(values.telefono),
-          esta_activo:
-            typeof values.esta_activo === "boolean" ? values.esta_activo : true,
+          estado: values.estado === "true" ? true : false,
           fecha_registro: payload.fecha_registro,
           rol_id: Number(payload.rol_id),
         };

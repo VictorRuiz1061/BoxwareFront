@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 
 export interface Permiso {
+  [x: string]: any;
   id: number;
   nombre: string;
   codigo_nombre: string;
