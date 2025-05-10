@@ -6,9 +6,9 @@ export const municipioSchema = z.object({
     .max(50, 'El nombre del municipio no puede tener más de 50 caracteres'),
   estado: z.enum(['Activo', 'Inactivo'], {
     errorMap: () => ({ message: 'Debe seleccionar un estado válido' })
-  }),
+  }).optional(), // Opcional para creación
   fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación'),
-  fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación'),
+  fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación').optional(), // Opcional para creación
 });
 
 export type MunicipioSchema = z.infer<typeof municipioSchema>; 

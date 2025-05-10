@@ -20,18 +20,36 @@ const Sedes = () => {
   const { centros } = useGetCentros();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Partial<Sede>>({});
+  // Usamos string para todos los campos del formulario para evitar errores de tipo
+  type SedeFormValues = {
+    nombre_sede: string;
+    direccion_sede: string;
+    centro_id: string;
+    fecha_creacion: string;
+    fecha_modificacion?: string;
+    estado?: string; // 'Activo' | 'Inactivo'
+  };
+  const [formData, setFormData] = useState<Partial<SedeFormValues>>({});
 
-  const columns: Column<Sede>[] = [
+  const columns: Column<Sede & { key: number }>[]= [
     { key: "nombre_sede", label: "Nombre de la Sede", filterable: true },
     { key: "direccion_sede", label: "Dirección de la sede", filterable: true },
     {
-      key: "centro_sede_id",
+      key: "estado",
+      label: "Estado",
+      render: (sede) => (
+        <span className={sede.estado ? "text-green-600" : "text-red-600"}>
+          {sede.estado ? "Activo" : "Inactivo"}
+        </span>
+      )
+    },
+    {
+      key: "centro_id",
       label: "Centro",
       filterable: true,
       render: (sede) => {
-        const centro = centros.find(c => c.id_centro === sede.centro_sede_id);
-        return centro ? centro.nombre_centro : sede.centro_sede_id;
+        const centro = centros.find(c => c.id_centro === sede.centro_id);
+        return centro ? centro.nombre_centro : sede.centro_id;
       }
     },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
@@ -58,19 +76,29 @@ const Sedes = () => {
     },
   ];
 
-  const formFields: FormField[] = [
+  // Campos base para ambos formularios
+  const baseFields: FormField[] = [
     { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
     { key: "direccion_sede", label: "Dirección de la sede", type: "text", required: true },
-    { 
-      key: "centro_sede_id", 
-      label: "Centro", 
-      type: "select", 
-      required: true, 
-      options: centros.map(c => ({ label: c.nombre_centro, value: c.id_centro.toString() })) 
-    },
+    { key: "centro_id", label: "Centro", type: "select", required: true, options: centros.map(c => ({ label: c.nombre_centro, value: c.id_centro.toString() })) },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+  ];
+  // Campos adicionales sólo para edición
+  const editFields: FormField[] = [
+    {
+      key: "estado",
+      label: "Estado",
+      type: "select",
+      required: true,
+      options: [
+        { value: "Activo", label: "Activo" },
+        { value: "Inactivo", label: "Inactivo" }
+      ]
+    },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
+  // Selección dinámica de campos
+  const formFields: FormField[] = editingId ? [...baseFields, ...editFields] : baseFields;
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
@@ -80,34 +108,23 @@ const Sedes = () => {
         alert(parsed.error.errors.map(e => e.message).join('\n'));
         return;
       }
-
       // Validar que todos los campos requeridos estén presentes
-      if (!values.nombre_sede || !values.direccion_sede || !values.centro_sede_id || !values.fecha_creacion || !values.fecha_modificacion) {
+      if (!values.nombre_sede || !values.direccion_sede || !values.centro_id || !values.fecha_creacion) {
         alert('Todos los campos son requeridos');
         return;
       }
-
-      // Verificar los valores de los centros
-      console.log('Centros disponibles:', centros);
-      console.log('Valor seleccionado para centro_sede_id:', values.centro_sede_id);
-
-      // Buscar el centro por id
-      const centroSeleccionado = centros.find(c => c.id_centro === Number(values.centro_sede_id));
-      if (!centroSeleccionado) {
-        throw new Error('Centro no encontrado');
-      }
-
+      const hoy = new Date().toISOString().split('T')[0];
+      // Estado: sólo se toma del form si es edición, si no siempre es 'Activo'
+      const estadoValue = editingId ? values.estado : 'Activo';
       // Preparar los datos
       const sedeData = {
         nombre_sede: values.nombre_sede.trim(),
         direccion_sede: values.direccion_sede.trim(),
-        fecha_creacion: new Date(values.fecha_creacion).toISOString(),
-        fecha_modificacion: new Date(values.fecha_modificacion).toISOString(),
-        centro_sede_id: centroSeleccionado.id_centro
+        fecha_creacion: values.fecha_creacion,
+        fecha_modificacion: editingId ? (values.fecha_modificacion || hoy) : hoy,
+        centro_sede_id: Number(values.centro_id), // Map centro_id to centro_sede_id
+        estado: estadoValue === 'Activo', // true para 'Activo', false para 'Inactivo'
       };
-
-      console.log('Datos preparados para enviar:', sedeData);
-
       if (editingId) {
         await actualizarSede(editingId, sedeData);
         alert('Sede actualizada con éxito');
@@ -119,11 +136,20 @@ const Sedes = () => {
       setFormData({});
       setEditingId(null);
     } catch (error: any) {
+      // Manejo seguro del error
+      let errorMessage = 'Error desconocido';
+      if (error && typeof error === 'object') {
+        if ('response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
+          errorMessage = (error.response.data as any).message;
+        } else if ('message' in error) {
+          errorMessage = (error as any).message;
+        }
+      }
       console.error('Error detallado al guardar la sede:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
       alert(`Error al guardar la sede: ${errorMessage}`);
     }
   };
+
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar esta sede?')) return;
@@ -139,8 +165,11 @@ const Sedes = () => {
   const handleCreate = () => {
     const hoy = new Date().toISOString().split('T')[0];
     setFormData({
+      nombre_sede: '',
+      direccion_sede: '',
+      centro_id: '',
       fecha_creacion: hoy,
-      fecha_modificacion: hoy
+      estado: 'Activo', // Valor por defecto para creación
     });
     setEditingId(null);
     setIsModalOpen(true);
@@ -150,9 +179,10 @@ const Sedes = () => {
     setFormData({
       nombre_sede: sede.nombre_sede,
       direccion_sede: sede.direccion_sede,
-      fecha_creacion: sede.fecha_creacion,
-      fecha_modificacion: sede.fecha_modificacion,
-      centro_sede_id: sede.centro_sede_id
+      centro_id: String(sede.centro_id),
+      fecha_creacion: sede.fecha_creacion?.split('T')[0],
+      fecha_modificacion: sede.fecha_modificacion?.split('T')[0],
+      estado: sede.estado ? 'Activo' : 'Inactivo',
     });
     setEditingId(sede.id_sede);
     setIsModalOpen(true);
@@ -199,9 +229,10 @@ const Sedes = () => {
                   initialValues={{
                     nombre_sede: formData.nombre_sede || '',
                     direccion_sede: formData.direccion_sede || '',
+                    centro_id: formData.centro_id || '',
                     fecha_creacion: formData.fecha_creacion || '',
-                    fecha_modificacion: formData.fecha_modificacion || '',
-                    centro_sede_id: formData.centro_sede_id?.toString() || ''
+                    // Solo pasamos fecha_modificacion y estado si es edición
+                    ...(editingId ? { fecha_modificacion: formData.fecha_modificacion || '', estado: formData.estado || 'Activo' } : {}),
                   }}
                   schema={sedeSchema}
                 />

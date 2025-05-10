@@ -20,10 +20,28 @@ const Centros = () => {
   const { municipios } = useGetMunicipios();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Partial<Centro>>({});
+  // Usamos string para todos los campos del formulario para evitar errores de tipo
+  type CentroFormValues = {
+    nombre_centro: string;
+    municipio_id: string;
+    fecha_creacion: string;
+    fecha_modificacion?: string;
+    estado?: string; // 'Activo' | 'Inactivo'
+    codigo_centro?: string;
+  };
+  const [formData, setFormData] = useState<Partial<CentroFormValues>>({});
 
-  const columns: Column<Centro>[] = [
+  const columns: Column<Centro & { key: number }>[]= [
     { key: "nombre_centro", label: "Nombre del Centro", filterable: true },
+    {
+      key: "estado",
+      label: "Estado",
+      render: (centro) => (
+        <span className={centro.estado ? "text-green-600" : "text-red-600"}>
+          {centro.estado ? "Activo" : "Inactivo"}
+        </span>
+      )
+    },
     {
       key: "municipio_id",
       label: "Municipio",
@@ -57,11 +75,30 @@ const Centros = () => {
     },
   ];
 
-  const formFields: FormField[] = [
+  // Campos base para ambos formularios
+  const baseFields: FormField[] = [
     { key: "nombre_centro", label: "Nombre del Centro", type: "text", required: true },
     { key: "municipio_id", label: "Municipio", type: "select", required: true, options: municipios.map(m => ({ label: m.nombre_municipio, value: m.id_municipio })) },
+    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+  ];
+
+  // Campos adicionales sólo para edición
+  const editFields: FormField[] = [
+    {
+      key: "estado",
+      label: "Estado",
+      type: "select",
+      required: true,
+      options: [
+        { value: "Activo", label: "Activo" },
+        { value: "Inactivo", label: "Inactivo" }
+      ]
+    },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
+
+  // Selección dinámica de campos
+  const formFields: FormField[] = editingId ? [...baseFields, ...editFields] : baseFields;
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
@@ -70,27 +107,22 @@ const Centros = () => {
         throw new Error('Municipio no encontrado');
       }
       const hoy = new Date().toISOString().slice(0, 10);
-      const datosParaEnviar = {
+      // Estado: sólo se toma del form si es edición, si no siempre es 'Activo'
+      const estadoValue = editingId ? values.estado : 'Activo';
+      const payload = {
         id_centro: editingId ?? undefined,
         nombre_centro: values.nombre_centro,
+        codigo_centro: values.codigo_centro || `C${Date.now()}`,
         municipio_id: municipioSeleccionado.id_municipio,
-        fecha_creacion: editingId ? values.fecha_creacion : hoy,
-        fecha_modificacion: hoy
-      };
+        estado: estadoValue === 'Activo', // true para 'Activo', false para 'Inactivo'
+        fecha_creacion: values.fecha_creacion || hoy,
+        fecha_modificacion: editingId ? (values.fecha_modificacion || hoy) : hoy
+      } as Centro;
+
       if (editingId) {
-        const datosActualizar = {
-          nombre_centro: datosParaEnviar.nombre_centro,
-          municipio_id: datosParaEnviar.municipio_id,
-          fecha_modificacion: datosParaEnviar.fecha_modificacion,
-          id_centro: editingId
-        };
-        await actualizarCentro(editingId, datosActualizar);
+        await actualizarCentro(editingId, payload);
       } else {
-        const datosCrear = {
-          ...datosParaEnviar,
-          codigo_centro: `C${Date.now()}` // Genera un código único
-        };
-        await crearCentro(datosCrear);
+        await crearCentro(payload);
       }
       alert(`Centro ${editingId ? "actualizado" : "creado"} con éxito`);
       setIsModalOpen(false);
@@ -114,13 +146,25 @@ const Centros = () => {
 
   const handleCreate = () => {
     const hoy = new Date().toISOString().slice(0, 10);
-    setFormData({ fecha_creacion: hoy, fecha_modificacion: hoy });
+    setFormData({
+      nombre_centro: '',
+      municipio_id: '',
+      fecha_creacion: hoy,
+      estado: 'Activo', // Valor por defecto para creación
+    });
     setEditingId(null);
     setIsModalOpen(true);
   };
 
   const handleEdit = (centro: Centro) => {
-    setFormData(centro);
+    setFormData({
+      nombre_centro: centro.nombre_centro,
+      municipio_id: String(centro.municipio_id),
+      fecha_creacion: centro.fecha_creacion?.split('T')[0],
+      fecha_modificacion: centro.fecha_modificacion?.split('T')[0],
+      estado: centro.estado ? 'Activo' : 'Inactivo',
+      codigo_centro: centro.codigo_centro,
+    });
     setEditingId(centro.id_centro);
     setIsModalOpen(true);
   };
@@ -166,10 +210,10 @@ const Centros = () => {
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     ...formData,
-                    id_centro: formData.id_centro?.toString(),
-                    municipio_id: formData.municipio_id ? String(formData.municipio_id) : '',
-                    fecha_creacion: formData.fecha_creacion,
-                    fecha_modificacion: formData.fecha_modificacion
+                    municipio_id: formData.municipio_id || '',
+                    fecha_creacion: formData.fecha_creacion || '',
+                    // Solo pasamos fecha_modificacion y estado si es edición
+                    ...(editingId ? { fecha_modificacion: formData.fecha_modificacion || '', estado: formData.estado || 'Activo' } : {}),
                   }}
                   schema={centroSchema}
                 />

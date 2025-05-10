@@ -61,33 +61,47 @@ const Municipios = () => {
     },
   ];
 
-  const formFields: FormField[] = [
+  // Campos base para ambos formularios
+  const baseFields: FormField[] = [
     { key: "nombre_municipio", label: "Nombre del Municipio", type: "text", required: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+  ];
+
+  // Campos adicionales sólo para edición
+  const editFields: FormField[] = [
     { 
       key: "estado", 
       label: "Estado", 
       type: "select", 
       required: true, 
       options: [
-        { value: "true", label: "Activo" },
-        { value: "false", label: "Inactivo" }
+        { value: "Activo", label: "Activo" },
+        { value: "Inactivo", label: "Inactivo" }
       ] 
     },
-    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
+
+  // Selección dinámica de campos
+  const formFields: FormField[] = editingId ? [...baseFields, ...editFields] : baseFields;
+
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
       const fechaCreacion = values.fecha_creacion ? new Date(values.fecha_creacion).toISOString() : new Date().toISOString();
-      const fechaModificacion = values.fecha_modificacion ? new Date(values.fecha_modificacion).toISOString() : new Date().toISOString();
+      // Si es edición, usar fecha_modificacion del form, si no, poner fecha actual
+      const fechaModificacion = editingId
+        ? (values.fecha_modificacion ? new Date(values.fecha_modificacion).toISOString() : new Date().toISOString())
+        : new Date().toISOString();
 
-      console.log('Valores del formulario:', values);
-      console.log('Estado seleccionado:', values.estado);
+      // El estado sólo se toma del form si es edición, si no siempre es 'Activo'
+      const estadoValue = editingId
+        ? values.estado // 'Activo' o 'Inactivo' del select
+        : 'Activo';
 
       const payload = {
         nombre_municipio: values.nombre_municipio,
-        estado: values.estado === "true",
+        estado: estadoValue === 'Activo', // true para 'Activo', false para 'Inactivo'
         fecha_creacion: fechaCreacion,
         fecha_modificacion: fechaModificacion
       };
@@ -131,7 +145,7 @@ const Municipios = () => {
     setFormData({
       fecha_creacion: today.split('T')[0],
       fecha_modificacion: today.split('T')[0],
-      estado: "true"
+      estado: "Activo" // Valor por defecto para creación
     });
     setEditingId(null);
     setIsModalOpen(true);
@@ -141,7 +155,7 @@ const Municipios = () => {
     console.log('Datos del municipio a editar:', municipio);
     setFormData({
       nombre_municipio: municipio.nombre_municipio,
-      estado: municipio.estado ? "true" : "false",
+      estado: municipio.estado ? "Activo" : "Inactivo", // Convertir booleano a string para el formulario
       fecha_creacion: municipio.fecha_creacion.split('T')[0],
       fecha_modificacion: new Date().toISOString().split('T')[0]
     });
@@ -193,9 +207,11 @@ const Municipios = () => {
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     ...formData,
-                    estado: formData.estado ?? "Activo",
+                    // Si es creación, aseguramos estado "Activo" por defecto aunque no se muestre
+                    ...(editingId ? {} : { estado: "Activo" }),
                     fecha_creacion: formData.fecha_creacion ?? new Date().toISOString().split('T')[0],
-                    fecha_modificacion: formData.fecha_modificacion ?? new Date().toISOString().split('T')[0]
+                    // Solo pasamos fecha_modificacion si es edición
+                    ...(editingId ? { fecha_modificacion: formData.fecha_modificacion ?? new Date().toISOString().split('T')[0] } : {})
                   }}
                   schema={municipioSchema}
                 />
