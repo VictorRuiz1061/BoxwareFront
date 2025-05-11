@@ -52,3 +52,7 @@ export function useGetAuth() {
 
   return { ...authState, getTokenFromCookie };
 } 
+
+function removeTokenCookie() {
+  throw new Error('Function not implemented.');
+}

@@ -6,8 +6,8 @@ import AnimatedContainer from '../atomos/AnimatedContainer';
 
 const InicioSesion = () => {
   const navigate = useNavigate(); 
-  const { isAuthenticated, loading, error } = useGetAuth();
-  const { login, validationErrors } = usePostAuth();
+  const { error } = useGetAuth();
+  const { login } = usePostAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
