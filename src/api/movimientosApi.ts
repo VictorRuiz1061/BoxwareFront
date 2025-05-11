@@ -12,7 +12,7 @@ export const crearMovimiento = async (movimiento: Omit<Movimiento, 'id_movimient
 };
 
 export const actualizarMovimiento = async (id: number, movimiento: Partial<Movimiento>): Promise<Movimiento> => {
-  const response = await axiosInstance.put<Movimiento>(`/movimientos/${id}`, movimiento);
+  const response = await axiosInstance.patch<Movimiento>(`/movimientos/${id}`, movimiento);
   return response.data;
 };
 

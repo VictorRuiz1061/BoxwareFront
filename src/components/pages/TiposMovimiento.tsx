@@ -1,39 +1,71 @@
 import { useState } from 'react';
-import Boton from '../atomos/Boton';
-import Sidebar from '../organismos/Sidebar';
-import Header from "../organismos/Header";
-import GlobalTable, { Column } from "../organismos/Table";
-import Form, { FormField } from "../organismos/Form";
-import { useTiposMovimiento } from '../../hooks/useTiposMovimiento';
-import { TipoMovimiento } from '../../types/tipoMovimiento';
+import { Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
+import { tipoMovimientoSchema } from '@/schemas/tipoMovimiento.schema';
+import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento/useGetTiposMovimiento';
+import { usePostTipoMovimiento } from '@/hooks/tipoMovimiento/usePostTipoMovimiento';
+import { usePutTipoMovimiento } from '@/hooks/tipoMovimiento/usePutTipoMovimiento';
+// La importación de useDeleteTipoMovimiento ha sido eliminada ya que no se utiliza más
+import { TipoMovimiento } from '@/types/tipoMovimiento';
+import AlertDialog from '@/components/atomos/AlertDialog';
+import Boton from "@/components/atomos/Boton";
+import Sidebar from "@/components/organismos/Sidebar";
+import Header from "@/components/organismos/Header";
+import GlobalTable, { Column } from "@/components/organismos/Table";
+import Form, { FormField } from "@/components/organismos/Form";
 
 const TiposMovimiento = () => {
-  const { tiposMovimiento, loading, crearTipoMovimiento, actualizarTipoMovimiento, eliminarTipoMovimiento } = useTiposMovimiento();
+  const { tiposMovimiento, loading } = useGetTiposMovimiento();
+  const { crearTipoMovimiento } = usePostTipoMovimiento();
+  const { actualizarTipoMovimiento } = usePutTipoMovimiento();
+  // La declaración de eliminarTipoMovimiento ha sido eliminada ya que no se utiliza más
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoMovimiento>>({});
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+  });
+  // La variable deleteConfirm ha sido eliminada ya que no se utiliza más
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successAlertText, setSuccessAlertText] = useState('');
 
-  const columns: Column<TipoMovimiento>[] = [
+  const columns: Column<TipoMovimiento & { key: any }>[] = [
     { key: "id_tipo_movimiento", label: "ID", filterable: true },
     { key: "tipo_movimiento", label: "Tipo de Movimiento", filterable: true },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
+    {
+      key: "estado",
+      label: "Estado",
+      render: (tipoMovimiento) => (
+        <div className="flex items-center justify-center">
+          {tipoMovimiento.estado ? 
+            <span className="text-green-500 font-medium">Activo</span> : 
+            <span className="text-red-500 font-medium">Inactivo</span>
+          }
+        </div>
+      ),
+    },
     {
       key: "acciones",
       label: "Acciones",
       render: (tipoMovimiento) => (
         <div className="flex gap-2">
           <Boton
-            onClick={() => handleEdit(tipoMovimiento)}
-            className="bg-yellow-500 text-white px-2 py-1"
+            onPress={() => handleEdit(tipoMovimiento)}
+            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Editar"
           >
-            Editar
+            <Pencil size={18} />
           </Boton>
           <Boton
-            onClick={() => handleDelete(tipoMovimiento.id_tipo_movimiento)}
-            className="bg-red-500 text-white px-2 py-1"
+            onPress={() => handleToggleEstado(tipoMovimiento)}
+            className={`${tipoMovimiento.estado ? 'bg-green-500' : 'bg-gray-500'} text-white px-2 py-1 flex items-center justify-center`}
+            aria-label={tipoMovimiento.estado ? "Desactivar" : "Activar"}
           >
-            Eliminar
+            {tipoMovimiento.estado ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
           </Boton>
         </div>
       ),
@@ -44,17 +76,67 @@ const TiposMovimiento = () => {
     { key: "tipo_movimiento", label: "Tipo de Movimiento", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
+    { key: "estado", label: "Estado", type: "checkbox", required: false },
   ];
 
   // Crear o actualizar tipo de movimiento
-  const handleSubmit = async (values: Record<string, any>) => {
+  const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
-      if (editingId) {
-        await actualizarTipoMovimiento(editingId, values);
-        alert("Tipo de movimiento actualizado con éxito");
-      } else {
-        await crearTipoMovimiento(values as Omit<TipoMovimiento, "id_tipo_movimiento">);
-        alert("Tipo de movimiento creado con éxito");
+      // Validar con zod
+      const parsed = tipoMovimientoSchema.safeParse(values);
+      if (!parsed.success) {
+        setAlert({
+          isOpen: true,
+          title: 'Error de validación',
+          message: parsed.error.errors.map(e => e.message).join('\n'),
+          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        });
+        return;
+      }
+      
+      // Asegurarse de que el campo estado sea booleano
+      const estado = typeof values.estado === 'boolean' ? values.estado : 
+                    values.estado === 'true' ? true : 
+                    Boolean(values.estado);
+      
+      try {
+        if (editingId) {
+          // Para actualización, preparar los datos necesarios
+          const updateData: Partial<TipoMovimiento> = {
+            tipo_movimiento: String(values.tipo_movimiento),
+            fecha_modificacion: new Date().toISOString().split('T')[0],
+            estado: estado
+          };
+          
+          console.log('Actualizando tipo de movimiento:', editingId, updateData);
+          await actualizarTipoMovimiento(editingId, updateData);
+          setSuccessAlertText('El tipo de movimiento fue actualizado correctamente.');
+          setShowSuccessAlert(true);
+          setTimeout(() => setShowSuccessAlert(false), 3000);
+        } else {
+          // Para creación, preparar todos los datos necesarios
+          const createData: Omit<TipoMovimiento, 'id_tipo_movimiento'> = {
+            tipo_movimiento: String(values.tipo_movimiento),
+            fecha_creacion: String(values.fecha_creacion),
+            fecha_modificacion: new Date().toISOString().split('T')[0],
+            estado: estado
+          };
+          
+          console.log('Creando nuevo tipo de movimiento:', createData);
+          await crearTipoMovimiento(createData);
+          setSuccessAlertText('El tipo de movimiento fue creado correctamente.');
+          setShowSuccessAlert(true);
+          setTimeout(() => setShowSuccessAlert(false), 3000);
+        }
+      } catch (error) {
+        console.error('Error al guardar:', error);
+        setAlert({
+          isOpen: true,
+          title: 'Error',
+          message: `Error al ${editingId ? 'actualizar' : 'crear'} el tipo de movimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        });
+        return;
       }
       
       // Cerrar modal y limpiar estado
@@ -63,23 +145,41 @@ const TiposMovimiento = () => {
       setEditingId(null);
     } catch (error) {
       console.error("Error al guardar el tipo de movimiento:", error);
-      alert(`Error al guardar el tipo de movimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: 'Ocurrió un error al guardar el tipo de movimiento.',
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
-  // Eliminar tipo de movimiento
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este tipo de movimiento?"))
-      return;
-
+  // Cambiar el estado (activo/inactivo) de un tipo de movimiento
+  const handleToggleEstado = async (tipoMovimiento: TipoMovimiento) => {
     try {
-      await eliminarTipoMovimiento(id);
-      alert("Tipo de movimiento eliminado con éxito");
+      // Preparar los datos para actualizar solo el estado
+      const updateData: Partial<TipoMovimiento> = {
+        estado: !tipoMovimiento.estado, // Invertir el estado actual
+        fecha_modificacion: new Date().toISOString().split('T')[0]
+      };
+      
+      console.log(`Cambiando estado de tipo de movimiento ${tipoMovimiento.id_tipo_movimiento} a ${!tipoMovimiento.estado ? 'Activo' : 'Inactivo'}`);
+      await actualizarTipoMovimiento(tipoMovimiento.id_tipo_movimiento, updateData);
+      setSuccessAlertText(`El tipo de movimiento fue ${!tipoMovimiento.estado ? 'activado' : 'desactivado'} correctamente.`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     } catch (error) {
-      console.error("Error al eliminar el tipo de movimiento:", error);
-      alert("Error al eliminar el tipo de movimiento");
+      console.error('Error al cambiar el estado:', error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: `Error al cambiar el estado del tipo de movimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
+
+  // La función confirmDelete ha sido eliminada ya que no se utiliza más
 
   // Abrir modal para crear nuevo tipo de movimiento
   const handleCreate = () => {
@@ -87,7 +187,8 @@ const TiposMovimiento = () => {
     const today = new Date().toISOString().split('T')[0];
     setFormData({
       fecha_creacion: today,
-      fecha_modificacion: today
+      fecha_modificacion: today,
+      estado: true
     });
     setEditingId(null);
     setIsModalOpen(true);
@@ -108,15 +209,22 @@ const TiposMovimiento = () => {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ backgroundColor: '#ECF5FF' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-4">
+          {/* Alerta de éxito */}
+          {showSuccessAlert && (
+            <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-out">
+              {successAlertText}
+            </div>
+          )}
+
           <h1 className="text-xl font-bold mb-4">Gestión de Tipos de Movimiento</h1>
 
           <Boton
-            onClick={handleCreate}
+            onPress={handleCreate}
             className="bg-blue-500 text-white px-4 py-2 mb-4"
           >
             Crear Nuevo Tipo de Movimiento
@@ -155,12 +263,24 @@ const TiposMovimiento = () => {
                   initialValues={{
                     tipo_movimiento: formData.tipo_movimiento || '',
                     fecha_creacion: formData.fecha_creacion || '',
-                    fecha_modificacion: formData.fecha_modificacion || ''
+                    fecha_modificacion: formData.fecha_modificacion || '',
+                    estado: formData.estado !== undefined ? formData.estado : true
                   }}
                 />
               </div>
             </div>
           )}
+
+          {/* Diálogo de alerta para errores */}
+          <AlertDialog
+            isOpen={alert.isOpen}
+            title={alert.title}
+            message={alert.message}
+            onConfirm={alert.onConfirm}
+            onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
+          />
+
+          {/* El diálogo de confirmación para eliminar ha sido eliminado */}
         </main>
       </div>
     </div>

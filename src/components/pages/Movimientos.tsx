@@ -1,43 +1,68 @@
 import { useState } from 'react';
-import Boton from '../atomos/Boton';
-import Sidebar from '../organismos/Sidebar';
-import Header from "../organismos/Header";
-import GlobalTable, { Column } from "../organismos/Table";
-import Form, { FormField } from "../organismos/Form";
-import { useMovimientos } from '../../hooks/useMovimientos';
-import { Movimiento } from '../../types/movimiento';
-import { useGetUsuarios } from '../../hooks/usuario/useGetUsuarios';
-import { useTiposMovimiento } from '../../hooks/useTiposMovimiento';
+import { Pencil } from 'lucide-react';
+import { movimientoSchema } from '@/schemas/movimiento.schema';
+import { useMovimientos } from '@/hooks/useMovimientos';
+import { Movimiento } from '@/types/movimiento';
+import { useGetUsuarios } from '@/hooks/usuario/useGetUsuarios';
+import { useTiposMovimiento } from '@/hooks/useTiposMovimiento';
+import AlertDialog from '@/components/atomos/AlertDialog';
+import Boton from "@/components/atomos/Boton";
+import ToggleEstadoBoton from "@/components/atomos/ToggleEstadoBoton";
+import SuccessAlert from "@/components/atomos/SuccessAlert";
+import Sidebar from "@/components/organismos/Sidebar";
+import Header from "@/components/organismos/Header";
+import GlobalTable, { Column } from "@/components/organismos/Table";
+import Form, { FormField } from "@/components/organismos/Form";
 
 const Movimientos = () => {
-  const { movimientos, loading, crearMovimiento, actualizarMovimiento, eliminarMovimiento } = useMovimientos();
+  const { movimientos, loading, crearMovimiento, actualizarMovimiento, fetchMovimientos } = useMovimientos();
   const { usuarios } = useGetUsuarios();
   const { tiposMovimiento } = useTiposMovimiento();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Movimiento>>({});
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+  });
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const columns: Column<Movimiento>[] = [
+  const columns: Column<Movimiento & { key: any }>[] = [
     { key: "id_movimiento", label: "ID", filterable: true },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
-      key: "usuario_movimiento_id",
+      key: "usuario_id",
       label: "Usuario",
       filterable: true,
       render: (movimiento) => {
-        const usuario = usuarios.find(u => u.id_usuario === movimiento.usuario_movimiento_id);
-        return usuario ? `${usuario.nombre} ${usuario.apellido}` : movimiento.usuario_movimiento_id;
+        const usuario = usuarios.find(u => u.id_usuario === movimiento.usuario_id);
+        return usuario ? `${usuario.nombre} ${usuario.apellido}` : movimiento.usuario_id;
       }
     },
     {
-      key: "tipo_movimiento_id",
+      key: "tipo_movimiento",
       label: "Tipo de Movimiento",
       filterable: true,
       render: (movimiento) => {
-        const tipo = tiposMovimiento.find(t => t.id_tipo_movimiento === movimiento.tipo_movimiento_id);
-        return tipo ? tipo.tipo_movimiento : movimiento.tipo_movimiento_id;
+        const tipo = tiposMovimiento.find(t => t.id_tipo_movimiento === movimiento.tipo_movimiento);
+        return tipo ? tipo.tipo_movimiento : movimiento.tipo_movimiento;
       }
+    },
+    {
+      key: "estado",
+      label: "Estado",
+      render: (movimiento) => (
+        <div className="flex items-center justify-center">
+          {movimiento.estado ? 
+            <span className="text-green-500 font-medium">Activo</span> : 
+            <span className="text-red-500 font-medium">Inactivo</span>
+          }
+        </div>
+      ),
     },
     {
       key: "acciones",
@@ -46,16 +71,16 @@ const Movimientos = () => {
         <div className="flex gap-2">
           <Boton
             onPress={() => handleEdit(movimiento)}
-            className="bg-yellow-500 text-white px-2 py-1"
+            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
+            aria-label="Editar"
           >
-            Editar
+            <Pencil size={18} />
           </Boton>
-          <Boton
-            onPress={() => handleDelete(movimiento.id_movimiento)}
-            className="bg-red-500 text-white px-2 py-1"
-          >
-            Eliminar
-          </Boton>
+          <ToggleEstadoBoton
+            estado={movimiento.estado}
+            onToggle={() => handleToggleEstado(movimiento)}
+            size={18}
+          />
         </div>
       ),
     },
@@ -63,62 +88,144 @@ const Movimientos = () => {
 
   // Definir campos del formulario dinámicamente
   const formFields: FormField[] = [
-    { key: "usuario_movimiento_id", label: "Usuario", type: "select", required: true, options: usuarios.map(u => `${u.nombre} ${u.apellido}`) },
-    { key: "tipo_movimiento_id", label: "Tipo de Movimiento", type: "select", required: true, options: tiposMovimiento.map(t => t.tipo_movimiento) },
+    {
+      key: "usuario_id",
+      label: "Usuario",
+      type: "select",
+      required: true,
+      options: usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` }))
+    },
+    {
+      key: "tipo_movimiento",
+      label: "Tipo de Movimiento",
+      type: "select",
+      required: true,
+      options: tiposMovimiento.map(t => ({ value: t.id_tipo_movimiento, label: t.tipo_movimiento }))
+    },
+    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
+    { key: "estado", label: "Estado", type: "checkbox", required: false },
   ];
-  if (editingId) {
-    formFields.unshift({ key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true });
-  } else {
-    formFields.unshift({ key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true });
-  }
 
   // Crear o actualizar movimiento
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
-      const movimientoData = {
-        usuario_movimiento_id: usuarios.find(u => `${u.nombre} ${u.apellido}` === values.usuario_movimiento_id)?.id_usuario || 0,
-        tipo_movimiento_id: tiposMovimiento.find(t => t.tipo_movimiento === values.tipo_movimiento_id)?.id_tipo_movimiento || 0,
-        fecha_modificacion: editingId
-          ? String(values.fecha_modificacion)
-          : String(values.fecha_creacion),
-        fecha_creacion: editingId
-          ? String(formData.fecha_creacion || "")
-          : String(values.fecha_creacion),
+      // Validar con zod
+      const parsedValues = {
+        ...values,
+        usuario_id: typeof values.usuario_id === 'string' 
+          ? parseInt(values.usuario_id as string, 10) 
+          : values.usuario_id as number,
+        tipo_movimiento: typeof values.tipo_movimiento === 'string' 
+          ? parseInt(values.tipo_movimiento as string, 10) 
+          : values.tipo_movimiento as number,
       };
-      if (editingId) {
-        await actualizarMovimiento(editingId, movimientoData);
-        alert('Movimiento actualizado con éxito');
-      } else {
-        await crearMovimiento(movimientoData as Omit<Movimiento, 'id_movimiento'>);
-        alert('Movimiento creado con éxito');
+      
+      const parsed = movimientoSchema.safeParse(parsedValues);
+      if (!parsed.success) {
+        setAlert({
+          isOpen: true,
+          title: 'Error de validación',
+          message: parsed.error.errors.map(e => e.message).join('\n'),
+          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        });
+        return;
       }
+      
+      // Asegurarse de que el campo estado sea booleano
+      const estado = typeof values.estado === 'boolean' ? values.estado : Boolean(values.estado);
+      
+      try {
+        if (editingId) {
+          // Para actualización, preparar los datos necesarios
+          const updateData: Partial<Movimiento> = {
+            usuario_id: parsedValues.usuario_id,
+            tipo_movimiento: parsedValues.tipo_movimiento,
+            fecha_modificacion: new Date().toISOString().split('T')[0],
+            estado: estado
+          };
+          
+          console.log('Actualizando movimiento:', editingId, updateData);
+          await actualizarMovimiento(editingId, updateData);
+          setSuccessMessage('El movimiento fue actualizado correctamente.');
+          setShowSuccessAlert(true);
+          fetchMovimientos(); // Actualizar la lista de movimientos
+        } else {
+          // Para creación, preparar todos los datos necesarios
+          const createData: Omit<Movimiento, 'id_movimiento'> = {
+            usuario_id: parsedValues.usuario_id,
+            tipo_movimiento: parsedValues.tipo_movimiento,
+            fecha_creacion: String(values.fecha_creacion),
+            fecha_modificacion: new Date().toISOString().split('T')[0],
+            estado: estado
+          };
+          
+          console.log('Creando nuevo movimiento:', createData);
+          await crearMovimiento(createData);
+          setSuccessMessage('El movimiento fue creado correctamente.');
+          setShowSuccessAlert(true);
+          fetchMovimientos(); // Actualizar la lista de movimientos
+        }
+      } catch (error) {
+        console.error('Error al guardar:', error);
+        setAlert({
+          isOpen: true,
+          title: 'Error',
+          message: `Error al ${editingId ? 'actualizar' : 'crear'} el movimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        });
+        return;
+      }
+      
+      // Cerrar modal y limpiar estado
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el movimiento:', error);
+      console.error("Error al guardar el movimiento:", error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: 'Ocurrió un error al guardar el movimiento.',
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
-  // Eliminar movimiento
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este movimiento?")) return;
+  // Cambiar el estado (activo/inactivo) de un movimiento
+  const handleToggleEstado = async (movimiento: Movimiento) => {
     try {
-      await eliminarMovimiento(id);
-      alert("Movimiento eliminado con éxito");
+      // Preparar los datos para actualizar solo el estado
+      const nuevoEstado = !movimiento.estado;
+      const updateData: Partial<Movimiento> = {
+        estado: nuevoEstado,
+        fecha_modificacion: new Date().toISOString().split('T')[0]
+      };
+      
+      console.log(`Cambiando estado de movimiento ${movimiento.id_movimiento} a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
+      await actualizarMovimiento(movimiento.id_movimiento, updateData);
+      setSuccessMessage(`El movimiento fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
+      setShowSuccessAlert(true);
+      fetchMovimientos(); // Actualizar la lista de movimientos
     } catch (error) {
-      console.error("Error al eliminar el movimiento:", error);
+      console.error('Error al cambiar el estado:', error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: `Error al cambiar el estado del movimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
   // Abrir modal para crear nuevo movimiento
   const handleCreate = () => {
-    // Inicializar con fecha actual
+    // Inicializar con fechas actuales
     const today = new Date().toISOString().split('T')[0];
     setFormData({
       fecha_creacion: today,
-      usuario_movimiento_id: 0,
-      tipo_movimiento_id: 0
+      fecha_modificacion: today,
+      estado: true
     });
     setEditingId(null);
     setIsModalOpen(true);
@@ -127,10 +234,12 @@ const Movimientos = () => {
   // Abrir modal para editar movimiento existente
   const handleEdit = (movimiento: Movimiento) => {
     // Convertir fechas a formato string para los inputs date
-    setFormData({
+    const formattedMovimiento = {
       ...movimiento,
-      fecha_modificacion: new Date().toISOString().split('T')[0], // Actualizar fecha de modificación
-    });
+      fecha_creacion: movimiento.fecha_creacion ? movimiento.fecha_creacion.split('T')[0] : '',
+      fecha_modificacion: new Date().toISOString().split('T')[0],
+    };
+    setFormData(formattedMovimiento);
     setEditingId(movimiento.id_movimiento);
     setIsModalOpen(true);
   };
@@ -141,6 +250,13 @@ const Movimientos = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-4">
+          {/* Alerta de éxito */}
+          {showSuccessAlert && (
+            <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-out">
+              {successAlertText}
+            </div>
+          )}
+
           <h1 className="text-xl font-bold mb-4">Gestión de Movimientos</h1>
 
           <Boton
@@ -156,7 +272,7 @@ const Movimientos = () => {
           ) : (
             <GlobalTable 
               columns={columns} 
-              data={movimientos.map(m => ({ ...m, key: m.id_movimiento }))} 
+              data={movimientos.map((m: Movimiento) => ({ ...m, key: m.id_movimiento }))} 
               rowsPerPage={6} 
             />
           )}
@@ -174,12 +290,9 @@ const Movimientos = () => {
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     ...formData,
-                    usuario_movimiento_id: editingId
-                      ? (usuarios.find(u => u.id_usuario === formData.usuario_movimiento_id) ? `${usuarios.find(u => u.id_usuario === formData.usuario_movimiento_id)?.nombre} ${usuarios.find(u => u.id_usuario === formData.usuario_movimiento_id)?.apellido}` : '')
-                      : formData.usuario_movimiento_id,
-                    tipo_movimiento_id: editingId
-                      ? (tiposMovimiento.find(t => t.id_tipo_movimiento === formData.tipo_movimiento_id)?.tipo_movimiento || '')
-                      : formData.tipo_movimiento_id,
+                    usuario_id: formData.usuario_id || '',
+                    tipo_movimiento: formData.tipo_movimiento || '',
+                    estado: formData.estado
                   }}
                 />
                 <div className="flex justify-end mt-4">
@@ -193,6 +306,15 @@ const Movimientos = () => {
               </div>
             </div>
           )}
+
+          {/* Diálogo de alerta para errores */}
+          <AlertDialog
+            isOpen={alert.isOpen}
+            title={alert.title}
+            message={alert.message}
+            onConfirm={alert.onConfirm}
+            onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
+          />
         </main>
       </div>
     </div>

@@ -3,4 +3,5 @@ export interface TipoMovimiento {
   tipo_movimiento: string;
   fecha_creacion: string;
   fecha_modificacion: string;
+  estado?: boolean;
 }

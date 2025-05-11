@@ -1,5 +1,4 @@
 export interface Sede {
-  [x: string]: number;
   id_sede: number;
   nombre_sede: string;
   direccion_sede: string;
