@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Pencil } from 'lucide-react';
 import { movimientoSchema } from '@/schemas/movimiento.schema';
-import { useMovimientos } from '@/hooks/useMovimientos';
+import { useGetMovimientos } from '@/hooks/movimiento/useGetMovimientos';
+import { usePostMovimiento } from '@/hooks/movimiento/usePostMovimiento';
+import { usePutMovimiento } from '@/hooks/movimiento/usePutMovimiento';
 import { Movimiento } from '@/types/movimiento';
 import { useGetUsuarios } from '@/hooks/usuario/useGetUsuarios';
-import { useTiposMovimiento } from '@/hooks/useTiposMovimiento';
+import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento/useGetTiposMovimiento';
 import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
 import ToggleEstadoBoton from "@/components/atomos/ToggleEstadoBoton";
@@ -15,9 +17,12 @@ import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 
 const Movimientos = () => {
-  const { movimientos, loading, crearMovimiento, actualizarMovimiento, fetchMovimientos } = useMovimientos();
+  const { movimientos, loading } = useGetMovimientos();
+  const { crearMovimiento } = usePostMovimiento();
+  const { actualizarMovimiento } = usePutMovimiento();
+  const fetchMovimientos = () => {}; // Placeholder for fetchMovimientos function
   const { usuarios } = useGetUsuarios();
-  const { tiposMovimiento } = useTiposMovimiento();
+  const { tiposMovimiento } = useGetTiposMovimiento();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Movimiento>>({});
@@ -253,7 +258,7 @@ const Movimientos = () => {
           {/* Alerta de éxito */}
           {showSuccessAlert && (
             <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-out">
-              {successAlertText}
+              {successMessage}
             </div>
           )}
 

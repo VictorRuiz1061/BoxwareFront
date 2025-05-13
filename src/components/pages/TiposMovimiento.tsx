@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Pencil } from 'lucide-react';
+import ToggleButton from '../atomos/ToggleButton';
 import { tipoMovimientoSchema } from '@/schemas/tipoMovimiento.schema';
 import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento/useGetTiposMovimiento';
 import { usePostTipoMovimiento } from '@/hooks/tipoMovimiento/usePostTipoMovimiento';
@@ -41,10 +42,10 @@ const TiposMovimiento = () => {
       label: "Estado",
       render: (tipoMovimiento) => (
         <div className="flex items-center justify-center">
-          {tipoMovimiento.estado ? 
-            <span className="text-green-500 font-medium">Activo</span> : 
-            <span className="text-red-500 font-medium">Inactivo</span>
-          }
+          <ToggleButton
+            isActive={tipoMovimiento.estado || false}
+            onChange={() => handleToggleEstado(tipoMovimiento)}
+          />
         </div>
       ),
     },
@@ -59,13 +60,6 @@ const TiposMovimiento = () => {
             aria-label="Editar"
           >
             <Pencil size={18} />
-          </Boton>
-          <Boton
-            onPress={() => handleToggleEstado(tipoMovimiento)}
-            className={`${tipoMovimiento.estado ? 'bg-green-500' : 'bg-gray-500'} text-white px-2 py-1 flex items-center justify-center`}
-            aria-label={tipoMovimiento.estado ? "Desactivar" : "Activar"}
-          >
-            {tipoMovimiento.estado ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
           </Boton>
         </div>
       ),
