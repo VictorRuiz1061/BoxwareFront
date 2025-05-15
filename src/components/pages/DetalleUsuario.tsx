@@ -1,17 +1,16 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Page, Text, View, Document, StyleSheet, PDFDownloadLink } from "@react-pdf/renderer";
 import { useGetUsuarios } from "../../hooks/usuario/useGetUsuarios";
 import { useGetFichas } from "../../hooks/fichas/useGetFichas";
 import { useGetRoles } from "../../hooks/roles/useGetRoles";
 import { useGetProgramas } from "../../hooks/programas/useGetProgramas";
-import { useMateriales } from "../../hooks/useMateriales";
-import { useSitios } from "../../hooks/useSitios";
+import { useGetMateriales } from "../../hooks/material/useGetMateriales";
+import { useGetSitios } from "../../hooks/sitio/useGetSitios";
 import { useGetSedes } from "../../hooks/sedes/useGetSedes";
 import { useGetCentros } from "../../hooks/centros/useGetCentros";
 import { useGetMunicipios } from "../../hooks/municipios/useGetMunicipios";
-import Sidebar from "../organismos/Sidebar";
-import Header from "../organismos/Header";
+
 import Boton from "../atomos/Boton";
 
 // Estilos para el PDF
@@ -226,8 +225,8 @@ const DetalleUsuario = () => {
   const { fichas } = useGetFichas();
   const { roles } = useGetRoles();
   const { programas } = useGetProgramas();
-  const { materiales } = useMateriales();
-  const { sitios } = useSitios();
+  const { materiales } = useGetMateriales();
+  const { sitios } = useGetSitios();
   const { sedes } = useGetSedes();
   const { centros } = useGetCentros();
   const { municipios } = useGetMunicipios();
@@ -310,11 +309,8 @@ const DetalleUsuario = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
+    <>
+      <div className="w-full">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Informe Detallado de Usuario</h1>
             <div className="flex gap-2">
@@ -473,10 +469,9 @@ const DetalleUsuario = () => {
           ) : (
             <div className="text-center py-8 text-red-500">No se pudo cargar la información del usuario</div>
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default DetalleUsuario; 
+export default React.memo(DetalleUsuario); 

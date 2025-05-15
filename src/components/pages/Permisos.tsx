@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
 import { useGetPermisos } from '@/hooks/permisos/useGetPermisos';
@@ -9,8 +9,7 @@ import { useGetRoles } from '@/hooks/roles/useGetRoles';
 import { useGetModulos } from '@/hooks/modulos/useGetModulos';
 import { Permiso } from '@/types/permiso';
 import Boton from "@/components/atomos/Boton";
-import Sidebar from "@/components/organismos/Sidebar";
-import Header from "@/components/organismos/Header";
+
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 import { permisoSchema } from '@/schemas/permiso.schema';
@@ -28,16 +27,49 @@ const Permisos = () => {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
 
+  // Define a safe render function to handle any type of value
+  const safeRender = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    if (value instanceof Date) return value.toLocaleDateString();
+    // If it's an object, try to extract a meaningful name or description
+    if (typeof value === 'object') {
+      // For modules, use the description_ruta if available
+      if (value.descripcion_ruta) return value.descripcion_ruta;
+      // For roles, use the nombre_rol if available
+      if (value.nombre_rol) return value.nombre_rol;
+      // Otherwise convert to a simple string
+      return '[Objeto]';
+    }
+    return String(value);
+  };
+
   const columns: Column<Permiso & { key: number }>[] = [
-    { key: "nombre", label: "Nombre", filterable: true },
-    { key: "codigo_nombre", label: "Código Nombre", filterable: true },
+    { 
+      key: "nombre", 
+      label: "Nombre", 
+      filterable: true,
+      render: (permiso) => String(permiso.nombre || '')
+    },
+    { 
+      key: "codigo_nombre", 
+      label: "Código Nombre", 
+      filterable: true,
+      render: (permiso) => String(permiso.codigo_nombre || '')
+    },
     {
       key: "modulo_id",
       label: "Módulo",
       filterable: true,
       render: (permiso) => {
+        // Find the module by ID and display only its description
         const modulo = modulos.find(m => m.id_modulo === permiso.modulo_id);
-        return modulo ? modulo.descripcion_ruta : permiso.modulo_id;
+        if (modulo) {
+          return modulo.descripcion_ruta;
+        }
+        // If module not found, just show the ID without prefix
+        return String(permiso.modulo_id);
       }
     },
     {
@@ -45,8 +77,13 @@ const Permisos = () => {
       label: "Rol",
       filterable: true,
       render: (permiso) => {
+        // Find the role by ID and display only its name
         const rol = roles.find(r => r.id_rol === permiso.rol_id);
-        return rol ? rol.nombre_rol : permiso.rol_id;
+        if (rol) {
+          return rol.nombre_rol;
+        }
+        // If role not found, just show the ID without prefix
+        return String(permiso.rol_id);
       }
     },
     {
@@ -58,7 +95,21 @@ const Permisos = () => {
         </span>
       )
     },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
+    { 
+      key: "fecha_creacion", 
+      label: "Fecha de Creación",
+      render: (permiso) => {
+        if (typeof permiso.fecha_creacion === 'string') {
+          try {
+            const date = new Date(permiso.fecha_creacion);
+            return date.toLocaleDateString();
+          } catch (e) {
+            return String(permiso.fecha_creacion);
+          }
+        }
+        return String(permiso.fecha_creacion || '');
+      }
+    },
     {
       key: "acciones",
       label: "Acciones",
@@ -91,16 +142,16 @@ const Permisos = () => {
       label: "Módulo", 
       type: "select", 
       required: true, 
-      options: modulos?.map(m => ({ label: m.descripcion_ruta, value: m.id_modulo })) ?? [] 
+      options: modulos?.map(m => ({ label: m.descripcion_ruta, value: String(m.id_modulo) })) ?? [] 
     },
     { 
       key: "rol_id", 
       label: "Rol", 
       type: "select", 
       required: true, 
-      options: roles?.map(r => ({ label: r.nombre_rol, value: r.id_rol })) ?? [] 
+      options: roles?.map(r => ({ label: r.nombre_rol, value: String(r.id_rol) })) ?? [] 
     },
-    { key: "estado", label: "Estado", type: "select", required: true, options: ["Activo", "Inactivo"] },
+    { key: "estado", label: "Estado", type: "select", required: true, options: [{ label: "Activo", value: "Activo" }, { label: "Inactivo", value: "Inactivo" }] },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
   ];
 
@@ -120,8 +171,8 @@ const Permisos = () => {
       const payload = {
         nombre: values.nombre as string,
         codigo_nombre: values.codigo_nombre as string,
-        modulo_id: moduloSeleccionado.id_modulo,
-        rol_id: rolSeleccionado.id_rol,
+        modulo_id: moduloId,
+        rol_id: rolId,
         estado: values.estado === "Activo",
         fecha_creacion: new Date(values.fecha_creacion as string).toISOString()
       };
@@ -175,11 +226,8 @@ const Permisos = () => {
   };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Permisos</h1>
 
           <Boton
@@ -194,10 +242,31 @@ const Permisos = () => {
           ) : (
             <GlobalTable<Permiso & { key: number }>
               columns={columns}
-              data={permisos.map((permiso) => ({
-                ...permiso,
-                key: permiso.id_permiso
-              }))}
+              data={permisos.map((permiso) => {
+                // Create a safe copy with all properties explicitly converted to appropriate types
+                const safePermiso = {
+                  ...permiso,
+                  // Ensure all properties exist and are safe to render
+                  id_permiso: permiso.id_permiso,
+                  nombre: permiso.nombre || '',
+                  codigo_nombre: permiso.codigo_nombre || '',
+                  modulo_id: permiso.modulo_id,
+                  rol_id: permiso.rol_id,
+                  estado: !!permiso.estado,
+                  fecha_creacion: permiso.fecha_creacion || '',
+                  key: permiso.id_permiso
+                };
+                
+                // Convert any remaining object properties to strings to prevent rendering errors
+                Object.keys(safePermiso).forEach(key => {
+                  const value = safePermiso[key as keyof typeof safePermiso];
+                  if (typeof value === 'object' && value !== null) {
+                    (safePermiso as any)[key] = safeRender(value);
+                  }
+                });
+                
+                return safePermiso;
+              })}
               rowsPerPage={6}
             />
           )}
@@ -222,8 +291,8 @@ const Permisos = () => {
                   initialValues={{
                     nombre: formData?.nombre ?? '',
                     codigo_nombre: formData?.codigo_nombre ?? '',
-                    modulo_id: modulos.find(m => m.id_modulo === formData?.modulo_id)?.descripcion_ruta ?? '',
-                    rol_id: roles.find(r => r.id_rol === formData?.rol_id)?.nombre_rol ?? '',
+                    modulo_id: formData?.modulo_id ? String(formData.modulo_id) : '',
+                    rol_id: formData?.rol_id ? String(formData.rol_id) : '',
                     estado: formData?.estado ? "Activo" : "Inactivo",
                     fecha_creacion: formData?.fecha_creacion ?? new Date().toISOString().split('T')[0]
                   }}
@@ -245,10 +314,9 @@ const Permisos = () => {
               />
             </div>
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default Permisos;
+export default React.memo(Permisos);

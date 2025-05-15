@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { eliminarMovimiento } from '../../api/movimiento/deleteMovimiento';
+import { deleteMovimiento } from '../../api/movimiento/deleteMovimiento';
 
 export function useDeleteMovimiento() {
   const [loading, setLoading] = useState(false);
@@ -9,7 +9,7 @@ export function useDeleteMovimiento() {
     setLoading(true);
     setError(null);
     try {
-      await eliminarMovimiento(id);
+      await deleteMovimiento(id);
       setLoading(false);
       return { success: true };
     } catch (err) {

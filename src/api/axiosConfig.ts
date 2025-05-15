@@ -12,12 +12,52 @@ export function getTokenFromCookie() {
   return null;
 }
 
+export function getToken() {
+  // Try to get token from localStorage first (as mentioned in the memory)
+  const localToken = localStorage.getItem('token');
+  if (localToken) {
+    return localToken;
+  }
+  
+  // Fallback to cookie if not in localStorage
+  return getTokenFromCookie();
+}
+
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:3000/',
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Add a request interceptor to include the JWT token in all requests
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = getToken();
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add a response interceptor to handle common errors
+axiosInstance.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error('API request error:', error.response?.status, error.message);
+    if (error.response?.status === 401) {
+      console.warn('Unauthorized access - token may be invalid or expired');
+      // Could redirect to login page here if needed
+    }
+    return Promise.reject(error);
+  }
+);
 
 axiosInstance.interceptors.request.use(
   (config) => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Pencil } from 'lucide-react';
 import { movimientoSchema } from '@/schemas/movimiento.schema';
 import { useGetMovimientos } from '@/hooks/movimiento/useGetMovimientos';
@@ -9,20 +9,47 @@ import { useGetUsuarios } from '@/hooks/usuario/useGetUsuarios';
 import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento/useGetTiposMovimiento';
 import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
-import ToggleEstadoBoton from "@/components/atomos/ToggleEstadoBoton";
-import SuccessAlert from "@/components/atomos/SuccessAlert";
-import Sidebar from "@/components/organismos/Sidebar";
-import Header from "@/components/organismos/Header";
+import ToggleEstadoBoton from "@/components/atomos/Toggle";
+// SuccessAlert is not being used, so removing the import
+
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 
+// Interfaz para los movimientos con clave para la tabla
+interface MovimientoConKey extends Movimiento {
+  key: number;
+}
+
 const Movimientos = () => {
-  const { movimientos, loading } = useGetMovimientos();
+  const { movimientos, loading, fetchMovimientos } = useGetMovimientos();
   const { crearMovimiento } = usePostMovimiento();
   const { actualizarMovimiento } = usePutMovimiento();
-  const fetchMovimientos = () => {}; // Placeholder for fetchMovimientos function
   const { usuarios } = useGetUsuarios();
   const { tiposMovimiento } = useGetTiposMovimiento();
+
+  // Estados para manejo del modal y alertas
+  
+  // Función para refrescar la lista de movimientos
+  const refreshMovimientos = async () => {
+    try {
+      await fetchMovimientos();
+    } catch (error) {
+      console.error('Error al actualizar la lista de movimientos:', error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: 'No se pudo actualizar la lista de movimientos',
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
+    }
+  };
+  
+  // Preparar los datos para la tabla añadiendo la propiedad key
+  const movimientosConKey = movimientos.map(movimiento => ({
+    ...movimiento,
+    key: movimiento.id_movimiento
+  }));
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Movimiento>>({});
@@ -35,7 +62,7 @@ const Movimientos = () => {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  const columns: Column<Movimiento & { key: any }>[] = [
+  const columns: Column<MovimientoConKey>[] = [
     { key: "id_movimiento", label: "ID", filterable: true },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
@@ -44,8 +71,13 @@ const Movimientos = () => {
       label: "Usuario",
       filterable: true,
       render: (movimiento) => {
+        // Buscar el usuario por ID y mostrar su nombre completo
         const usuario = usuarios.find(u => u.id_usuario === movimiento.usuario_id);
-        return usuario ? `${usuario.nombre} ${usuario.apellido}` : movimiento.usuario_id;
+        if (usuario) {
+          return `${usuario.nombre} ${usuario.apellido}`;
+        }
+        // Si no se encuentra, mostrar el ID
+        return `ID: ${movimiento.usuario_id}`;
       }
     },
     {
@@ -53,8 +85,13 @@ const Movimientos = () => {
       label: "Tipo de Movimiento",
       filterable: true,
       render: (movimiento) => {
-        const tipo = tiposMovimiento.find(t => t.id_tipo_movimiento === movimiento.tipo_movimiento);
-        return tipo ? tipo.tipo_movimiento : movimiento.tipo_movimiento;
+        // Buscar el tipo de movimiento por ID y mostrar su descripción
+        const tipoMov = tiposMovimiento.find(t => t.id_tipo_movimiento === movimiento.tipo_movimiento);
+        if (tipoMov) {
+          return tipoMov.tipo_movimiento;
+        }
+        // Si no se encuentra, mostrar el ID
+        return `ID: ${movimiento.tipo_movimiento}`;
       }
     },
     {
@@ -109,7 +146,6 @@ const Movimientos = () => {
     },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
-    { key: "estado", label: "Estado", type: "checkbox", required: false },
   ];
 
   // Crear o actualizar movimiento
@@ -154,7 +190,10 @@ const Movimientos = () => {
           await actualizarMovimiento(editingId, updateData);
           setSuccessMessage('El movimiento fue actualizado correctamente.');
           setShowSuccessAlert(true);
-          fetchMovimientos(); // Actualizar la lista de movimientos
+          // Esperar un momento antes de actualizar para asegurar que el servidor haya procesado el cambio
+          setTimeout(() => {
+            refreshMovimientos();
+          }, 500);
         } else {
           // Para creación, preparar todos los datos necesarios
           const createData: Omit<Movimiento, 'id_movimiento'> = {
@@ -169,7 +208,10 @@ const Movimientos = () => {
           await crearMovimiento(createData);
           setSuccessMessage('El movimiento fue creado correctamente.');
           setShowSuccessAlert(true);
-          fetchMovimientos(); // Actualizar la lista de movimientos
+          // Esperar un momento antes de actualizar para asegurar que el servidor haya procesado el cambio
+          setTimeout(() => {
+            refreshMovimientos();
+          }, 500);
         }
       } catch (error) {
         console.error('Error al guardar:', error);
@@ -211,7 +253,10 @@ const Movimientos = () => {
       await actualizarMovimiento(movimiento.id_movimiento, updateData);
       setSuccessMessage(`El movimiento fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
-      fetchMovimientos(); // Actualizar la lista de movimientos
+      // Esperar un momento antes de actualizar para asegurar que el servidor haya procesado el cambio
+      setTimeout(() => {
+        refreshMovimientos();
+      }, 500);
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
       setAlert({
@@ -250,11 +295,8 @@ const Movimientos = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           {/* Alerta de éxito */}
           {showSuccessAlert && (
             <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-out">
@@ -276,9 +318,9 @@ const Movimientos = () => {
             <p>Cargando movimientos...</p>
           ) : (
             <GlobalTable 
+              data={movimientosConKey} 
               columns={columns} 
-              data={movimientos.map((m: Movimiento) => ({ ...m, key: m.id_movimiento }))} 
-              rowsPerPage={6} 
+              rowsPerPage={6}
             />
           )}
 
@@ -320,10 +362,9 @@ const Movimientos = () => {
             onConfirm={alert.onConfirm}
             onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
           />
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default Movimientos;
+export default React.memo(Movimientos);

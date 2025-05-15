@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Movimiento } from '../../types/movimiento';
-import { crearMovimiento } from '../../api/movimiento/postMovimiento';
+import { postMovimiento } from '../../api/movimiento/postMovimiento';
 
 export function usePostMovimiento() {
   const [loading, setLoading] = useState(false);
@@ -10,7 +10,7 @@ export function usePostMovimiento() {
     setLoading(true);
     setError(null);
     try {
-      const resultado = await crearMovimiento(movimiento);
+      const resultado = await postMovimiento(movimiento);
       setLoading(false);
       return { success: true, data: resultado };
     } catch (err) {

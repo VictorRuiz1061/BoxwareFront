@@ -9,7 +9,17 @@ export interface Material {
   fecha_vencimiento: string;
   fecha_creacion: string;
   fecha_modificacion: string;
-  categoria_id: number;
-  tipo_material_id: number;
-  sitio_id: number;
+  // Campos con nombres actualizados para coincidir con el backend
+  id_categoria?: number;
+  id_tipo_material?: number;
+  id_sitio?: number;
+  // Mantener los nombres anteriores para compatibilidad
+  categoria_id?: number;
+  tipo_material_id?: number;
+  sitio_id?: number;
+  // Estado puede ser string o boolean
+  estado: string | boolean;
+  // Imagen puede ser img o imagen
+  img?: string;
+  imagen?: string;
 }

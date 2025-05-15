@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Boton from '../atomos/Boton';
-import Sidebar from '../organismos/Sidebar';
-import Header from "../organismos/Header";
+
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import { useGetRoles } from '../../hooks/roles/useGetRoles';
@@ -160,11 +159,8 @@ const Roles = () => {
   };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
             <h1 className="text-xl font-bold mb-4">Gestión de Roles</h1>
           </AnimatedContainer>
@@ -232,10 +228,9 @@ const Roles = () => {
               />
             </div>
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default Roles;
+export default React.memo(Roles);

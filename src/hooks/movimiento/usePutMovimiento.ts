@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Movimiento } from '../../types/movimiento';
-import { actualizarMovimiento } from '../../api/movimiento/putMovimiento';
+import { putMovimiento } from '../../api/movimiento/putMovimiento';
 
 export function usePutMovimiento() {
   const [loading, setLoading] = useState(false);
@@ -10,7 +10,7 @@ export function usePutMovimiento() {
     setLoading(true);
     setError(null);
     try {
-      const resultado = await actualizarMovimiento(id, movimiento);
+      const resultado = await putMovimiento({ id, data: movimiento });
       setLoading(false);
       return { success: true, data: resultado };
     } catch (err) {

@@ -1,10 +1,10 @@
 import { getUsuarios } from '@/api/usuario/getUsuarios';
-import { getMateriales } from './materialesApi';
-import { getTipoMateriales } from './tipoMaterialApi';
-import { getSitios } from './sitiosApi';
-import { getMovimientos } from './movimientosApi';
-import { getTiposMovimiento } from './tiposMovimientoApi';
-import { getCategoriasElementos } from './categoriaElementosApi';
+import { getMateriales } from './material/getMateriales';
+import { getTipoMateriales } from './tipoMaterial/getTipoMateriales';
+import { getSitios } from './sitio/getSitios';
+import { getMovimientos } from './movimiento/getMovimientos';
+import { getTiposMovimiento } from './tipoMovimiento/getTiposMovimiento';
+import { getCategoriasElementos } from './Elemento/getCategoriasElementos';
 
 interface DashboardStats {
   totalUsuarios: number;

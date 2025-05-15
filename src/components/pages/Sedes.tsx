@@ -1,6 +1,5 @@
-import { useState } from "react";
-import Sidebar from "../organismos/Sidebar";
-import Header from "../organismos/Header";
+import React, { useState } from "react";
+import { Alert } from "@heroui/react";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
@@ -11,15 +10,31 @@ import { useDeleteSede } from '../../hooks/sedes/useDeleteSede';
 import { useGetCentros } from '../../hooks/centros/useGetCentros';
 import { sedeSchema } from '@/schemas/sede.schema';
 import { Sede } from "@/types/sede";
+import { NuevaSede } from "@/api/sedes/postSede";
+import ToggleEstadoBoton from "@/components/atomos/Toggle";
+import AlertDialog from '@/components/atomos/AlertDialog';
 
 const Sedes = () => {
-  const { sedes, loading } = useGetSedes();
+  const { sedes, loading, fetchSedes } = useGetSedes();
   const { crearSede } = usePostSede();
   const { actualizarSede } = usePutSede();
   const { eliminarSede } = useDeleteSede();
   const { centros } = useGetCentros();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [alert, setAlert] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+  });
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successAlertText, setSuccessAlertText] = useState('');
   // Usamos string para todos los campos del formulario para evitar errores de tipo
   type SedeFormValues = {
     nombre_sede: string;
@@ -38,7 +53,11 @@ const Sedes = () => {
       key: "estado",
       label: "Estado",
       render: (sede) => (
-        <span className={sede.estado ? "text-green-600" : "text-red-600"}>
+        <span className={`px-2 py-1 rounded-full text-sm ${
+          sede.estado 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-red-100 text-red-800'
+        }`}>
           {sede.estado ? "Activo" : "Inactivo"}
         </span>
       )
@@ -61,10 +80,15 @@ const Sedes = () => {
         <div className="flex gap-2">
           <Boton
             onClick={() => handleEdit(sede)}
-            className="bg-yellow-500 text-white px-2 py-1"
+            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
           >
             Editar
           </Boton>
+          <ToggleEstadoBoton
+            estado={Boolean(sede.estado)}
+            onToggle={() => handleToggleEstado(sede)}
+            size={18}
+          />
           <Boton
             onClick={() => handleDelete(sede.id_sede)}
             className="bg-red-500 text-white px-2 py-1"
@@ -105,36 +129,53 @@ const Sedes = () => {
       // Validar con zod
       const parsed = sedeSchema.safeParse(values);
       if (!parsed.success) {
-        alert(parsed.error.errors.map(e => e.message).join('\n'));
+        setAlert({
+          isOpen: true,
+          title: 'Error de validación',
+          message: parsed.error.errors.map(e => e.message).join('\n'),
+          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        });
         return;
       }
-      // Validar que todos los campos requeridos estén presentes
-      if (!values.nombre_sede || !values.direccion_sede || !values.centro_id || !values.fecha_creacion) {
-        alert('Todos los campos son requeridos');
-        return;
-      }
+
+      // Convertir valores a los tipos correctos
       const hoy = new Date().toISOString().split('T')[0];
-      // Estado: sólo se toma del form si es edición, si no siempre es 'Activo'
-      const estadoValue = editingId ? values.estado : 'Activo';
-      // Preparar los datos
-      const sedeData = {
-        nombre_sede: values.nombre_sede.trim(),
-        direccion_sede: values.direccion_sede.trim(),
-        fecha_creacion: values.fecha_creacion,
-        fecha_modificacion: editingId ? (values.fecha_modificacion || hoy) : hoy,
-        centro_sede_id: Number(values.centro_id), // Map centro_id to centro_sede_id
-        estado: estadoValue === 'Activo', // true para 'Activo', false para 'Inactivo'
-      };
+      
       if (editingId) {
+        // Para actualización
+        const sedeData: NuevaSede = {
+          nombre_sede: values.nombre_sede,
+          direccion_sede: values.direccion_sede,
+          centro_id: parseInt(values.centro_id),
+          fecha_creacion: values.fecha_creacion,
+          fecha_modificacion: values.fecha_modificacion || hoy,
+          estado: values.estado === 'Activo'
+        };
+        
         await actualizarSede(editingId, sedeData);
-        alert('Sede actualizada con éxito');
+        setSuccessAlertText('Sede actualizada con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
+        // Para creación
+        const sedeData: NuevaSede = {
+          nombre_sede: values.nombre_sede,
+          direccion_sede: values.direccion_sede,
+          centro_id: parseInt(values.centro_id),
+          fecha_creacion: values.fecha_creacion,
+          fecha_modificacion: hoy,
+          estado: true
+        };
+        
         await crearSede(sedeData);
-        alert('Sede creada con éxito');
+        setSuccessAlertText('Sede creada con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       }
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
+      fetchSedes();
     } catch (error: any) {
       // Manejo seguro del error
       let errorMessage = 'Error desconocido';
@@ -146,20 +187,70 @@ const Sedes = () => {
         }
       }
       console.error('Error detallado al guardar la sede:', error);
-      alert(`Error al guardar la sede: ${errorMessage}`);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: `Error al guardar la sede: ${errorMessage}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
+  // Cambiar el estado (activo/inactivo) de una sede
+  const handleToggleEstado = async (sede: Sede) => {
+    try {
+      // Preparar los datos para actualizar solo el estado
+      const nuevoEstado = !sede.estado;
+      const updateData: NuevaSede = {
+        nombre_sede: sede.nombre_sede,
+        direccion_sede: sede.direccion_sede,
+        centro_id: sede.centro_id,
+        fecha_creacion: sede.fecha_creacion,
+        estado: nuevoEstado,
+        fecha_modificacion: new Date().toISOString().split('T')[0]
+      };
+      
+      console.log(`Cambiando estado de sede ${sede.id_sede} a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
+      await actualizarSede(sede.id_sede, updateData);
+      setSuccessAlertText(`La sede fue ${nuevoEstado ? 'activada' : 'desactivada'} correctamente.`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      fetchSedes(); // Actualizar la lista de sedes
+    } catch (error) {
+      console.error('Error al cambiar el estado:', error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: `Error al cambiar el estado de la sede: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
+    }
+  };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta sede?')) return;
-    try {
-      await eliminarSede(id);
-      alert('Sede eliminada con éxito');
-    } catch (error) {
-      console.error('Error al eliminar la sede:', error);
-      alert('Error al eliminar la sede');
-    }
+    setAlert({
+      isOpen: true,
+      title: 'Confirmar eliminación',
+      message: '¿Estás seguro de que deseas eliminar esta sede?',
+      onConfirm: async () => {
+        try {
+          await eliminarSede(id);
+          setSuccessAlertText('Sede eliminada con éxito');
+          setShowSuccessAlert(true);
+          setTimeout(() => setShowSuccessAlert(false), 3000);
+          fetchSedes();
+          setAlert(a => ({ ...a, isOpen: false }));
+        } catch (error) {
+          console.error('Error al eliminar la sede:', error);
+          setAlert({
+            isOpen: true,
+            title: 'Error',
+            message: `Error al eliminar la sede: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+            onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+          });
+        }
+      },
+    });
   };
 
   const handleCreate = () => {
@@ -189,11 +280,8 @@ const Sedes = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Sedes</h1>
 
           <Boton
@@ -239,10 +327,30 @@ const Sedes = () => {
               </div>
             </div>
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+      {showSuccessAlert && (
+        <div className="fixed top-4 right-4 z-50">
+          <Alert
+            hideIconWrapper
+            color="success"
+            description={successAlertText}
+            title="¡Éxito!"
+            variant="solid"
+            onClose={() => setShowSuccessAlert(false)}
+          />
+        </div>
+      )}
+      <AlertDialog
+        isOpen={alert.isOpen}
+        title={alert.title}
+        message={alert.message}
+        onConfirm={alert.onConfirm}
+        onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
+        confirmText="Aceptar"
+        cancelText="Cancelar"
+      />
+    </>
   );
 };
 
-export default Sedes;
+export default React.memo(Sedes);

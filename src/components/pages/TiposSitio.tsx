@@ -1,18 +1,22 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Pencil } from 'lucide-react';
 import { tipoSitioSchema } from '@/schemas/tipoSitio.schema';
-import { useTiposSitio } from '@/hooks/useTiposSitio';
+import { useGetTiposSitio } from '@/hooks/tipoSitio/useGetTiposSitio';
+import { usePostTipoSitio } from '@/hooks/tipoSitio/usePostTipoSitio';
+import { usePutTipoSitio } from '@/hooks/tipoSitio/usePutTipoSitio';
 import { TipoSitio } from '@/types/tipoSitio';
 import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
-import ToggleEstadoBoton from "@/components/atomos/ToggleEstadoBoton";
-import Sidebar from "@/components/organismos/Sidebar";
-import Header from "@/components/organismos/Header";
+import ToggleEstadoBoton from "@/components/atomos/Toggle";
+
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 
 const TiposSitio = () => {
-  const { tiposSitio, loading, crearTipoSitio, actualizarTipoSitio, fetchTiposSitio } = useTiposSitio();
+  const { tiposSitio, loading, refetch } = useGetTiposSitio();
+  const { crearTipoSitio } = usePostTipoSitio();
+  const { actualizarTipoSitio } = usePutTipoSitio();
+  const fetchTiposSitio = () => refetch();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoSitio>>({});
@@ -68,7 +72,6 @@ const TiposSitio = () => {
     { key: "nombre_tipo_sitio", label: "Nombre del Tipo de Sitio", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
-    { key: "estado", label: "Estado", type: "checkbox", required: false },
   ];
 
   // Crear o actualizar tipo de sitio
@@ -200,11 +203,8 @@ const TiposSitio = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           {/* Alerta de éxito */}
           {showSuccessAlert && (
             <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-out">
@@ -269,10 +269,9 @@ const TiposSitio = () => {
             onConfirm={alert.onConfirm}
             onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
           />
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default TiposSitio;
+export default React.memo(TiposSitio);

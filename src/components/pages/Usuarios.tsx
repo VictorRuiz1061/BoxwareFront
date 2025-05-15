@@ -1,28 +1,27 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Alert } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Trash, Eye } from "lucide-react";
+import { Pencil, Eye } from "lucide-react";
 import { usuarioSchema } from "@/schemas/usuario.schema";
 import { useGetUsuarios } from "@/hooks/usuario/useGetUsuarios";
 import { usePostUsuario } from "@/hooks/usuario/usePostUsuario";
 import { usePutUsuario } from "@/hooks/usuario/usePutUsuario";
-import { useDeleteUsuario } from "@/hooks/usuario/useDeleteUsuario";
+// Eliminamos la importación de useDeleteUsuario ya que no lo usamos más
 import { useGetRoles } from "@/hooks/roles/useGetRoles";
 import { Usuario } from "@/types/usuario";
 import AnimatedContainer from "@/components/atomos/AnimatedContainer";
 import AlertDialog from "@/components/atomos/AlertDialog";
 import Boton from "@/components/atomos/Boton";
-import Sidebar from "@/components/organismos/Sidebar";
-import Header from "@/components/organismos/Header";
+
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
+import ToggleEstadoBoton from "@/components/atomos/Toggle";
 
 const Usuarios = () => {
   const navigate = useNavigate();
   const { usuarios, loading } = useGetUsuarios();
   const { crearUsuario } = usePostUsuario();
   const { actualizarUsuario } = usePutUsuario();
-  const { eliminarUsuario } = useDeleteUsuario();
   const { roles } = useGetRoles();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -33,10 +32,7 @@ const Usuarios = () => {
     message: "",
     onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
   });
-  const [deleteConfirm, setDeleteConfirm] = useState<{
-    open: boolean;
-    id: number | null;
-  }>({ open: false, id: null });
+  // Eliminamos el estado deleteConfirm ya que no lo necesitamos más
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState("");
 
@@ -82,13 +78,11 @@ const Usuarios = () => {
           >
             <Pencil size={18} />
           </Boton>
-          <Boton
-            onPress={() => handleDeleteClick(usuario.id_usuario)}
-            className="bg-red-500 text-white px-2 py-1 flex items-center justify-center"
-            aria-label="Eliminar"
-          >
-            <Trash size={18} />
-          </Boton>
+          <ToggleEstadoBoton
+            estado={usuario.estado}
+            onToggle={() => handleToggleEstado(usuario)}
+            size={18}
+          />
           <Boton
             onPress={() => handleViewDetails(usuario.id_usuario)}
             className="bg-blue-500 text-white px-2 py-1 flex items-center justify-center"
@@ -198,33 +192,41 @@ const Usuarios = () => {
     }
   };
 
-  // Eliminar usuario con confirmación personalizada
-  const handleDeleteClick = (id: number) => {
-    setDeleteConfirm({ open: true, id });
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteConfirm.id) return;
+  // Cambiar el estado (activo/inactivo) de un usuario
+  const handleToggleEstado = async (usuario: Usuario) => {
     try {
-      await eliminarUsuario(deleteConfirm.id);
-      setSuccessAlertText("El usuario fue eliminado correctamente.");
+      // Preparar los datos para actualizar solo el estado
+      const nuevoEstado = !usuario.estado;
+      
+      // Crear un objeto Usuario completo con los datos mínimos necesarios
+      // para la actualización, manteniendo los datos originales del usuario
+      const updateData: Usuario = {
+        ...usuario,
+        estado: nuevoEstado
+      };
+      
+      console.log(`Cambiando estado de usuario ${usuario.id_usuario} a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
+      
+      // Actualizar el usuario en el servidor
+      await actualizarUsuario(usuario.id_usuario, updateData);
+      
+      // Mostrar mensaje de éxito
+      setSuccessAlertText(`El usuario fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
-      setAlert({
-        isOpen: false,
-        title: "",
-        message: "",
-        onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
-      });
+      
+          // No necesitamos hacer nada más aquí
+      // La invalidación de la cache de React Query se maneja automáticamente 
+      // en el hook usePutUsuario cuando se completa la mutación
+      // Esto hará que la tabla se actualice automáticamente sin recargar la página
     } catch (error) {
+      console.error('Error al cambiar el estado:', error);
       setAlert({
         isOpen: true,
-        title: "Error",
-        message: "Ocurrió un error al eliminar el usuario.",
-        onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
+        title: 'Error',
+        message: `Error al cambiar el estado del usuario: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
       });
-    } finally {
-      setDeleteConfirm({ open: false, id: null });
     }
   };
 
@@ -248,12 +250,9 @@ const Usuarios = () => {
   };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: "#ECF5FF" }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
-          <AnimatedContainer
+    <>
+      <div className="w-full">
+        <AnimatedContainer
             animation="fadeIn"
             duration={400}
             className="w-full"
@@ -335,7 +334,6 @@ const Usuarios = () => {
               </AnimatedContainer>
             </div>
           )}
-        </main>
       </div>
       {showSuccessAlert && (
         <div className="fixed top-4 right-4 z-50">
@@ -358,17 +356,8 @@ const Usuarios = () => {
         confirmText="Aceptar"
         cancelText=""
       />
-      <AlertDialog
-        isOpen={deleteConfirm.open}
-        title="¿Eliminar usuario?"
-        message="¿Estás seguro de que deseas eliminar este usuario?"
-        onConfirm={confirmDelete}
-        onCancel={() => setDeleteConfirm({ open: false, id: null })}
-        confirmText="Sí, eliminar"
-        cancelText="Cancelar"
-      />
-    </div>
+    </>
   );
 };
 
-export default Usuarios;
+export default React.memo(Usuarios);

@@ -1,6 +1,5 @@
-import { useState } from "react";
-import Sidebar from "../organismos/Sidebar";
-import Header from "../organismos/Header";
+import React, { useState } from "react";
+
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
@@ -14,6 +13,7 @@ import { programaSchema } from '@/schemas/programa.schema';
 
 const Programas = () => {
   const { programas, loading } = useGetProgramas();
+  console.log('Programas component data:', { programas, loading });
   const { crearPrograma } = usePostPrograma();
   const { actualizarPrograma } = usePutPrograma();
   const { eliminarPrograma } = useDeletePrograma();
@@ -30,7 +30,21 @@ const Programas = () => {
       filterable: true,
       render: (programa) => {
         const area = areas.find(a => a.id_area === programa.area_id);
-        return area ? area.nombre_area : programa.area_id;
+        return area ? area.nombre_area : String(programa.area_id);
+      }
+    },
+    {
+      key: "estado",
+      label: "Estado",
+      filterable: true,
+      render: (programa) => {
+        // Check if estado is active by comparing with string "true" since it's stored as a string in the database
+        const isActive = programa.estado === "true";
+        return (
+          <span className={isActive ? "text-green-600" : "text-red-600"}>
+            {isActive ? "Activo" : "Inactivo"}
+          </span>
+        );
       }
     },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
@@ -60,7 +74,10 @@ const Programas = () => {
   const formFields: FormField[] = [
     { key: "nombre_programa", label: "Nombre del Programa", type: "text", required: true },
     { key: "area_id", label: "Área", type: "select", required: true, options: areas.map(a => ({ label: a.nombre_area, value: a.id_area })) },
-    { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
+    { key: "estado", label: "Estado", type: "select", required: true, options: [
+      { label: "Activo", value: "true" },
+      { label: "Inactivo", value: "false" }
+    ]},
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
@@ -70,25 +87,31 @@ const Programas = () => {
         alert("Por favor selecciona un área válida.");
         return;
       }
+      
+      const currentDate = new Date().toISOString();
+      
       if (editingId) {
+        // Get the existing program to preserve fecha_creacion
+        const existingPrograma = programas.find(p => p.id_programa === editingId);
+        
         await actualizarPrograma(editingId, {
-          ...values,
+          id_programa: editingId,
           nombre_programa: values.nombre_programa as string,
           area_id: areaSeleccionada.id_area,
-          fecha_modificacion: new Date().toISOString(),
-          id_programa: editingId,
-          fecha_creacion: "2025-05-10",
-          estado: ""
+          fecha_creacion: existingPrograma?.fecha_creacion || currentDate, // Preserve existing fecha_creacion
+          fecha_modificacion: currentDate,
+          estado: values.estado === "true" ? "true" : "false"
         });
         alert('Programa actualizado con éxito');
       } else {
+        // Para creación, incluimos un id_programa temporal que el backend puede usar o ignorar
         await crearPrograma({
-          ...values,
+          id_programa: 0, // El backend generará el ID real
           nombre_programa: values.nombre_programa as string,
           area_id: areaSeleccionada.id_area,
-          fecha_creacion: new Date().toISOString(),
-          fecha_modificacion: new Date().toISOString(),
-          estado: ""
+          fecha_creacion: currentDate,
+          fecha_modificacion: currentDate,
+          estado: values.estado === "true" ? "true" : "false"
         });
         alert('Programa creado con éxito');
       }
@@ -125,11 +148,8 @@ const Programas = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Programas</h1>
 
           <Boton
@@ -141,8 +161,16 @@ const Programas = () => {
 
           {loading ? (
             <p>Cargando programas...</p>
+          ) : programas && programas.length > 0 ? (
+            <GlobalTable 
+              columns={columns as Column<any>[]} 
+              data={programas.map(programa => ({ ...programa, key: programa.id_programa }))} 
+              rowsPerPage={6} 
+            />
           ) : (
-            <GlobalTable columns={columns as Column<any>[]} data={programas.map(programa => ({ ...programa, key: programa.id_programa }))} rowsPerPage={6} />
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-yellow-700">No se encontraron programas. Intenta crear uno nuevo.</p>
+            </div>
           )}
 
           {isModalOpen && (
@@ -165,17 +193,17 @@ const Programas = () => {
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     nombre_programa: formData.nombre_programa || '',
-                    area_id: formData.area_id ? String(formData.area_id) : ''
+                    area_id: formData.area_id ? String(formData.area_id) : '',
+                    estado: formData.estado ? String(formData.estado) : 'true'
                   }}
                   schema={programaSchema}
                 />
               </div>
             </div>
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default Programas;
+export default React.memo(Programas);

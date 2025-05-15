@@ -8,7 +8,7 @@ interface PutTipoMovimientoParams {
 }
 
 export async function putTipoMovimiento({ id, data }: PutTipoMovimientoParams): Promise<TipoMovimiento> {
-  const response = await axiosInstance.patch(`/tipos-movimientos/${id}`, data);
+  const response = await axiosInstance.put(`/tipos-movimientos/${id}`, data);
   return response.data;
 }
 

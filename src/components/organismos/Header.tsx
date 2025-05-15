@@ -1,14 +1,21 @@
 import { Bell, User, Settings } from "lucide-react"; 
 import AnimatedContainer from "../atomos/AnimatedContainer";
+import ThemeToggle from "../atomos/ThemeToggle";
+import { useTheme } from "../../context/ThemeContext";
 
 const Header = ({ userName = "Usuario" }) => { 
+  const { darkMode } = useTheme();
  
   return (
     <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-      <header className="bg-white shadow-lg h-16 relative z-10">
-        <div className="flex items-center justify-end h-full px-6 bg-gradient-to-r from-black via-blue-800 to-blue-600">
+      <header className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg h-16 relative z-10 transition-colors duration-300`}>
+        <div className={`flex items-center justify-end h-full px-6 ${darkMode ? 'bg-gradient-to-r from-black via-blue-900 to-blue-700' : 'bg-gradient-to-r from-black via-blue-800 to-blue-600'} transition-colors duration-300`}>
           {/* Zona de usuario */}
           <div className="flex items-center space-x-6">
+            {/* Theme Toggle */}
+            <AnimatedContainer animation="slideUp" delay={50} duration={400}>
+              <ThemeToggle />
+            </AnimatedContainer>
             {/* Notificaciones */}
             <AnimatedContainer animation="slideUp" delay={100} duration={400}>
               <button className="relative p-2 text-white hover:bg-blue-500 rounded-lg transition-all duration-300 group">
@@ -65,4 +72,4 @@ const Header = ({ userName = "Usuario" }) => {
   );
 };
 
-export default Header;
+export default Header

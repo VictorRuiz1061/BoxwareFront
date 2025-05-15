@@ -1,6 +1,4 @@
-import { useState } from "react";
-import Sidebar from "../organismos/Sidebar";
-import Header from "../organismos/Header";
+import React, { useState } from "react";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
@@ -11,7 +9,7 @@ import { useDeleteArea } from '../../hooks/areas/useDeleteArea';
 import { Area } from '../../types/area';
 import { useGetSedes } from '../../hooks/sedes/useGetSedes';
 import { areaSchema } from '@/schemas/area.schema';
-
+ 
 const Areas = () => {
   const { areas, loading } = useGetAreas();
   const { crearArea } = usePostArea();
@@ -65,33 +63,74 @@ const Areas = () => {
   // Crear o actualizar área
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
+      console.log('Form submitted with values:', values);
+      
+      // Verificar que el token JWT esté presente para la autenticación
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No hay token JWT disponible. La autenticación podría fallar.');
+        alert('No hay sesión activa. Por favor inicia sesión nuevamente.');
+        return;
+      }
+      
       // Validar con zod
       const parsed = areaSchema.safeParse(values);
       if (!parsed.success) {
+        console.error('Errores de validación:', parsed.error.errors);
         alert(parsed.error.errors.map(e => e.message).join('\n'));
         return;
       }
+      
       // Buscar la sede seleccionada por id
-      const sedeSeleccionada = sedes.find(s => s.id_sede === Number(values.sede_id));
+      const sedeId = Number(values.sede_id);
+      if (isNaN(sedeId)) {
+        console.error('ID de sede inválido:', values.sede_id);
+        alert('Por favor selecciona una sede válida');
+        return;
+      }
+      
+      const sedeSeleccionada = sedes.find(s => s.id_sede === sedeId);
+      if (!sedeSeleccionada) {
+        console.error('Sede no encontrada para ID:', sedeId);
+        alert('La sede seleccionada no existe');
+        return;
+      }
+      
+      console.log('Sede seleccionada:', sedeSeleccionada);
+      
+      // Preparar el payload con todos los campos requeridos por la tabla SQL
+      const currentDate = new Date().toISOString();
       const payload = {
-        ...values,
-        sede_id: sedeSeleccionada ? sedeSeleccionada.id_sede : undefined,
-        fecha_creacion: editingId ? (values as any).fecha_creacion : new Date().toISOString(),
-        fecha_modificacion: new Date().toISOString(),
+        nombre_area: String(values.nombre_area),
+        sede_id: sedeId,
+        estado: true, // Por defecto activo
+        fecha_creacion: editingId ? (values as any).fecha_creacion : currentDate,
+        fecha_modificacion: currentDate,
+        id_area: editingId || 0 // Usar 0 para nuevas áreas, el backend generará el ID real
       };
+      
+      console.log('Payload preparado:', payload);
+      
       if (editingId) {
+        console.log('Actualizando área existente con ID:', editingId);
         await actualizarArea(editingId, { ...payload, id_area: editingId });
         alert('Área actualizada con éxito');
       } else {
-        await crearArea(payload as Omit<Area, 'id_area'>);
+        console.log('Creando nueva área');
+        await crearArea(payload);
         alert('Área creada con éxito');
       }
+      
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
-    } catch (error) {
-      console.error('Error al guardar el área:', error);
-      alert('Error al guardar el área');
+    } catch (error: any) {
+      console.error('Error detallado al guardar el área:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      alert(`Error al guardar el área: ${error.message}`);
     }
   };
 
@@ -122,11 +161,8 @@ const Areas = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Áreas</h1>
 
           <Boton
@@ -174,10 +210,9 @@ const Areas = () => {
               </div>
             </div>
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default Areas;
+export default React.memo(Areas);

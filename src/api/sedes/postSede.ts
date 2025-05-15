@@ -3,11 +3,14 @@ import axiosInstance from "@/api/axiosConfig";
 import { Sede } from "@/types/sede";
 
 export interface NuevaSede {
+  // Para creación, id_sede puede ser opcional ya que el backend podría generarlo automáticamente
+  id_sede?: number;
   nombre_sede: string;
   direccion_sede: string;
   fecha_creacion: string;
   fecha_modificacion: string;
-  centro_sede_id: number;
+  centro_id: number;
+  estado: boolean;
 }
 
 export async function postSede(data: NuevaSede): Promise<Sede> {

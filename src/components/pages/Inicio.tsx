@@ -1,3 +1,4 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Boton from '../atomos/Boton';
 import Card from '../atomos/Card';
@@ -33,4 +34,4 @@ const Inicio = () => {
   );
 };
 
-export default Inicio;
+export default React.memo(Inicio);

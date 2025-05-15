@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Pencil, Trash } from 'lucide-react';
 import { Alert } from '@heroui/react';
 import { useGetMunicipios } from '@/hooks/municipios/useGetMunicipios';
@@ -7,8 +7,7 @@ import { usePutMunicipio } from '@/hooks/municipios/usePutMunicipio';
 import { useDeleteMunicipio } from '@/hooks/municipios/useDeleteMunicipio';
 import { Municipio } from '@/types/municipio';
 import Boton from "@/components/atomos/Boton";
-import Sidebar from "@/components/organismos/Sidebar";
-import Header from "@/components/organismos/Header";
+
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 import { municipioSchema } from '@/schemas/municipio.schema';
@@ -164,11 +163,8 @@ const Municipios = () => {
   };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Municipios</h1>
 
           <Boton
@@ -231,10 +227,9 @@ const Municipios = () => {
               />
             </div>
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default Municipios;
+export default React.memo(Municipios);

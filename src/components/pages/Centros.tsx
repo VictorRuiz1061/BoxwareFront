@@ -1,6 +1,4 @@
-import { useState } from "react";
-import Sidebar from "../organismos/Sidebar";
-import Header from "../organismos/Header";
+import React, { useState } from "react";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
@@ -170,11 +168,8 @@ const Centros = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Centros</h1>
 
           <Boton
@@ -220,10 +215,9 @@ const Centros = () => {
                 </div>
               </div> 
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default Centros;
+export default React.memo(Centros);

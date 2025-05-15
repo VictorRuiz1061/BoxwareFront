@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Pencil } from 'lucide-react';
-import ToggleButton from '../atomos/ToggleButton';
+import { Alert } from "@heroui/react";
 import { tipoMovimientoSchema } from '@/schemas/tipoMovimiento.schema';
 import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento/useGetTiposMovimiento';
 import { usePostTipoMovimiento } from '@/hooks/tipoMovimiento/usePostTipoMovimiento';
@@ -9,13 +9,13 @@ import { usePutTipoMovimiento } from '@/hooks/tipoMovimiento/usePutTipoMovimient
 import { TipoMovimiento } from '@/types/tipoMovimiento';
 import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
-import Sidebar from "@/components/organismos/Sidebar";
-import Header from "@/components/organismos/Header";
+import ToggleEstadoBoton from "@/components/atomos/Toggle";
+
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 
 const TiposMovimiento = () => {
-  const { tiposMovimiento, loading } = useGetTiposMovimiento();
+  const { tiposMovimiento, loading, fetchTiposMovimiento } = useGetTiposMovimiento();
   const { crearTipoMovimiento } = usePostTipoMovimiento();
   const { actualizarTipoMovimiento } = usePutTipoMovimiento();
   // La declaración de eliminarTipoMovimiento ha sido eliminada ya que no se utiliza más
@@ -41,12 +41,13 @@ const TiposMovimiento = () => {
       key: "estado",
       label: "Estado",
       render: (tipoMovimiento) => (
-        <div className="flex items-center justify-center">
-          <ToggleButton
-            isActive={tipoMovimiento.estado || false}
-            onChange={() => handleToggleEstado(tipoMovimiento)}
-          />
-        </div>
+        <span className={`px-2 py-1 rounded-full text-sm ${
+          tipoMovimiento.estado 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-red-100 text-red-800'
+        }`}>
+          {tipoMovimiento.estado ? "Activo" : "Inactivo"}
+        </span>
       ),
     },
     {
@@ -61,6 +62,11 @@ const TiposMovimiento = () => {
           >
             <Pencil size={18} />
           </Boton>
+          <ToggleEstadoBoton
+            estado={tipoMovimiento.estado || false}
+            onToggle={() => handleToggleEstado(tipoMovimiento)}
+            size={18}
+          />
         </div>
       ),
     },
@@ -70,7 +76,6 @@ const TiposMovimiento = () => {
     { key: "tipo_movimiento", label: "Tipo de Movimiento", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
-    { key: "estado", label: "Estado", type: "checkbox", required: false },
   ];
 
   // Crear o actualizar tipo de movimiento
@@ -104,23 +109,31 @@ const TiposMovimiento = () => {
           
           console.log('Actualizando tipo de movimiento:', editingId, updateData);
           await actualizarTipoMovimiento(editingId, updateData);
-          setSuccessAlertText('El tipo de movimiento fue actualizado correctamente.');
+          setSuccessAlertText('Tipo de movimiento actualizado con éxito');
           setShowSuccessAlert(true);
           setTimeout(() => setShowSuccessAlert(false), 3000);
+          setIsModalOpen(false);
+          setFormData({});
+          setEditingId(null);
+          fetchTiposMovimiento();
         } else {
           // Para creación, preparar todos los datos necesarios
           const createData: Omit<TipoMovimiento, 'id_tipo_movimiento'> = {
             tipo_movimiento: String(values.tipo_movimiento),
             fecha_creacion: String(values.fecha_creacion),
             fecha_modificacion: new Date().toISOString().split('T')[0],
-            estado: estado
+            estado: true
           };
           
           console.log('Creando nuevo tipo de movimiento:', createData);
           await crearTipoMovimiento(createData);
-          setSuccessAlertText('El tipo de movimiento fue creado correctamente.');
+          setSuccessAlertText('Tipo de movimiento creado con éxito');
           setShowSuccessAlert(true);
           setTimeout(() => setShowSuccessAlert(false), 3000);
+          setIsModalOpen(false);
+          setFormData({});
+          setEditingId(null);
+          fetchTiposMovimiento();
         }
       } catch (error) {
         console.error('Error al guardar:', error);
@@ -132,11 +145,6 @@ const TiposMovimiento = () => {
         });
         return;
       }
-      
-      // Cerrar modal y limpiar estado
-      setIsModalOpen(false);
-      setFormData({});
-      setEditingId(null);
     } catch (error) {
       console.error("Error al guardar el tipo de movimiento:", error);
       setAlert({
@@ -162,6 +170,7 @@ const TiposMovimiento = () => {
       setSuccessAlertText(`El tipo de movimiento fue ${!tipoMovimiento.estado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
+      fetchTiposMovimiento();
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
       setAlert({
@@ -203,15 +212,19 @@ const TiposMovimiento = () => {
   };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#ECF5FF' }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           {/* Alerta de éxito */}
           {showSuccessAlert && (
-            <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-out">
-              {successAlertText}
+            <div className="fixed top-4 right-4 z-50">
+              <Alert
+                hideIconWrapper
+                color="success"
+                description={successAlertText}
+                title="¡Éxito!"
+                variant="solid"
+                onClose={() => setShowSuccessAlert(false)}
+              />
             </div>
           )}
 
@@ -275,10 +288,9 @@ const TiposMovimiento = () => {
           />
 
           {/* El diálogo de confirmación para eliminar ha sido eliminado */}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default TiposMovimiento;
+export default React.memo(TiposMovimiento);

@@ -1,3 +1,4 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
 import { useGetAuth } from '../../hooks/auth/useGetAuth';
@@ -251,4 +252,4 @@ const Registrarse = () => {
   );
 };
 
-export default Registrarse;
+export default React.memo(Registrarse);

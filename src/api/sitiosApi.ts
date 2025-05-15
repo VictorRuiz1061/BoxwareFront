@@ -1,21 +1,18 @@
-import { Sitio } from '../types/sitio';
-import axios from './axiosConfig';
+// Este archivo sirve como puente para mantener compatibilidad con el código existente
+// Reexporta las funciones desde la estructura organizada en carpetas
+import { getSitios as getSitiosFn } from './sitio/getSitios';
+import { postSitio } from './sitio/postSitio';
+import { putSitio } from './sitio/putSitio';
+import { deleteSitio } from './sitio/deleteSitio';
 
-export const getSitios = async (): Promise<Sitio[]> => {
-  const res = await axios.get('/sitios');
-  return res.data;
-};
+// Exportamos las funciones con los nombres que espera el código existente
+export const getSitios = getSitiosFn;
+export const crearSitio = postSitio;
+export const actualizarSitio = (id: number, data: any) => putSitio({ id, data });
+export const eliminarSitio = deleteSitio;
 
-export const crearSitio = async (sitio: Omit<Sitio, 'id_sitio'>): Promise<Sitio> => {
-  const res = await axios.post('/sitios/crear', sitio);
-  return res.data;
-};
-
-export const actualizarSitio = async (id: number, sitio: Omit<Sitio, 'id_sitio'>): Promise<Sitio> => {
-  const res = await axios.put(`/sitios/actualizar/${id}`, sitio);
-  return res.data;
-};
-
-export const eliminarSitio = async (id: number): Promise<void> => {
-  await axios.delete(`/sitios/eliminar/${id}`);
-};
+// También exportamos los hooks para quienes quieran usarlos
+export { useGetSitios } from './sitio/getSitios';
+export { usePostSitio } from './sitio/postSitio';
+export { usePutSitio } from './sitio/putSitio';
+export { useDeleteSitio } from './sitio/deleteSitio';

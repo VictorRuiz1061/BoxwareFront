@@ -1,6 +1,5 @@
-import { useState } from "react";
-import Sidebar from "../organismos/Sidebar";
-import Header from "../organismos/Header";
+import React, { useState } from "react";
+
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
@@ -126,11 +125,8 @@ const ModulosPage = () => {
   };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#F1F8FF' }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4">
+    <>
+      <div className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Módulos</h1>
 
           <Boton
@@ -193,10 +189,9 @@ const ModulosPage = () => {
               />
             </div>
           )}
-        </main>
-      </div>
-    </div>
+        </div>
+    </>
   );
 };
 
-export default ModulosPage;
+export default React.memo(ModulosPage);

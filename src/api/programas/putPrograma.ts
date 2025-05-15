@@ -8,7 +8,7 @@ export interface ProgramaUpdate {
 }
 
 export async function putPrograma(id: number, data: Partial<Programa>): Promise<Programa> {
-  const response = await axiosInstance.put(`/programa/${id}`, data);
+  const response = await axiosInstance.put(`/programas/${id}`, data);
   return response.data;
 }
 
