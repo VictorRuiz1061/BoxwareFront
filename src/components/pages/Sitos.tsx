@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Alert } from "@heroui/react";
 
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
@@ -6,10 +7,11 @@ import Boton from "../atomos/Boton";
 import { useGetSitios } from '../../hooks/sitio/useGetSitios';
 import { usePostSitio } from '../../hooks/sitio/usePostSitio';
 import { usePutSitio } from '../../hooks/sitio/usePutSitio';
-import { useDeleteSitio } from '../../hooks/sitio/useDeleteSitio';
 import { Sitio } from '../../types/sitio';
 import { useGetUsuarios } from '../../hooks/usuario/useGetUsuarios';
 import { useGetTiposSitio } from '../../hooks/tipoSitio/useGetTiposSitio';
+import Toggle from "../atomos/Toggle";
+import AlertDialog from "../atomos/AlertDialog";
 
 
 
@@ -17,29 +19,37 @@ const Sitios = () => {
   const { sitios, loading } = useGetSitios();
   const { crearSitio } = usePostSitio();
   const { actualizarSitio } = usePutSitio();
-  const { eliminarSitio } = useDeleteSitio();
   const { usuarios } = useGetUsuarios();
   const { tiposSitio } = useGetTiposSitio();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Sitio>>({});
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
+  });
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successAlertText, setSuccessAlertText] = useState("");
 
   const columns: Column<Sitio>[] = [
     { key: "nombre_sitio", label: "Nombre del Sitio", filterable: true },
     { key: "ubicacion", label: "Ubicación", filterable: true },
     { key: "ficha_tecnica", label: "Ficha Técnica", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "estado",
       label: "Estado",
       filterable: true,
       render: (sitio) => (
-        <span className={sitio.estado ? "text-green-600" : "text-red-600"}>
-          {sitio.estado ? "Activo" : "Inactivo"}
-        </span>
+        <Toggle 
+          isOn={sitio.estado} 
+          onToggle={() => handleToggleEstado(sitio)}
+        />
       )
     },
-    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
-    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -50,12 +60,6 @@ const Sitios = () => {
             className="bg-yellow-500 text-white px-2 py-1"
           >
             Editar
-          </Boton>
-          <Boton
-            onClick={() => handleDelete(sitio.id_sitio)}
-            className="bg-red-500 text-white px-2 py-1"
-          >
-            Eliminar
           </Boton>
         </div>
       ),
@@ -84,7 +88,12 @@ const Sitios = () => {
       const usuarioSeleccionado = usuarios.find(u => u.nombre === values.persona_encargada_id);
       const tipoSitioSeleccionado = tiposSitio.find(t => t.nombre_tipo_sitio === values.tipo_sitio_id);
       if (!tipoSitioSeleccionado) {
-        alert("Por favor selecciona un tipo de sitio válido.");
+        setAlert({
+          isOpen: true,
+          title: 'Error',
+          message: "Por favor selecciona un tipo de sitio válido.",
+          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+        });
         return;
       }
       
@@ -109,29 +118,66 @@ const Sitios = () => {
       
       if (editingId) {
         await actualizarSitio(editingId, sitioData);
-        alert('Sitio actualizado con éxito');
+        setSuccessAlertText('Sitio actualizado con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       } else {
         await crearSitio(sitioData);
-        alert('Sitio creado con éxito');
+        setSuccessAlertText('Sitio creado con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       }
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
       console.error('Error al guardar el sitio:', error);
-      alert('Error al guardar el sitio');
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: `Error al guardar el sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
-  // Eliminar sitio
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este sitio?')) return;
+  // Cambiar el estado (activo/inactivo) de un sitio
+  const handleToggleEstado = async (sitio: Sitio) => {
     try {
-      await eliminarSitio(id);
-      alert('Sitio eliminado con éxito');
+      // Preparar los datos para actualizar solo el estado
+      const nuevoEstado = !sitio.estado;
+      
+      // Crear un objeto para la actualización con los datos necesarios
+      const updateData = {
+        nombre_sitio: sitio.nombre_sitio,
+        ubicacion: sitio.ubicacion,
+        ficha_tecnica: sitio.ficha_tecnica,
+        estado: nuevoEstado,
+        tipo_sitio_id: sitio.tipo_sitio_id,
+        fecha_creacion: sitio.fecha_creacion,
+        fecha_modificacion: new Date().toISOString().split('T')[0],
+        persona_encargada_id: sitio.persona_encargada_id,
+        sede_id: sitio.sede_id,
+      };
+      
+      console.log(`Cambiando estado de sitio ${sitio.id_sitio} a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
+      
+      // Actualizar el sitio en el servidor
+      await actualizarSitio(sitio.id_sitio, updateData);
+      
+      // Mostrar mensaje de éxito
+      setSuccessAlertText(`El sitio fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      
     } catch (error) {
-      console.error('Error al eliminar el sitio:', error);
-      alert('Error al eliminar el sitio');
+      console.error('Error al cambiar el estado:', error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: `Error al cambiar el estado del sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
@@ -199,6 +245,28 @@ const Sitios = () => {
             </div>
           )}
         </div>
+        
+      {showSuccessAlert && (
+        <div className="fixed top-4 right-4 z-50">
+          <Alert
+            hideIconWrapper
+            color="success"
+            description={successAlertText}
+            title="¡Éxito!"
+            variant="solid"
+            onClose={() => setShowSuccessAlert(false)}
+          />
+        </div>
+      )}
+      <AlertDialog
+        isOpen={alert.isOpen}
+        title={alert.title}
+        message={alert.message}
+        onConfirm={alert.onConfirm}
+        onCancel={alert.onConfirm}
+        confirmText="Aceptar"
+        cancelText=""
+      />
     </>
   );
 };

@@ -6,6 +6,8 @@ export interface AreaUpdate {
   id_area: number;
   nombre_area?: string;
   sede_id?: number | null;
+  estado?: boolean;
+  fecha_modificacion?: string;
   // otros campos opcionales si es necesario
 }
 

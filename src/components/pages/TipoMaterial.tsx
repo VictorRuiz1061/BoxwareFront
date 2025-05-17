@@ -6,16 +6,14 @@ import Boton from "../atomos/Boton";
 import { useGetTipoMateriales } from '../../hooks/tipoMaterial/useGetTipoMateriales';
 import { usePostTipoMaterial } from '../../hooks/tipoMaterial/usePostTipoMaterial';
 import { usePutTipoMaterial } from '../../hooks/tipoMaterial/usePutTipoMaterial';
-import { useDeleteTipoMaterial } from '../../hooks/tipoMaterial/useDeleteTipoMaterial';
 import type { TipoMaterial } from '../../types/tipoMaterial';
-import ToggleEstadoBoton from "@/components/atomos/Toggle";
+import Toggle from "@/components/atomos/Toggle";
 import AlertDialog from '@/components/atomos/AlertDialog';
 
 const TipoMaterial = () => {
   const { tipoMateriales, loading, fetchTipoMateriales } = useGetTipoMateriales();
   const { crearTipoMaterial } = usePostTipoMaterial();
   const { actualizarTipoMaterial } = usePutTipoMaterial();
-  const { eliminarTipoMaterial } = useDeleteTipoMaterial();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoMaterial>>({});
@@ -31,22 +29,19 @@ const TipoMaterial = () => {
 
   const columns: Column<TipoMaterial>[] = [
     { key: "tipo_elemento", label: "Tipo de Elemento", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "estado",
       label: "Estado",
       filterable: true,
       render: (tipoMaterial) => (
-        <span className={`px-2 py-1 rounded-full text-sm ${
-          tipoMaterial.estado 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {tipoMaterial.estado ? "Activo" : "Inactivo"}
-        </span>
+        <Toggle 
+          isOn={tipoMaterial.estado} 
+          onToggle={() => handleToggleEstado(tipoMaterial)}
+        />
       )
     },
-    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
-    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -57,17 +52,6 @@ const TipoMaterial = () => {
             className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
           >
             Editar
-          </Boton>
-          <ToggleEstadoBoton
-            estado={Boolean(tipoMaterial.estado)}
-            onToggle={() => handleToggleEstado(tipoMaterial)}
-            size={18}
-          />
-          <Boton
-            onClick={() => handleDelete(tipoMaterial.id_tipo_material)}
-            className="bg-red-500 text-white px-2 py-1"
-          >
-            Eliminar
           </Boton>
         </div>
       ),
@@ -154,34 +138,6 @@ const TipoMaterial = () => {
       });
     }
   };
-
-  // Eliminar tipo de material
-  const handleDelete = async (id: number) => {
-    setAlert({
-      isOpen: true,
-      title: 'Confirmar eliminación',
-      message: '¿Estás seguro de que deseas eliminar este tipo de material?',
-      onConfirm: async () => {
-        try {
-          await eliminarTipoMaterial(id);
-          setSuccessAlertText('Tipo de material eliminado con éxito');
-          setShowSuccessAlert(true);
-          setTimeout(() => setShowSuccessAlert(false), 3000);
-          fetchTipoMateriales();
-          setAlert(a => ({ ...a, isOpen: false }));
-        } catch (error) {
-          console.error('Error al eliminar el tipo de material:', error);
-          setAlert({
-            isOpen: true,
-            title: 'Error',
-            message: `Error al eliminar el tipo de material: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-            onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-          });
-        }
-      },
-    });
-  };
-
 
   // Abrir modal para crear nuevo tipo de material
   const handleCreate = () => {

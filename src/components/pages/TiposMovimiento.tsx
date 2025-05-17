@@ -9,7 +9,7 @@ import { usePutTipoMovimiento } from '@/hooks/tipoMovimiento/usePutTipoMovimient
 import { TipoMovimiento } from '@/types/tipoMovimiento';
 import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
-import ToggleEstadoBoton from "@/components/atomos/Toggle";
+import Toggle from "@/components/atomos/Toggle";
 
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
@@ -40,14 +40,12 @@ const TiposMovimiento = () => {
     {
       key: "estado",
       label: "Estado",
+      filterable: true,
       render: (tipoMovimiento) => (
-        <span className={`px-2 py-1 rounded-full text-sm ${
-          tipoMovimiento.estado 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {tipoMovimiento.estado ? "Activo" : "Inactivo"}
-        </span>
+        <Toggle 
+          isOn={tipoMovimiento.estado || false} 
+          onToggle={() => handleToggleEstado(tipoMovimiento)}
+        />
       ),
     },
     {
@@ -62,11 +60,6 @@ const TiposMovimiento = () => {
           >
             <Pencil size={18} />
           </Boton>
-          <ToggleEstadoBoton
-            estado={tipoMovimiento.estado || false}
-            onToggle={() => handleToggleEstado(tipoMovimiento)}
-            size={18}
-          />
         </div>
       ),
     },

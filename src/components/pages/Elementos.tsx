@@ -3,19 +3,18 @@ import { Alert } from "@heroui/react";
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
+import AnimatedContainer from "../atomos/AnimatedContainer";
 import { useGetCategoriasElementos } from '../../hooks/Elemento/useGetCategoriasElementos';
 import { CategoriaElemento } from '../../types/categoriaElemento';
 import { usePostCategoriaElemento } from '../../hooks/Elemento/usePostCategoriaElemento';
 import { usePutCategoriaElemento } from '../../hooks/Elemento/usePutCategoriaElemento';
-import { useDeleteCategoriaElemento } from '../../hooks/Elemento/useDeleteCategoriaElemento';
-import ToggleEstadoBoton from "@/components/atomos/Toggle";
-import AlertDialog from '@/components/atomos/AlertDialog';
+import Toggle from "../atomos/Toggle";
+import AlertDialog from '../atomos/AlertDialog';
 
 const Elementos = () => {
   const { categorias, loading, fetchCategorias } = useGetCategoriasElementos();
   const { crearCategoriaElemento } = usePostCategoriaElemento();
   const { actualizarCategoriaElemento } = usePutCategoriaElemento();
-  const { eliminarCategoriaElemento } = useDeleteCategoriaElemento();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<CategoriaElemento>>({});
@@ -38,13 +37,10 @@ const Elementos = () => {
       label: "Estado", 
       filterable: true,
       render: (categoria) => (
-        <span className={`px-2 py-1 rounded-full text-sm ${
-          categoria.estado 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {categoria.estado ? 'Activo' : 'Inactivo'}
-        </span>
+        <Toggle
+          isOn={categoria.estado}
+          onToggle={() => handleToggleEstado(categoria)}
+        />
       )
     },
     {
@@ -58,17 +54,6 @@ const Elementos = () => {
           >
             Editar
           </Boton>
-          <ToggleEstadoBoton
-            estado={Boolean(categoria.estado)}
-            onToggle={() => handleToggleEstado(categoria)}
-            size={18}
-          />
-          <Boton
-            onClick={() => handleDelete(categoria.id_categoria_elemento)}
-            className="bg-red-500 text-white px-2 py-1"
-          >
-            Eliminar
-          </Boton>
         </div>
       ),
     },
@@ -78,8 +63,7 @@ const Elementos = () => {
   const formFields: FormField[] = [
     { key: "codigo_unpsc", label: "Código UNSPSC", type: "text", required: true },
     { key: "nombre_categoria", label: "Nombre de la Categoría", type: "text", required: true },
-    { key: "estado", label: "Estado", type: "checkbox", required: true },
-
+    // Quitamos el campo de estado ya que ahora se maneja con el Toggle
   ];
   if (editingId) {
     formFields.push({ key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true });
@@ -155,33 +139,6 @@ const Elementos = () => {
     }
   };
 
-  // Eliminar categoría
-  const handleDelete = async (id: number) => {
-    setAlert({
-      isOpen: true,
-      title: 'Confirmar eliminación',
-      message: '¿Estás seguro de que deseas eliminar esta categoría?',
-      onConfirm: async () => {
-        try {
-          await eliminarCategoriaElemento(id);
-          setSuccessAlertText('Categoría eliminada con éxito');
-          setShowSuccessAlert(true);
-          setTimeout(() => setShowSuccessAlert(false), 3000);
-          fetchCategorias();
-          setAlert(a => ({ ...a, isOpen: false }));
-        } catch (error) {
-          console.error('Error al eliminar la categoría:', error);
-          setAlert({
-            isOpen: true,
-            title: 'Error',
-            message: `Error al eliminar la categoría: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-            onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-          });
-        }
-      },
-    });
-  };
-
   // Abrir modal para crear nueva categoría
   const handleCreate = () => {
     setFormData({});
@@ -199,42 +156,77 @@ const Elementos = () => {
   return (
     <>
       <div className="w-full">
+        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Categorías de Elementos</h1>
+        </AnimatedContainer>
 
+        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
           <Boton  
             onClick={handleCreate}
             className="bg-blue-500 text-white px-4 py-2 mb-4"
           >
             Crear Nueva Categoría
           </Boton>
+        </AnimatedContainer>
 
           {/* Tabla de categorías */}
           {loading ? (
             <p>Cargando categorías de elementos...</p>
           ) : (
-            <GlobalTable columns={columns} data={categorias.map(categoria => ({ ...categoria, key: categoria.id_categoria_elemento }))} rowsPerPage={6} />
+            <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+              <GlobalTable 
+                columns={columns} 
+                data={categorias
+                  .map(categoria => ({ ...categoria, key: categoria.id_categoria_elemento }))
+                  // Ordenar por estado: activos primero, inactivos después
+                  .sort((a, b) => {
+                    if (a.estado === b.estado) return 0;
+                    return a.estado ? -1 : 1; // -1 pone a los activos primero
+                  })
+                } 
+                rowsPerPage={6}
+                defaultSortColumn="estado"
+                defaultSortDirection="desc"
+              />
+            </AnimatedContainer>
           )}
 
           {/* Modal para crear/editar */}
           {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-1/2">
-                <h2 className="text-lg font-bold mb-4">
-                  {editingId ? "Editar Categoría" : "Crear Nueva Categoría"}
-                </h2>
-                <Form
-                  fields={formFields}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={formData}
-                />
-                <Boton
-                  onClick={() => setIsModalOpen(false)}
-                  className="mt-4 bg-gray-500 text-white px-4 py-2"
-                >
-                  Cerrar
-                </Boton>
-              </div>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <AnimatedContainer
+                animation="scaleIn"
+                duration={300}
+                className="w-full max-w-lg"
+              >
+                <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
+                  {/* Botón X para cerrar en la esquina superior derecha */}
+                  <button 
+                    onClick={() => setIsModalOpen(false)} 
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                  >
+                    <span className="text-gray-800 font-bold">×</span>
+                  </button>
+                  
+                  <h2 className="text-lg font-bold mb-4 text-center">
+                    {editingId ? "Editar Categoría" : "Crear Nueva Categoría"}
+                  </h2>
+                  <Form
+                    fields={formFields}
+                    onSubmit={handleSubmit}
+                    buttonText={editingId ? "Actualizar" : "Crear"}
+                    initialValues={formData}
+                  />
+                  <div className="flex justify-end mt-4">
+                    <Boton
+                      onClick={() => setIsModalOpen(false)}
+                      className="bg-gray-500 text-white px-4 py-2 mr-2"
+                    >
+                      Cancelar
+                    </Boton>
+                  </div>
+                </div>
+              </AnimatedContainer>
             </div>
           )}
         </div>

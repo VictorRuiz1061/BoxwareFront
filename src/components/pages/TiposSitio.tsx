@@ -7,7 +7,7 @@ import { usePutTipoSitio } from '@/hooks/tipoSitio/usePutTipoSitio';
 import { TipoSitio } from '@/types/tipoSitio';
 import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
-import ToggleEstadoBoton from "@/components/atomos/Toggle";
+import Toggle from "@/components/atomos/Toggle";
 
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
@@ -37,13 +37,12 @@ const TiposSitio = () => {
     {
       key: "estado",
       label: "Estado",
+      filterable: true,
       render: (tipoSitio) => (
-        <div className="flex items-center justify-center">
-          {tipoSitio.estado ? 
-            <span className="text-green-500 font-medium">Activo</span> : 
-            <span className="text-red-500 font-medium">Inactivo</span>
-          }
-        </div>
+        <Toggle 
+          isOn={tipoSitio.estado || false} 
+          onToggle={() => handleToggleEstado(tipoSitio)}
+        />
       ),
     },
     {
@@ -58,11 +57,6 @@ const TiposSitio = () => {
           >
             <Pencil size={18} />
           </Boton>
-          <ToggleEstadoBoton
-            estado={tipoSitio.estado}
-            onToggle={() => handleToggleEstado(tipoSitio)}
-            size={18}
-          />
         </div>
       ),
     },

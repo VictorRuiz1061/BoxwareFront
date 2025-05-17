@@ -5,6 +5,10 @@ import { Centro } from "@/types/centro";
 export interface CentroUpdate {
   id_centro: number;
   nombre_centro?: string;
+  estado?: boolean;
+  fecha_modificacion?: string;
+  municipio_id?: number;
+  codigo_centro?: string;
   // otros campos opcionales si es necesario
 }
 

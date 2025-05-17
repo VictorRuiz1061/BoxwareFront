@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { Alert } from "@heroui/react";
-
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
@@ -12,14 +10,15 @@ import { Material } from '../../types/material';
 import { useGetCategoriasElementos } from '../../hooks/Elemento/useGetCategoriasElementos';
 import { useGetTipoMateriales } from '../../hooks/tipoMaterial/useGetTipoMateriales';
 import { useGetSitios } from '../../hooks/sitio/useGetSitios';
-import ToggleEstadoBoton from "@/components/atomos/Toggle";
-import AlertDialog from '@/components/atomos/AlertDialog';
+import Toggle from "../atomos/Toggle";
+import AlertDialog from '../atomos/AlertDialog';
+import AnimatedContainer from "../atomos/AnimatedContainer";
 
 const Materiales = () => {
   const { materiales, loading, fetchMateriales } = useGetMateriales();
   const { crearMaterial } = usePostMaterial();
   const { actualizarMaterial } = usePutMaterial();
-  const { eliminarMaterial } = useDeleteMaterial();
+  const {  } = useDeleteMaterial();
   const { categorias } = useGetCategoriasElementos();
   const { tipoMateriales } = useGetTipoMateriales();
   const { sitios } = useGetSitios();
@@ -100,36 +99,22 @@ const Materiales = () => {
       label: "Estado",
       filterable: true,
       render: (material) => (
-        <span className={`px-2 py-1 rounded-full text-sm ${
-          material.estado 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {material.estado ? 'Activo' : 'Inactivo'}
-        </span>
-      )
+        <Toggle
+          isOn={Boolean(material.estado)}
+          onToggle={() => handleToggleEstado(material)}
+        />
+      ),
     },
     {
-      key: "acciones",
+      key: "acciones", // Cambiado de "actions" a "acciones" para cumplir con el tipo esperado
       label: "Acciones",
       render: (material) => (
         <div className="flex gap-2">
           <Boton
             onClick={() => handleEdit(material)}
-            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
+            className="bg-yellow-500 text-white px-2 py-1"
           >
             Editar
-          </Boton>
-          <ToggleEstadoBoton
-            estado={Boolean(material.estado)}
-            onToggle={() => handleToggleEstado(material)}
-            size={18}
-          />
-          <Boton
-            onClick={() => handleDelete(material.id_material)}
-            className="bg-red-500 text-white px-2 py-1"
-          >
-            Eliminar
           </Boton>
         </div>
       ),
@@ -220,17 +205,27 @@ const Materiales = () => {
     try {
       // Preparar los datos para actualizar solo el estado
       const nuevoEstado = !material.estado;
-      const updateData: Partial<Material> = {
+      
+      // Crear un objeto Material completo con los datos mínimos necesarios
+      // para la actualización, manteniendo los datos originales del material
+      const updateData: Material = {
+        ...material,
         estado: nuevoEstado,
-        fecha_modificacion: new Date().toISOString().split('T')[0]
+        fecha_modificacion: new Date().toISOString()
       };
       
       console.log(`Cambiando estado de material ${material.id_material} a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
+      
+      // Actualizar el material en el servidor
       await actualizarMaterial(material.id_material, updateData);
+      
+      // Mostrar mensaje de éxito
       setSuccessAlertText(`El material fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
-      fetchMateriales(); // Actualizar la lista de materiales
+      
+      // Actualizar la lista de materiales
+      fetchMateriales();
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
       setAlert({
@@ -242,32 +237,7 @@ const Materiales = () => {
     }
   };
 
-  // Eliminar material
-  const handleDelete = async (id: number) => {
-    setAlert({
-      isOpen: true,
-      title: 'Confirmar eliminación',
-      message: '¿Estás seguro de que deseas eliminar este material?',
-      onConfirm: async () => {
-        try {
-          await eliminarMaterial(id);
-          setSuccessAlertText('Material eliminado con éxito');
-          setShowSuccessAlert(true);
-          setTimeout(() => setShowSuccessAlert(false), 3000);
-          fetchMateriales();
-          setAlert(a => ({ ...a, isOpen: false }));
-        } catch (error) {
-          console.error('Error al eliminar el material:', error);
-          setAlert({
-            isOpen: true,
-            title: 'Error',
-            message: `Error al eliminar el material: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-            onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-          });
-        }
-      },
-    });
-  };
+
 
   const handleCreate = () => {
     setFormData({});
@@ -285,20 +255,25 @@ const Materiales = () => {
   return (
     <>
       <div className="w-full">
+        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Materiales</h1>
+        </AnimatedContainer>
 
+        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
           <Boton
             onClick={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
+            className="bg-blue-500 text-white px-4 py-2 mb-4 hover:bg-blue-600"
           >
             Crear Nuevo Material
           </Boton>
+        </AnimatedContainer>
 
           {/* Tabla de materiales */}
           {loading ? (
             <p>Cargando materiales...</p>
           ) : (
-            <GlobalTable
+            <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+              <GlobalTable
               columns={columns}
               data={materiales.map((material) => {
                 // Crear un objeto con valores seguros para renderizar
@@ -307,7 +282,7 @@ const Materiales = () => {
                   key: material.id_material,
                   // Manejar tanto los campos antiguos como los nuevos
                   categoria_id: material.categoria_id || material.id_categoria,
-                  tipo_material_id: material.tipo_material_id || material.id_tipo_material,
+                   tipo_material_id: material.tipo_material_id || material.id_tipo_material,
                   sitio_id: material.sitio_id || material.id_sitio,
                   // Manejar el campo estado que puede ser string o boolean
                   estado: typeof material.estado === 'boolean' ? (material.estado ? 'Activo' : 'Inactivo') : material.estado,
@@ -344,13 +319,28 @@ const Materiales = () => {
                 return safeData;
               })}
               rowsPerPage={6}
+              defaultSortColumn="estado"
+              defaultSortDirection="desc"
             />
+            </AnimatedContainer>
           )}
 
           {/* Modal para crear/editar */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <AnimatedContainer
+                animation="scaleIn"
+                duration={300}
+                className="w-full max-w-lg"
+              >
+                <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
+                  {/* Botón X para cerrar en la esquina superior derecha */}
+                  <button 
+                    onClick={() => setIsModalOpen(false)} 
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                  >
+                    <span className="text-gray-800 font-bold">×</span>
+                  </button>
                 <h2 className="text-lg font-bold mb-4 text-center">
                   {editingId ? "Editar Material" : "Crear Nuevo Material"}
                 </h2>
@@ -372,21 +362,26 @@ const Materiales = () => {
                   >
                     Cerrar
                   </Boton>
+                </div>  
                 </div>
-              </div>
+              
+              </AnimatedContainer>
             </div>
           )}
         </div>
       {showSuccessAlert && (
         <div className="fixed top-4 right-4 z-50">
-          <Alert
-            hideIconWrapper
-            color="success"
-            description={successAlertText}
-            title="¡Éxito!"
-            variant="solid"
-            onClose={() => setShowSuccessAlert(false)}
-          />
+          <AnimatedContainer animation="fadeIn" duration={300}>
+            <div className="bg-green-500 text-white p-4 rounded shadow-lg">
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold">¡Éxito!</h3>
+                <button onClick={() => setShowSuccessAlert(false)} className="text-white hover:bg-green-600 rounded-full w-6 h-6 flex items-center justify-center">
+                  ×
+                </button>
+              </div>
+              <p>{successAlertText}</p>
+            </div>
+          </AnimatedContainer>
         </div>
       )}
       <AlertDialog
@@ -394,10 +389,11 @@ const Materiales = () => {
         title={alert.title}
         message={alert.message}
         onConfirm={alert.onConfirm}
-        onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
+        onCancel={alert.onConfirm}
         confirmText="Aceptar"
-        cancelText="Cancelar"
+        cancelText=""
       />
+      
     </>
   );
 };

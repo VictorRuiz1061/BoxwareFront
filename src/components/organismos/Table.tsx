@@ -126,29 +126,29 @@ const GlobalTable = <T extends { key: React.Key }>({
   return (
     <div className={`w-full ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}>
       {/* Controles superiores */}
-      <div className={`flex justify-between items-center gap-4 p-4 rounded-lg shadow-sm ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+      <div className={`flex flex-col sm:flex-row justify-between gap-4 p-4 rounded-lg ${darkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-gray-200'}`}>
         <div className="flex items-center gap-2">
-          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>Mostrar</span>
+          <span className={`text-sm ${darkMode ? 'text-emerald-300' : 'text-gray-700'}`}>registros</span>
           <Select
-            className={`w-20 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'}`}
+            className={`w-20 ${darkMode ? 'bg-slate-800 text-white border-slate-700' : 'bg-white text-gray-800 border-gray-300'}`}
             value={String(rowsPerPage)}
             onChange={(e) => setRowsPerPage(Number(e.target.value))}
             aria-label="Rows per page">
           
             {rowsPerPageOptions.map((option) => (
-              <SelectItem key={option} className={darkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : ''}>
+              <SelectItem key={option} className={darkMode ? 'bg-indigo-900 text-white hover:bg-indigo-800' : ''}>
                 {String(option)}
               </SelectItem>
             ))}
           </Select>
-          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>por página</span>
+          <span className={`text-sm ${darkMode ? 'text-purple-200' : 'text-gray-500'}`}>por página</span>
         </div>
 
         <div className="flex-1 max-w-xs">
           <div className="relative">
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} size={18} />
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${darkMode ? 'text-emerald-300' : 'text-gray-400'}`} size={18} />
             <Input
-              className={`pl-10 ${darkMode ? 'bg-gray-700 text-white border-gray-600 focus:border-blue-500' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
+              className={`pl-10 ${darkMode ? 'bg-slate-800 text-white border-slate-700 focus:border-emerald-400' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
               placeholder="Buscar..."
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
@@ -161,8 +161,8 @@ const GlobalTable = <T extends { key: React.Key }>({
       <Table
         aria-label="Dynamic Table"
         bottomContent={
-          <div className={`flex justify-between items-center px-4 py-2 ${darkMode ? 'bg-gray-800 border-t border-gray-700' : 'bg-white border-t border-gray-200'}`}>
-            <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+          <div className={`flex justify-between items-center px-4 py-2 ${darkMode ? 'bg-slate-900 border-t border-slate-700' : 'bg-white border-t border-gray-200'}`}>
+            <div className={`text-sm ${darkMode ? 'text-emerald-200' : 'text-gray-500'}`}>
               Mostrando {((page - 1) * rowsPerPage) + 1} a {Math.min(page * rowsPerPage, processedData.length)} de {processedData.length} registros
             </div>
             <Pagination
@@ -172,14 +172,14 @@ const GlobalTable = <T extends { key: React.Key }>({
               page={page}
               total={pages}
               onChange={setPage}
-              className={`${darkMode ? 'text-blue-400 [&_button]:!bg-gray-700 [&_button.active]:!bg-blue-600 [&_button:hover]:!bg-gray-600' : 'text-blue-600 [&_button]:!bg-blue-600 [&_button.active]:!bg-blue-600 [&_button:hover]:!bg-blue-500'}`}
+              className={`${darkMode ? 'text-emerald-300 [&_button]:!bg-slate-800 [&_button.active]:!bg-emerald-700 [&_button:hover]:!bg-slate-700' : 'text-blue-600 [&_button]:!bg-blue-600 [&_button.active]:!bg-blue-600 [&_button:hover]:!bg-blue-500'}`}
             />
           </div>
         }
         classNames={{
-          wrapper: `min-h-[222px] rounded-lg shadow-sm ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`,
-          th: darkMode ? 'bg-gray-700 text-gray-200 border-b border-gray-600' : 'bg-gray-50/50 text-gray-700 border-b border-gray-200',
-          td: `py-3 ${darkMode ? 'border-gray-700 text-gray-200' : 'border-gray-200 text-gray-800'}`
+          wrapper: `min-h-[222px] rounded-lg shadow-sm ${darkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-gray-200'}`,
+          th: darkMode ? 'bg-slate-800 text-emerald-200 border-b border-slate-700' : 'bg-gray-50/50 text-gray-700 border-b border-gray-200',
+          td: `py-3 ${darkMode ? 'border-slate-700 text-emerald-100' : 'border-gray-200 text-gray-800'}`
         }}
       >
         <TableHeader>
@@ -201,10 +201,10 @@ const GlobalTable = <T extends { key: React.Key }>({
 
         <TableBody 
           items={pagedData}
-          emptyContent={<div className={darkMode ? 'text-gray-400' : 'text-gray-500'}>No se encontraron registros</div>}
+          emptyContent={<div className={darkMode ? 'text-emerald-300' : 'text-gray-500'}>No se encontraron registros</div>}
         >
           {(item: T) => (
-            <TableRow key={String(item.key)} className={darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+            <TableRow key={String(item.key)} className={darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-50'}>
               {columns.map((col) => (
                 <TableCell key={String(col.key)}>
                   {col.render ? col.render(item) :

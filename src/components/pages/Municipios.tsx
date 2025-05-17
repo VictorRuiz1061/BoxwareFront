@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Pencil, Trash } from 'lucide-react';
-import { Alert } from '@heroui/react';
+
 import { useGetMunicipios } from '@/hooks/municipios/useGetMunicipios';
 import { usePostMunicipio } from '@/hooks/municipios/usePostMunicipio';
 import { usePutMunicipio } from '@/hooks/municipios/usePutMunicipio';
 import { useDeleteMunicipio } from '@/hooks/municipios/useDeleteMunicipio';
 import { Municipio } from '@/types/municipio';
 import Boton from "@/components/atomos/Boton";
+import Toggle from "@/components/atomos/Toggle";
+import { Alert } from "@heroui/react";
 
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
@@ -21,21 +23,24 @@ const Municipios = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [successAlertText, setSuccessAlertText] = useState('');
+  const [successAlertText, setSuccessAlertText] = useState("");
 
   const columns: Column<Municipio & { key: number }>[] = [
     { key: "nombre_municipio", label: "Nombre del Municipio", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
       key: "estado",
       label: "Estado",
       render: (municipio) => (
-        <span className={municipio.estado ? "text-green-600" : "text-red-600"}>
-          {municipio.estado ? "Activo" : "Inactivo"}
-        </span>
+        <div className="flex items-center justify-center">
+          <Toggle
+            isOn={municipio.estado}
+            onToggle={() => handleToggleEstado(municipio)}
+          />
+        </div>
       )
-    },
-    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
-    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
+    },  
     {
       key: "acciones",
       label: "Acciones",
@@ -47,13 +52,6 @@ const Municipios = () => {
             aria-label="Editar"
           >
             <Pencil size={18} />
-          </Boton>
-          <Boton
-            onPress={() => handleDelete(municipio.id_municipio)}
-            className="bg-red-500 text-white px-2 py-1 flex items-center justify-center"
-            aria-label="Eliminar"
-          >
-            <Trash size={18} />
           </Boton>
         </div>
       ),
@@ -83,6 +81,27 @@ const Municipios = () => {
 
   // Selección dinámica de campos
   const formFields: FormField[] = editingId ? [...baseFields, ...editFields] : baseFields;
+
+  // Cambiar el estado (activo/inactivo) de un municipio
+  const handleToggleEstado = async (municipio: Municipio) => {
+    try {
+      const nuevoEstado = !municipio.estado;
+      const updateData = {
+        ...municipio,
+        estado: nuevoEstado,
+        fecha_modificacion: new Date().toISOString(),
+      };
+      await actualizarMunicipio(municipio.id_municipio, updateData);
+      setSuccessAlertText(
+        `El municipio fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`
+      );
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+    } catch (error) {
+      console.error('Error al cambiar el estado:', error);
+      alert('Error al cambiar el estado del municipio');
+    }
+  };
 
 
   const handleSubmit = async (values: Record<string, string>) => {

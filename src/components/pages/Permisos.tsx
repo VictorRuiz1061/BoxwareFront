@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { Pencil, Trash } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Pencil } from 'lucide-react';
 import { Alert } from '@heroui/react';
 import { useGetPermisos } from '@/hooks/permisos/useGetPermisos';
 import { usePostPermiso } from '@/hooks/permisos/usePostPermiso';
 import { usePutPermiso } from '@/hooks/permisos/usePutPermiso';
-import { useDeletePermiso } from '@/hooks/permisos/useDeletePermiso';
 import { useGetRoles } from '@/hooks/roles/useGetRoles';
 import { useGetModulos } from '@/hooks/modulos/useGetModulos';
 import { Permiso } from '@/types/permiso';
 import Boton from "@/components/atomos/Boton";
+import Toggle from "@/components/atomos/Toggle";
 
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
@@ -16,12 +16,27 @@ import { permisoSchema } from '@/schemas/permiso.schema';
 
 const Permisos = () => {
   const { permisos, loading } = useGetPermisos();
+  // Estado para controlar el toggle visual sin depender de la recarga de datos
+  const [toggleStates, setToggleStates] = useState<{[key: number]: boolean}>({});
+  
+  // Inicializar los estados de los toggles cuando los permisos se cargan
+  useEffect(() => {
+    if (permisos && permisos.length > 0) {
+      const initialStates: {[key: number]: boolean} = {};
+      permisos.forEach(permiso => {
+        // Convertir correctamente el estado a booleano
+        // Si es string "false" o false o 0 o null o undefined, debe ser false
+        const estado = permiso.estado;
+        initialStates[permiso.id_permiso] = estado === true || String(estado) === "true" || Number(estado) === 1;
+      });
+      setToggleStates(initialStates);
+    }
+  }, [permisos]);
   const { crearPermiso } = usePostPermiso();
   const { actualizarPermiso } = usePutPermiso();
-  const { eliminarPermiso } = useDeletePermiso();
   const { roles } = useGetRoles();
   const { modulos } = useGetModulos();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);  
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Permiso>>({});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
@@ -86,15 +101,6 @@ const Permisos = () => {
         return String(permiso.rol_id);
       }
     },
-    {
-      key: "estado",
-      label: "Estado",
-      render: (permiso) => (
-        <span className={permiso.estado ? "text-green-600" : "text-red-600"}>
-          {permiso.estado ? "Activo" : "Inactivo"}
-        </span>
-      )
-    },
     { 
       key: "fecha_creacion", 
       label: "Fecha de Creación",
@@ -111,6 +117,18 @@ const Permisos = () => {
       }
     },
     {
+      key: "estado",
+      label: "Estado",
+      render: (permiso) => (
+        <div className="flex items-center justify-center">
+          <Toggle
+            isOn={toggleStates[permiso.id_permiso] ?? (permiso.estado === true || String(permiso.estado) === "true" || Number(permiso.estado) === 1)}
+            onToggle={() => handleToggleEstado(permiso)}
+          />
+        </div>
+      )
+    },
+    {
       key: "acciones",
       label: "Acciones",
       render: (permiso) => (
@@ -121,13 +139,6 @@ const Permisos = () => {
             aria-label="Editar"
           >
             <Pencil size={18} />
-          </Boton>
-          <Boton
-            onPress={() => handleDelete(permiso.id_permiso)}
-            className="bg-red-500 text-white px-2 py-1 flex items-center justify-center"
-            aria-label="Eliminar"
-          >
-            <Trash size={18} />
           </Boton>
         </div>
       ),
@@ -196,24 +207,55 @@ const Permisos = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este permiso?')) return;
-    try {
-      await eliminarPermiso(id);
-      setSuccessAlertText('Permiso eliminado con éxito');
-      setShowSuccessAlert(true);
-      setTimeout(() => setShowSuccessAlert(false), 3000);
-    } catch (error) {
-      console.error('Error al eliminar el permiso:', error);
-      alert('Error al eliminar el permiso');
-    }
-  };
-
   const handleCreate = () => {
     const today = new Date().toISOString().split('T')[0];
     setFormData({ fecha_creacion: today });
     setEditingId(null);
     setIsModalOpen(true);
+  };
+
+  // Cambiar el estado (activo/inactivo) de un permiso
+  const handleToggleEstado = async (permiso: Permiso) => {
+    try {
+      // Preparar los datos para actualizar solo el estado
+      // Determinar el estado actual correctamente
+      const estado = permiso.estado;
+      const estadoActual = toggleStates[permiso.id_permiso] ?? (estado === true || String(estado) === "true" || Number(estado) === 1);
+      const nuevoEstado = !estadoActual;
+      
+      // Actualizar el estado visual del toggle inmediatamente
+      setToggleStates(prev => ({
+        ...prev,
+        [permiso.id_permiso]: nuevoEstado
+      }));
+      
+      // Mostrar mensaje de éxito inmediatamente
+      setSuccessAlertText(`El permiso fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      
+      // Crear un objeto Permiso para la actualización en el servidor
+      // Importante: Enviar el estado en el formato que espera el backend (false, no "false")
+      const updateData = {
+        id: permiso.id_permiso,
+        estado: nuevoEstado // Enviar como booleano
+      };
+      
+      console.log('Enviando actualización al servidor:', { id: permiso.id_permiso, estado: nuevoEstado });
+      
+      // Actualizar el permiso en el servidor
+      await actualizarPermiso(permiso.id_permiso, updateData);
+      
+    } catch (error) {
+      console.error('Error al cambiar el estado:', error);
+      alert('Error al cambiar el estado del permiso');
+      
+      // Si hay un error, revertir el cambio visual
+      setToggleStates(prev => ({
+        ...prev,
+        [permiso.id_permiso]: toggleStates[permiso.id_permiso] ?? (permiso.estado === true || String(permiso.estado) === "true" || Number(permiso.estado) === 1)
+      }));
+    }
   };
 
   const handleEdit = (permiso: Permiso) => {
@@ -242,7 +284,8 @@ const Permisos = () => {
           ) : (
             <GlobalTable<Permiso & { key: number }>
               columns={columns}
-              data={permisos.map((permiso) => {
+              data={permisos
+                .map((permiso) => {
                 // Create a safe copy with all properties explicitly converted to appropriate types
                 const safePermiso = {
                   ...permiso,
@@ -252,7 +295,7 @@ const Permisos = () => {
                   codigo_nombre: permiso.codigo_nombre || '',
                   modulo_id: permiso.modulo_id,
                   rol_id: permiso.rol_id,
-                  estado: !!permiso.estado,
+                  estado: permiso.estado === true || String(permiso.estado) === "true" || Number(permiso.estado) === 1,
                   fecha_creacion: permiso.fecha_creacion || '',
                   key: permiso.id_permiso
                 };
@@ -266,8 +309,24 @@ const Permisos = () => {
                 });
                 
                 return safePermiso;
+              })
+              // Ordenar por estado: activos primero, inactivos después
+              .sort((a, b) => {
+                // Usar toggleStates para reflejar el estado actual, incluso si acaba de cambiar
+                const aActive = toggleStates[a.id_permiso] ?? (a.estado === true || String(a.estado) === "true" || Number(a.estado) === 1);
+                const bActive = toggleStates[b.id_permiso] ?? (b.estado === true || String(b.estado) === "true" || Number(b.estado) === 1);
+                
+                // Si los estados son diferentes, ordenar por estado
+                if (aActive !== bActive) {
+                  return aActive ? -1 : 1; // -1 pone a los activos primero
+                }
+                
+                // Si los estados son iguales, ordenar alfabéticamente por nombre
+                return (a.nombre || '').localeCompare(b.nombre || '');
               })}
               rowsPerPage={6}
+              defaultSortColumn="estado"
+              defaultSortDirection="desc"
             />
           )}
 

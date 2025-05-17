@@ -5,6 +5,7 @@ import { Permiso } from "./getPermisos";
 export interface PermisoUpdate {
   id: number;
   nombre?: string;
+  estado?: boolean | string | number;
 }
 
 export async function putPermiso(data: PermisoUpdate): Promise<Permiso> {

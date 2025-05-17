@@ -53,16 +53,16 @@ const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "E
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`flex flex-col gap-4 p-4 border rounded-lg shadow-md ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-gray-300'} ${className}`}>
+    <form onSubmit={handleSubmit} className={`flex flex-col gap-4 p-4 border rounded-lg shadow-md ${darkMode ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white border-slate-700' : 'bg-white text-gray-800 border-gray-300'} ${className}`}>
       {fields.map((field) => (
         <div key={field.key} className="flex flex-col">
-          <label className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{field.label}</label>
+          <label className={`font-semibold ${darkMode ? 'text-emerald-300' : 'text-gray-700'}`}>{field.label}</label>
           {field.type === "select" ? (
             <select
               required={field.required}
               value={formData[field.key] || ""}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleChange(field.key, e.target.value)}
-              className={`border p-2 rounded ${darkMode ? 'bg-gray-700 text-white border-gray-600 focus:border-blue-500' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
+              className={`border p-2 rounded ${darkMode ? 'bg-slate-800 text-white border-slate-700 focus:border-emerald-400 focus:outline-none' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
             >
               <option key="default-option" value="">Seleccione...</option>
               {field.options?.map((option, idx) => {
@@ -87,11 +87,11 @@ const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "E
               required={field.required}
               value={formData[field.key] || ""}
               onChange={(e) => handleChange(field.key, e.target.value)}
-              className={`border p-2 rounded ${darkMode ? 'bg-gray-700 text-white border-gray-600 focus:border-blue-500' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
+              className={`border p-2 rounded ${darkMode ? 'bg-slate-800 text-white border-slate-700 focus:border-emerald-400 focus:outline-none' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
             />
           )}
           {errors[field.key] && (
-            <span className={`${darkMode ? 'text-red-400' : 'text-red-600'} text-xs mt-1`}>{errors[field.key]}</span>
+            <span className={`${darkMode ? 'text-red-300' : 'text-red-600'} text-xs mt-1`}>{errors[field.key]}</span>
           )}
         </div>
       ))}

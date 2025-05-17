@@ -6,19 +6,17 @@ import Boton from "../atomos/Boton";
 import { useGetSedes } from '../../hooks/sedes/useGetSedes';
 import { usePostSede } from '../../hooks/sedes/usePostSede';
 import { usePutSede } from '../../hooks/sedes/usePutSede';
-import { useDeleteSede } from '../../hooks/sedes/useDeleteSede';
 import { useGetCentros } from '../../hooks/centros/useGetCentros';
 import { sedeSchema } from '@/schemas/sede.schema';
 import { Sede } from "@/types/sede";
 import { NuevaSede } from "@/api/sedes/postSede";
-import ToggleEstadoBoton from "@/components/atomos/Toggle";
+import Toggle from "@/components/atomos/Toggle";
 import AlertDialog from '@/components/atomos/AlertDialog';
 
 const Sedes = () => {
   const { sedes, loading, fetchSedes } = useGetSedes();
   const { crearSede } = usePostSede();
   const { actualizarSede } = usePutSede();
-  const { eliminarSede } = useDeleteSede();
   const { centros } = useGetCentros();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -50,19 +48,6 @@ const Sedes = () => {
     { key: "nombre_sede", label: "Nombre de la Sede", filterable: true },
     { key: "direccion_sede", label: "Dirección de la sede", filterable: true },
     {
-      key: "estado",
-      label: "Estado",
-      render: (sede) => (
-        <span className={`px-2 py-1 rounded-full text-sm ${
-          sede.estado 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {sede.estado ? "Activo" : "Inactivo"}
-        </span>
-      )
-    },
-    {
       key: "centro_id",
       label: "Centro",
       filterable: true,
@@ -74,6 +59,17 @@ const Sedes = () => {
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
     {
+      key: "estado",
+      label: "Estado",
+      filterable: true,
+      render: (sede) => (
+        <Toggle 
+          isOn={sede.estado} 
+          onToggle={() => handleToggleEstado(sede)}
+        />
+      )
+    },
+    {
       key: "acciones",
       label: "Acciones",
       render: (sede) => (
@@ -83,17 +79,6 @@ const Sedes = () => {
             className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
           >
             Editar
-          </Boton>
-          <ToggleEstadoBoton
-            estado={Boolean(sede.estado)}
-            onToggle={() => handleToggleEstado(sede)}
-            size={18}
-          />
-          <Boton
-            onClick={() => handleDelete(sede.id_sede)}
-            className="bg-red-500 text-white px-2 py-1"
-          >
-            Eliminar
           </Boton>
         </div>
       ),
@@ -225,32 +210,6 @@ const Sedes = () => {
         onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
       });
     }
-  };
-
-  const handleDelete = async (id: number) => {
-    setAlert({
-      isOpen: true,
-      title: 'Confirmar eliminación',
-      message: '¿Estás seguro de que deseas eliminar esta sede?',
-      onConfirm: async () => {
-        try {
-          await eliminarSede(id);
-          setSuccessAlertText('Sede eliminada con éxito');
-          setShowSuccessAlert(true);
-          setTimeout(() => setShowSuccessAlert(false), 3000);
-          fetchSedes();
-          setAlert(a => ({ ...a, isOpen: false }));
-        } catch (error) {
-          console.error('Error al eliminar la sede:', error);
-          setAlert({
-            isOpen: true,
-            title: 'Error',
-            message: `Error al eliminar la sede: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-            onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-          });
-        }
-      },
-    });
   };
 
   const handleCreate = () => {

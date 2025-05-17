@@ -1,26 +1,46 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
+import Toggle from "../atomos/Toggle";
+import { Alert } from "@heroui/react";
 import { useGetProgramas } from '../../hooks/programas/useGetProgramas';
 import { usePostPrograma } from '../../hooks/programas/usePostPrograma';
 import { usePutPrograma } from '../../hooks/programas/usePutPrograma';
-import { useDeletePrograma } from '../../hooks/programas/useDeletePrograma';
 import { Programa } from '../../types/programa';
 import { useGetAreas } from '../../hooks/areas/useGetAreas';
 import { programaSchema } from '@/schemas/programa.schema';
 
 const Programas = () => {
   const { programas, loading } = useGetProgramas();
-  console.log('Programas component data:', { programas, loading });
+  // Estado para controlar el toggle visual sin depender de la recarga de datos
+  const [toggleStates, setToggleStates] = useState<{[key: number]: boolean}>({});
+  
+  // Inicializar los estados de los toggles cuando los programas se cargan
+  useEffect(() => {
+    if (programas && programas.length > 0) {
+      setToggleStates(prev => {
+        const newStates = {...prev};
+        programas.forEach(programa => {
+          // Solo inicializar si no existe ya en toggleStates
+          if (!(programa.id_programa in newStates)) {
+            newStates[programa.id_programa] = programa.estado === "true";
+          }
+        });
+        return newStates;
+      });
+    }
+  }, [programas]);
+  // Eliminar console.log innecesario
   const { crearPrograma } = usePostPrograma();
   const { actualizarPrograma } = usePutPrograma();
-  const { eliminarPrograma } = useDeletePrograma();
   const { areas } = useGetAreas();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Programa>>({});
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successAlertText, setSuccessAlertText] = useState('');
 
   const columns: Column<Programa>[] = [
     { key: "nombre_programa", label: "Nombre del Programa", filterable: true },
@@ -33,22 +53,28 @@ const Programas = () => {
         return area ? area.nombre_area : String(programa.area_id);
       }
     },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
+    { key: "fecha_modificacion", label: "Última Modificación", filterable: true },
     {
       key: "estado",
       label: "Estado",
       filterable: true,
       render: (programa) => {
-        // Check if estado is active by comparing with string "true" since it's stored as a string in the database
-        const isActive = programa.estado === "true";
+        // Usar el ID específico como clave para este toggle
+        const programaId = programa.id_programa;
+        const isActive = toggleStates[programaId] ?? (programa.estado === "true");
+        
         return (
-          <span className={isActive ? "text-green-600" : "text-red-600"}>
-            {isActive ? "Activo" : "Inactivo"}
-          </span>
+          <div className="flex items-center justify-center">
+            <Toggle
+              key={`toggle-${programaId}`} // Clave única para React
+              isOn={isActive}
+              onToggle={() => handleToggleEstado(programa)}
+            />
+          </div>
         );
       }
     },
-    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
-    { key: "fecha_modificacion", label: "Última Modificación", filterable: true },
     {
       key: "acciones",
       label: "Acciones",
@@ -59,12 +85,6 @@ const Programas = () => {
             className="bg-yellow-500 text-white px-2 py-1"
           >
             Editar
-          </Boton>
-          <Boton
-            onClick={() => handleDelete(programa.id_programa)}
-            className="bg-red-500 text-white px-2 py-1"
-          >
-            Eliminar
           </Boton>
         </div>
       ),
@@ -124,22 +144,66 @@ const Programas = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este programa?')) return;
-    try {
-      await eliminarPrograma(id);
-      alert('Programa eliminado con éxito');
-    } catch (error) {
-      console.error('Error al eliminar el programa:', error);
-      alert('Error al eliminar el programa');
-    }
-  };
-
   const handleCreate = () => {
     setFormData({});
     setEditingId(null);
     setIsModalOpen(true);
   };
+
+  // Cambiar el estado (activo/inactivo) de un programa
+  // Cambiar el estado (activo/inactivo) de un programa específico
+  const handleToggleEstado = async (programa: Programa) => {
+    try {
+      // Obtener el ID específico del programa que estamos modificando
+      const programaId = programa.id_programa;
+      
+      // Determinar el estado actual y el nuevo estado
+      const estadoActual = toggleStates[programaId] ?? (programa.estado === "true");
+      const nuevoEstado = !estadoActual;
+      
+      // Actualizar SOLO el estado de este programa específico
+      setToggleStates(prev => {
+        const newState = {...prev};
+        newState[programaId] = nuevoEstado;
+        return newState;
+      });
+      
+      // Mostrar mensaje de éxito
+      setSuccessAlertText(`El programa fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      
+      // Crear el objeto de actualización para el backend (debe ser un Programa completo)
+      const updateData: Programa = {
+        id_programa: programaId,
+        nombre_programa: programa.nombre_programa,
+        area_id: programa.area_id,
+        fecha_creacion: programa.fecha_creacion,
+        fecha_modificacion: new Date().toISOString(),
+        estado: nuevoEstado ? "true" : "false"
+      };
+      
+      // Enviar la actualización al servidor
+      await actualizarPrograma(programaId, updateData);
+      
+      console.log(`Toggle actualizado para programa ${programaId}: ${nuevoEstado}`);
+      
+    } catch (error) {
+      console.error(`Error al cambiar el estado del programa ${programa.id_programa}:`, error);
+      
+      // Si hay un error, revertir SOLO el cambio de este programa específico
+      const programaId = programa.id_programa;
+      setToggleStates(prev => {
+        const newState = {...prev};
+        newState[programaId] = programa.estado === "true";
+        return newState;
+      });
+      
+      alert('Error al cambiar el estado del programa');
+    }
+  };
+
+
 
   const handleEdit = (programa: Programa) => {
     setFormData(programa);
@@ -164,8 +228,37 @@ const Programas = () => {
           ) : programas && programas.length > 0 ? (
             <GlobalTable 
               columns={columns as Column<any>[]} 
-              data={programas.map(programa => ({ ...programa, key: programa.id_programa }))} 
-              rowsPerPage={6} 
+              data={programas
+                .map(programa => {
+                  // Asegurarse de que cada programa tenga un ID único
+                  const programaId = programa.id_programa;
+                  
+                  // Crear un objeto nuevo para cada programa
+                  return {
+                    ...programa,
+                    key: programaId, // Clave única para React
+                    // NO modificar el estado original aquí, solo usarlo para ordenar
+                    _estadoVisual: toggleStates[programaId] ?? (programa.estado === "true")
+                  };
+                })
+                // Ordenar por estado: activos primero, inactivos después
+                .sort((a, b) => {
+                  // Usar toggleStates para reflejar el estado actual, incluso si acaba de cambiar
+                  const aActive = toggleStates[a.id_programa] ?? (a.estado === "true");
+                  const bActive = toggleStates[b.id_programa] ?? (b.estado === "true");
+                  
+                  // Si los estados son diferentes, ordenar por estado
+                  if (aActive !== bActive) {
+                    return aActive ? -1 : 1; // -1 pone a los activos primero
+                  }
+                  
+                  // Si los estados son iguales, ordenar alfabéticamente por nombre
+                  return a.nombre_programa.localeCompare(b.nombre_programa);
+                })
+              } 
+              rowsPerPage={6}
+              defaultSortColumn="estado"
+              defaultSortDirection="desc"
             />
           ) : (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -202,6 +295,20 @@ const Programas = () => {
             </div>
           )}
         </div>
+
+        {/* Alerta de éxito */}
+        {showSuccessAlert && (
+          <div className="fixed top-4 right-4 z-50">
+            <Alert
+              hideIconWrapper
+              color="success"
+              description={successAlertText}
+              title="¡Éxito!"
+              variant="solid"
+              onClose={() => setShowSuccessAlert(false)}
+            />
+          </div>
+        )}
     </>
   );
 };

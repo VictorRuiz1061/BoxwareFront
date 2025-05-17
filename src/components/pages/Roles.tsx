@@ -6,18 +6,18 @@ import Form, { FormField } from "../organismos/Form";
 import { useGetRoles } from '../../hooks/roles/useGetRoles';
 import { usePostRol } from '../../hooks/roles/usePostRol';
 import { usePutRol } from '../../hooks/roles/usePutRol';
-import { useDeleteRol } from '../../hooks/roles/useDeleteRol';
-import { Rol } from '../../types/rol';
 import AnimatedContainer from "../atomos/AnimatedContainer";
-import { Pencil, Trash } from 'lucide-react';
-import { Alert } from "@heroui/react";
 import { rolSchema } from '@/schemas/rol.schema';
+import AlertDialog from '../atomos/AlertDialog';
+import { Pencil } from 'lucide-react';
+import { Alert } from "@heroui/react";
+import Toggle from "../atomos/Toggle";
+import { Rol } from '../../types/rol';
 
 const Roles = () => {
   const { roles, loading } = useGetRoles();
   const { crearRol } = usePostRol();
   const { actualizarRol } = usePutRol();
-  const { eliminarRol } = useDeleteRol();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   // Usamos string para los valores del formulario para evitar problemas de tipo
@@ -31,20 +31,28 @@ const Roles = () => {
   const [formData, setFormData] = useState<Partial<RolFormValues>>({});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
+  });
 
   const columns: Column<Rol & { key: number }>[] = [
     { key: "nombre_rol", label: "Nombre del Rol", filterable: true },
     { key: "descripcion", label: "Descripción", filterable: true },
+    { key: "fecha_creacion", label: "Fecha de Creación" },
     { 
       key: "estado", 
       label: "Estado",
+      filterable: true,
       render: (rol) => (
-        <span className={rol.estado ? "text-green-600" : "text-red-600"}>
-          {rol.estado ? "Activo" : "Inactivo"}
-        </span>
+        <Toggle 
+          isOn={rol.estado} 
+          onToggle={() => handleToggleEstado(rol)}
+        />
       )
     },
-    { key: "fecha_creacion", label: "Fecha de Creación" },
     {
       key: "acciones",
       label: "Acciones",
@@ -56,13 +64,6 @@ const Roles = () => {
             aria-label="Editar"
           >
             <Pencil size={18} />
-          </Boton>
-          <Boton
-            onPress={() => handleDelete(rol.id_rol)}
-            className="bg-red-500 text-white px-2 py-1 flex items-center justify-center"
-            aria-label="Eliminar"
-          >
-            <Trash size={18} />
           </Boton>
         </div>
       ),
@@ -120,22 +121,52 @@ const Roles = () => {
       setEditingId(null);
     } catch (error) {
       console.error("Error al guardar el rol:", error);
-      alert(`Error al guardar el rol: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: `Error al guardar el rol: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
-  // Eliminar rol
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este rol?"))
-      return;
-
+  // Cambiar el estado (activo/inactivo) de un rol
+  const handleToggleEstado = async (rol: Rol) => {
     try {
-      await eliminarRol(id);
-      setSuccessAlertText('Rol eliminado con éxito');
+      // Preparar los datos para actualizar solo el estado
+      const nuevoEstado = !rol.estado;
+      
+      // Crear un objeto RolUpdate con los datos mínimos necesarios
+      // para la actualización, incluyendo la propiedad 'id'
+      const updateData = {
+        id: rol.id_rol,
+        nombre_rol: rol.nombre_rol,
+        descripcion: rol.descripcion,
+        estado: nuevoEstado,
+        fecha_creacion: rol.fecha_creacion,
+        fecha_modificacion: new Date().toISOString().split('T')[0],
+      };
+      
+      console.log(`Cambiando estado de rol ${rol.id_rol} a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
+      
+      // Actualizar el rol en el servidor
+      await actualizarRol(rol.id_rol, updateData);
+      
+      // Mostrar mensaje de éxito
+      setSuccessAlertText(`El rol fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
+      
+      // La invalidación de la cache de React Query se maneja automáticamente 
+      // en el hook usePutRol cuando se completa la mutación
     } catch (error) {
-      console.error("Error al eliminar el rol:", error);
+      console.error('Error al cambiar el estado:', error);
+      setAlert({
+        isOpen: true,
+        title: 'Error',
+        message: `Error al cambiar el estado del rol: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
+      });
     }
   };
 
@@ -228,6 +259,15 @@ const Roles = () => {
               />
             </div>
           )}
+          <AlertDialog
+            isOpen={alert.isOpen}
+            title={alert.title}
+            message={alert.message}
+            onConfirm={alert.onConfirm}
+            onCancel={alert.onConfirm}
+            confirmText="Aceptar"
+            cancelText=""
+          />
         </div>
     </>
   );

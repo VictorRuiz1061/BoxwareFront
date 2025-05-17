@@ -172,15 +172,15 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className={`flex flex-col h-full overflow-hidden transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'} ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+    <div className={`flex flex-col h-full overflow-hidden transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'} ${darkMode ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white' : 'bg-white text-gray-800'}`}>
       {/* Encabezado del sidebar */}
-      <div className={`flex items-center justify-between p-4 ${darkMode ? 'border-gray-700' : 'border-gray-200'} border-b`}>
+      <div className={`flex items-center justify-between p-4 ${darkMode ? 'border-slate-700' : 'border-gray-200'} border-b`}>
         {!collapsed && (
-          <h2 className="font-bold text-xl">BoxWare</h2>
+          <h2 className={`font-bold text-xl ${darkMode ? 'text-emerald-400' : ''}`}>BoxWare</h2>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={`p-2 rounded-md ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+          className={`p-2 rounded-md ${darkMode ? 'hover:bg-slate-700 text-emerald-400' : 'hover:bg-gray-100'}`}
         >
           <Menu size={20} />
         </button>
@@ -194,9 +194,9 @@ const Sidebar = () => {
               <a
                 href={group.path}
                 className={`flex items-center px-4 py-3 ${isActive(group.path) 
-                  ? `bg-blue-500 ${darkMode ? 'text-white' : 'text-black'}` 
-                  : `${darkMode ? 'hover:bg-gray-700 text-gray-200 hover:text-blue-300' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
-                } hover:pl-5 transition-all duration-300 rounded-md cursor-pointer font-medium ${darkMode ? 'bg-gray-700' : 'bg-white'}`}
+                  ? `${darkMode ? 'bg-emerald-700 text-white' : 'bg-blue-500 text-black'}` 
+                  : `${darkMode ? 'hover:bg-slate-700 text-emerald-300 hover:text-emerald-200' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
+                } hover:pl-5 transition-all duration-300 rounded-md cursor-pointer font-medium ${darkMode ? 'bg-slate-800/60' : 'bg-white'}`}
               >
                 <div className="mr-3">{group.icon}</div>
                 {!collapsed && <span>{group.label}</span>}
@@ -207,9 +207,9 @@ const Sidebar = () => {
                 <div
                   onClick={() => !collapsed && toggleGroup(group.label)}
                   className={`flex items-center px-4 py-3 ${isGroupActive(group.items) 
-                    ? `bg-blue-500 ${darkMode ? 'text-white' : 'text-black'}` 
-                    : `${darkMode ? 'hover:bg-gray-700 text-gray-200 hover:text-blue-300' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
-                  } hover:pl-5 transition-all duration-300 rounded-md cursor-pointer font-medium ${darkMode ? 'bg-gray-700' : 'bg-white'}`}
+                    ? `${darkMode ? 'bg-emerald-700 text-white' : 'bg-blue-500 text-black'}` 
+                    : `${darkMode ? 'hover:bg-slate-700 text-emerald-300 hover:text-emerald-200' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
+                  } hover:pl-5 transition-all duration-300 rounded-md cursor-pointer font-medium ${darkMode ? 'bg-slate-800/60' : 'bg-white'}`}
                 >
                   <div className="mr-3">{group.icon}</div>
                   {!collapsed && (
@@ -229,15 +229,15 @@ const Sidebar = () => {
 
                 {/* Submenú con animación */}
                 <div
-                  className={`pl-4 ${darkMode ? 'bg-gray-700' : 'bg-white'} transition-all duration-300 ease-in-out overflow-hidden ${expandedGroups.includes(group.label) ? "max-h-96" : "max-h-0"}`}
+                  className={`pl-4 ${darkMode ? 'bg-slate-800/40' : 'bg-white'} transition-all duration-300 ease-in-out overflow-hidden ${expandedGroups.includes(group.label) ? "max-h-96" : "max-h-0"}`}
                 >
                   {group.items?.map((item, itemIndex) => (
                     <div key={itemIndex} className="w-full">
                       <a
                         href={item.path}
                         className={`flex items-center px-4 py-2 ${isActive(item.path) 
-                          ? `bg-blue-500 ${darkMode ? 'text-white' : 'text-black'}` 
-                          : `${darkMode ? 'hover:bg-gray-600 text-gray-200 hover:text-blue-300' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
+                          ? `${darkMode ? 'bg-emerald-700 text-white' : 'bg-blue-500 text-black'}` 
+                          : `${darkMode ? 'hover:bg-slate-700 text-emerald-300 hover:text-emerald-200' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
                         } transition-colors duration-300 rounded-md cursor-pointer font-medium`}
                       >
                         <div className="mr-3">{item.icon}</div>
@@ -253,22 +253,17 @@ const Sidebar = () => {
       </div>
 
       {/* Botón de cerrar sesión */}
-      <div className={`mt-auto border-t ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-white'} transition-colors duration-300`}>
-
-
-        {/* Botón de cerrar sesión */}
-        <div className={`mt-auto border-t ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-white'} transition-colors duration-300`}>
-          <div className="px-3 py-3">
-            <button
-              onClick={confirmLogout}
-              className={`flex items-center px-3 py-2 ${darkMode ? 'text-gray-200 hover:text-blue-300 hover:bg-gray-600' : 'text-black hover:text-blue-600 hover:bg-gray-400'} transition-colors duration-300 cursor-pointer w-full text-left rounded-md font-medium`}
-            >
-              <div className="mr-3">
-                <LogOut size={20} />
-              </div>
-              {!collapsed && <span>Cerrar Sesión</span>}
-            </button>
-          </div>
+      <div className={`mt-auto border-t ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-300 bg-white'} transition-colors duration-300`}>
+        <div className="px-3 py-3">
+          <button
+            onClick={confirmLogout}
+            className={`flex items-center px-3 py-2 ${darkMode ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-700' : 'text-black hover:text-blue-600 hover:bg-gray-400'} transition-colors duration-300 cursor-pointer w-full text-left rounded-md font-medium`}
+          >
+            <div className="mr-3">
+              <LogOut size={20} />
+            </div>
+            {!collapsed && <span>Cerrar Sesión</span>}
+          </button>
         </div>
       </div>
 

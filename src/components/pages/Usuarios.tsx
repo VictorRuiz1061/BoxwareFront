@@ -15,7 +15,7 @@ import Boton from "@/components/atomos/Boton";
 
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
-import ToggleEstadoBoton from "@/components/atomos/Toggle";
+import Toggle from "@/components/atomos/Toggle";
 
 const Usuarios = () => {
   const navigate = useNavigate();
@@ -43,20 +43,6 @@ const Usuarios = () => {
     { key: "cedula", label: "Cédula", filterable: true },
     { key: "email", label: "Email", filterable: true },
     { key: "telefono", label: "Teléfono", filterable: true },
-    { 
-      key: "estado", 
-      label: "Estado", 
-      filterable: true,
-      render: (usuario) => (
-        <span className={`px-2 py-1 rounded-full text-sm ${
-          usuario.estado 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {usuario.estado ? 'Activo' : 'Inactivo'}
-        </span>
-      )
-    },
     {
       key: "rol_id",
       label: "Rol",
@@ -65,6 +51,17 @@ const Usuarios = () => {
         const rol = roles.find((r) => r.id_rol === usuario.rol_id);
         return rol ? rol.nombre_rol : usuario.rol_id;
       },
+    },
+    { 
+      key: "estado", 
+      label: "Estado", 
+      filterable: true,
+      render: (usuario) => (
+        <Toggle 
+          isOn={usuario.estado} 
+          onToggle={() => handleToggleEstado(usuario)}
+        />
+      )
     },
     {
       key: "acciones",
@@ -78,11 +75,6 @@ const Usuarios = () => {
           >
             <Pencil size={18} />
           </Boton>
-          <ToggleEstadoBoton
-            estado={usuario.estado}
-            onToggle={() => handleToggleEstado(usuario)}
-            size={18}
-          />
           <Boton
             onPress={() => handleViewDetails(usuario.id_usuario)}
             className="bg-blue-500 text-white px-2 py-1 flex items-center justify-center"
@@ -108,16 +100,6 @@ const Usuarios = () => {
       required: true,
     },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
-    {
-      key: "estado",
-      label: "Estado",
-      type: "select",
-      required: true,
-      options: [
-        { label: "Activo", value: "true" },
-        { label: "Inactivo", value: "false" }
-      ],
-    },
     {
       key: "rol_id",
       label: "Rol",
@@ -287,11 +269,20 @@ const Usuarios = () => {
             ) : (
               <GlobalTable
                 columns={columns}
-                data={usuarios.map((usuario) => ({
-                  ...usuario,
-                  key: usuario.id_usuario,
-                }))}
+                data={usuarios
+                  .map((usuario) => ({
+                    ...usuario,
+                    key: usuario.id_usuario,
+                  }))
+                  // Ordenar por estado: activos primero, inactivos después
+                  .sort((a, b) => {
+                    if (a.estado === b.estado) return 0;
+                    return a.estado ? -1 : 1; // -1 pone a los activos primero
+                  })
+                }
                 rowsPerPage={6}
+                defaultSortColumn="estado"
+                defaultSortDirection="desc"
               />
             )}
           </AnimatedContainer>

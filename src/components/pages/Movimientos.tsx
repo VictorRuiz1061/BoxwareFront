@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pencil } from 'lucide-react';
 import { movimientoSchema } from '@/schemas/movimiento.schema';
 import { useGetMovimientos } from '@/hooks/movimiento/useGetMovimientos';
@@ -10,7 +10,7 @@ import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento/useGetTiposMovimie
 import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
 import ToggleEstadoBoton from "@/components/atomos/Toggle";
-// SuccessAlert is not being used, so removing the import
+import { Alert } from "@heroui/react";
 
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
@@ -21,7 +21,13 @@ interface MovimientoConKey extends Movimiento {
 }
 
 const Movimientos = () => {
-  const { movimientos, loading, fetchMovimientos } = useGetMovimientos();
+  const { movimientos: movimientosIniciales, loading, fetchMovimientos } = useGetMovimientos();
+  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
+  
+  // Sincronizar el estado local con los datos obtenidos del hook
+  useEffect(() => {
+    setMovimientos(movimientosIniciales);
+  }, [movimientosIniciales]);
   const { crearMovimiento } = usePostMovimiento();
   const { actualizarMovimiento } = usePutMovimiento();
   const { usuarios } = useGetUsuarios();
@@ -44,11 +50,17 @@ const Movimientos = () => {
     }
   };
   
-  // Preparar los datos para la tabla añadiendo la propiedad key
-  const movimientosConKey = movimientos.map(movimiento => ({
-    ...movimiento,
-    key: movimiento.id_movimiento
-  }));
+  // Preparar los datos para la tabla añadiendo la propiedad key y ordenando por estado (activos primero)
+  const movimientosConKey = movimientos
+    .map(movimiento => ({
+      ...movimiento,
+      key: movimiento.id_movimiento
+    }))
+    // Ordenar por estado: activos primero, inactivos después
+    .sort((a, b) => {
+      if (a.estado === b.estado) return 0;
+      return a.estado ? -1 : 1; // -1 pone a los activos primero
+    });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -60,7 +72,7 @@ const Movimientos = () => {
     onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
   });
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
 
   const columns: Column<MovimientoConKey>[] = [
     { key: "id_movimiento", label: "ID", filterable: true },
@@ -99,10 +111,10 @@ const Movimientos = () => {
       label: "Estado",
       render: (movimiento) => (
         <div className="flex items-center justify-center">
-          {movimiento.estado ? 
-            <span className="text-green-500 font-medium">Activo</span> : 
-            <span className="text-red-500 font-medium">Inactivo</span>
-          }
+          <ToggleEstadoBoton
+            isOn={movimiento.estado}
+            onToggle={() => handleToggleEstado(movimiento)}
+          />
         </div>
       ),
     },
@@ -118,11 +130,6 @@ const Movimientos = () => {
           >
             <Pencil size={18} />
           </Boton>
-          <ToggleEstadoBoton
-            estado={movimiento.estado}
-            onToggle={() => handleToggleEstado(movimiento)}
-            size={18}
-          />
         </div>
       ),
     },
@@ -244,21 +251,38 @@ const Movimientos = () => {
     try {
       // Preparar los datos para actualizar solo el estado
       const nuevoEstado = !movimiento.estado;
+      
+      // Actualización optimista: Actualizar el estado en la UI inmediatamente
+      // Creamos una copia del array de movimientos y actualizamos el estado del movimiento específico
+      const movimientosActualizados = movimientos.map(m => 
+        m.id_movimiento === movimiento.id_movimiento 
+          ? { ...m, estado: nuevoEstado, fecha_modificacion: new Date().toISOString().split('T')[0] }
+          : m
+      );
+      
+      // Actualizamos el estado local inmediatamente para reflejar el cambio en la UI
+      setMovimientos(movimientosActualizados);
+      
+      // Crear un objeto Movimiento para la actualización en el servidor
       const updateData: Partial<Movimiento> = {
         estado: nuevoEstado,
         fecha_modificacion: new Date().toISOString().split('T')[0]
       };
       
-      console.log(`Cambiando estado de movimiento ${movimiento.id_movimiento} a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
-      await actualizarMovimiento(movimiento.id_movimiento, updateData);
+      // Mostrar mensaje de éxito inmediatamente
       setSuccessMessage(`El movimiento fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
-      // Esperar un momento antes de actualizar para asegurar que el servidor haya procesado el cambio
-      setTimeout(() => {
-        refreshMovimientos();
-      }, 500);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      
+      // Actualizar el movimiento en el servidor en segundo plano
+      await actualizarMovimiento(movimiento.id_movimiento, updateData);
+      
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
+      
+      // Si hay un error, revertimos el cambio optimista
+      refreshMovimientos();
+      
       setAlert({
         isOpen: true,
         title: 'Error',
@@ -281,6 +305,7 @@ const Movimientos = () => {
     setIsModalOpen(true);
   };
 
+  
   // Abrir modal para editar movimiento existente
   const handleEdit = (movimiento: Movimiento) => {
     // Convertir fechas a formato string para los inputs date
@@ -299,8 +324,15 @@ const Movimientos = () => {
       <div className="w-full">
           {/* Alerta de éxito */}
           {showSuccessAlert && (
-            <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in-out">
-              {successMessage}
+            <div className="fixed top-4 right-4 z-50">
+              <Alert
+                hideIconWrapper
+                color="success"
+                description={successMessage}
+                title="¡Éxito!"
+                variant="solid"
+                onClose={() => setShowSuccessAlert(false)}
+              />
             </div>
           )}
 
@@ -321,6 +353,8 @@ const Movimientos = () => {
               data={movimientosConKey} 
               columns={columns} 
               rowsPerPage={6}
+              defaultSortColumn="estado"
+              defaultSortDirection="desc"
             />
           )}
 
