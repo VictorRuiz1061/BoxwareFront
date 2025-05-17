@@ -12,10 +12,9 @@ import Modulos from "./components/pages/Modulos";
 import Usuarios from "./components/pages/Usuarios";
 import Roles from "./components/pages/Roles";
 import Permisos from "./components/pages/Permisos";
-import DetalleUsuario from "./components/pages/DetalleUsuario";
 
 // Inventario Pages
-import Materiales from "./components/pages/Materiales";
+// import Materiales from "./components/pages/Materiales";
 import Elementos from "./components/pages/Elementos";
 import TipoMaterial from "./components/pages/TipoMaterial";
 import Movimientos from "./components/pages/Movimientos";
@@ -34,18 +33,18 @@ import Programas from "./components/pages/programas";
 import Fichas from "./components/pages/fichas";
 import NotFound from "./components/pages/Not404";
 
-// // Informes Pages
-// import Informes from "./components/pages/Informes";
-// import MaterialesPorUsuario from "./components/pages/informes/MaterialesPorUsuario";
-// import InventarioPorSedeArea from "./components/pages/informes/InventarioPorSedeArea";
-// import MovimientosHistoricos from "./components/pages/informes/MovimientosHistoricos";
-// import MaterialesStockMinimo from "./components/pages/informes/MaterialesStockMinimo";
-// import MaterialesMasUtilizados from "./components/pages/informes/MaterialesMasUtilizados";
-// import UsuariosConMasMateriales from "./components/pages/informes/UsuariosConMasMateriales";
-// import EstadoInventario from "./components/pages/informes/EstadoInventario";
-// import TransferenciasSedes from "./components/pages/informes/TransferenciasSedes";
-// import HistorialPorUsuario from "./components/pages/informes/HistorialPorUsuario";
-// import MaterialesBaja from "./components/pages/informes/MaterialesBaja";
+// Informes Pages
+import Informes from "./components/pages/Informes";
+import MaterialesPorUsuario from "./components/pages/informes/MaterialesPorUsuario";
+import InventarioPorSedeArea from "./components/pages/informes/InventarioPorSedeArea";
+import MovimientosHistoricos from "./components/pages/informes/MovimientosHistoricos";
+import MaterialesStockMinimo from "./components/pages/informes/MaterialesStockMinimo";
+import MaterialesMasUtilizados from "./components/pages/informes/MaterialesMasUtilizados";
+import UsuariosConMasMateriales from "./components/pages/informes/UsuariosConMasMateriales";
+import EstadoInventario from "./components/pages/informes/EstadoInventario";
+import TransferenciasSedes from "./components/pages/informes/TransferenciasSedes";
+import HistorialPorUsuario from "./components/pages/informes/HistorialPorUsuario";
+import MaterialesBaja from "./components/pages/informes/MaterialesBaja";
 
 function App() {
   return (
@@ -63,12 +62,11 @@ function App() {
         {/* Administración */}
         <Route path="/modulos" element={<Modulos />} />
         <Route path="/usuarios" element={<Usuarios />} />
-        <Route path="/detalle-usuario/:id?" element={<DetalleUsuario />} />
         <Route path="/roles" element={<Roles />} />
         <Route path="/permisos" element={<Permisos />} />
         
         {/* Inventario */}
-        <Route path="/materiales" element={<Materiales />} />
+        {/* <Route path="/materiales" element={<Materiales />} /> */}
         <Route path="/elementos" element={<Elementos />} />
         <Route path="/tipo_materiales" element={<TipoMaterial />} />
         <Route path="/movimientos" element={<Movimientos />} />
@@ -84,8 +82,7 @@ function App() {
         
         {/* Educación */}
         <Route path="/programas" element={<Programas />} />
-        <Route path="/fichas" element={<Fichas />} />
-{/*         
+        <Route path="/fichas" element={<Fichas />} />        
         <Route path="/informes" element={<Informes />} />
         <Route path="/informes/materiales-por-usuario" element={<MaterialesPorUsuario />} />
         <Route path="/informes/inventario-por-sede-area" element={<InventarioPorSedeArea />} />
@@ -97,7 +94,6 @@ function App() {
         <Route path="/informes/transferencias-sedes" element={<TransferenciasSedes />} />
         <Route path="/informes/historial-por-usuario" element={<HistorialPorUsuario />} />
         <Route path="/informes/materiales-baja" element={<MaterialesBaja />} />
-        */}
       </Route>
        
       {/* Ruta 404 */}

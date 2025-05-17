@@ -180,7 +180,7 @@ const TiposSitio = () => {
       estado: true
     });
     setEditingId(null);
-    setIsModalOpen(true);
+    setIsModalOpen(true); 
   };
 
   // Abrir modal para editar tipo de sitio existente

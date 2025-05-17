@@ -1,11 +1,3 @@
-import { getUsuarios } from '@/api/usuario/getUsuarios';
-import { getMateriales } from './material/getMateriales';
-import { getTipoMateriales } from './tipoMaterial/getTipoMateriales';
-import { getSitios } from './sitio/getSitios';
-import { getMovimientos } from './movimiento/getMovimientos';
-import { getTiposMovimiento } from './tipoMovimiento/getTiposMovimiento';
-import { getCategoriasElementos } from './Elemento/getCategoriasElementos';
-
 interface DashboardStats {
   totalUsuarios: number;
   totalMovimientos: number;
@@ -29,177 +21,21 @@ interface DashboardStats {
 
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
-    // Obtener datos de las diferentes APIs
-    const [usuarios, materiales, tiposMaterial, sitios, movimientos, tiposMovimiento] = await Promise.all([
-      getUsuarios(),
-      getMateriales(),
-      getTipoMateriales(),
-      getSitios(),
-      getMovimientos(),
-      getTiposMovimiento(),
-      getCategoriasElementos()
-    ]);
-
-    // Calcular totales
-    const totalUsuarios = usuarios.length;
-    const totalMovimientos = movimientos.length;
-    const totalMateriales = materiales.length;
-    const totalSitios = sitios.length;
-
-    // Agrupar materiales por tipo
-    const materialesPorTipo: Record<string, number> = {};
-    
-    // Crear un mapa de tipos de material para buscar nombres
-    const mapaTiposMaterial = tiposMaterial.reduce((map, tipo) => {
-      map[tipo.id_tipo_material] = tipo.tipo_elemento;
-      return map;
-    }, {} as Record<number, string>);
-    
-    // Contar materiales por tipo
-    materiales.forEach(material => {
-      const tipoNombre = mapaTiposMaterial[material.tipo_material_id] || 'Sin categoría';
-      materialesPorTipo[tipoNombre] = (materialesPorTipo[tipoNombre] || 0) + 1;
+    const token = localStorage.getItem('token');
+    const response = await fetch('http://localhost:3000/dashboard', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
     });
-    
-    // Formato para gráfica de materiales
-    const materialesData = Object.entries(materialesPorTipo)
-      .map(([tipo, cantidad]) => ({
-        tipo,
-        cantidad
-      }))
-      .sort((a, b) => b.cantidad - a.cantidad) // Ordenar de mayor a menor
-      .slice(0, 6); // Tomar los 6 más numerosos
-
-    // Calcular movimientos por mes (últimos 6 meses)
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const movimientosPorMes = [];
-    
-    // Crear un mapa de tipos de movimiento para identificar entradas/salidas
-    const mapaTiposMovimiento = tiposMovimiento.reduce((map, tipo) => {
-      map[tipo.id_tipo_movimiento] = tipo.tipo_movimiento;
-      return map;
-    }, {} as Record<number, string>);
-    
-    // Obtener últimos 6 meses
-    const hoy = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-      const mes = meses[fecha.getMonth()];
-      
-      // Filtrar movimientos de este mes
-      const movimientosMes = movimientos.filter(m => {
-        try {
-          const fechaMovimiento = new Date(m.fecha_creacion);
-          return fechaMovimiento.getMonth() === fecha.getMonth() && 
-                 fechaMovimiento.getFullYear() === fecha.getFullYear();
-        } catch (e) {
-          return false;
-        }
-      });
-      
-      // Contar entradas y salidas
-      let entradas = 0;
-      let salidas = 0;
-      
-      movimientosMes.forEach(movimiento => {
-        const tipoNombre = (mapaTiposMovimiento[movimiento.tipo_movimiento_id] || '').toLowerCase();
-        if (tipoNombre.includes('entrada')) {
-          entradas++;
-        } else if (tipoNombre.includes('salida')) {
-          salidas++;
-        }
-      });
-      
-      movimientosPorMes.push({
-        mes: `${mes}`,
-        entrada: entradas,
-        salida: salidas
-      });
+    if (!response.ok) {
+      throw new Error('Error al obtener estadísticas del dashboard');
     }
-
-    // Crear un mapa para buscar nombres de usuarios
-    const mapaUsuarios = usuarios.reduce((map, usuario) => {
-      map[usuario.id_usuario] = `${usuario.nombre} ${usuario.apellido}`;
-      return map;
-    }, {} as Record<number, string>);
-
-    // Crear un mapa para buscar nombres de sitios
-
-    // Obtener últimos movimientos
-    const movimientosRecientes = movimientos
-      .sort((a, b) => {
-        try {
-          return new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime();
-        } catch (e) {
-          return 0;
-        }
-      })
-      .slice(0, 5)
-      .map(movimiento => {
-        // Buscar tipo de movimiento y detalles adicionales
-        const tipoNombre = mapaTiposMovimiento[movimiento.tipo_movimiento_id] || 'Desconocido';
-        const usuario = mapaUsuarios[movimiento.usuario_movimiento_id] || 'Usuario desconocido';
-        
-        // Definir estado basado en alguna lógica
-        let estado = 'Completado';
-        try {
-          const fechaMovimiento = new Date(movimiento.fecha_creacion);
-          const hoy = new Date();
-          const diferenciaDias = Math.floor((hoy.getTime() - fechaMovimiento.getTime()) / (1000 * 3600 * 24));
-          
-          if (diferenciaDias < 1) {
-            estado = 'En progreso';
-          } else if (diferenciaDias < 3) {
-            estado = 'Pendiente';
-          }
-        } catch (e) {
-          // Si hay error al procesar la fecha, mantener "Completado" por defecto
-        }
-        
-        return {
-          descripcion: `${tipoNombre} por ${usuario}`,
-          fecha: movimiento.fecha_creacion,
-          estado
-        };
-      });
-
-    return {
-      totalUsuarios,
-      totalMovimientos,
-      totalMateriales,
-      totalSitios,
-      movimientosPorMes,
-      materiales: materialesData,
-      movimientoRecientes: movimientosRecientes
-    };
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Error al obtener estadísticas del dashboard:', error);
-    // Devolver datos de ejemplo en caso de error (para desarrollo)
-    return {
-      totalUsuarios: 45,
-      totalMovimientos: 120,
-      totalMateriales: 85,
-      totalSitios: 12,
-      movimientosPorMes: [
-        { mes: 'Enero', entrada: 15, salida: 10 },
-        { mes: 'Febrero', entrada: 20, salida: 12 },
-        { mes: 'Marzo', entrada: 25, salida: 15 },
-        { mes: 'Abril', entrada: 30, salida: 20 },
-        { mes: 'Mayo', entrada: 22, salida: 18 },
-        { mes: 'Junio', entrada: 28, salida: 16 }
-      ],
-      materiales: [
-        { tipo: 'Herramientas', cantidad: 35 },
-        { tipo: 'Equipos', cantidad: 25 },
-        { tipo: 'Consumibles', cantidad: 15 },
-        { tipo: 'Otros', cantidad: 10 }
-      ],
-      movimientoRecientes: [
-        { descripcion: 'Entrada de herramientas', fecha: '2023-06-15', estado: 'Completado' },
-        { descripcion: 'Salida de equipos', fecha: '2023-06-14', estado: 'Completado' },
-        { descripcion: 'Inventario de consumibles', fecha: '2023-06-13', estado: 'En progreso' },
-        { descripcion: 'Mantenimiento de equipos', fecha: '2023-06-12', estado: 'Pendiente' }
-      ]
-    };
+    throw error;
   }
-}; 
+};

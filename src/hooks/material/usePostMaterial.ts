@@ -1,12 +1,8 @@
+import { usePostMaterial as useApiPostMaterial } from '@/api/materiales/postMateriales';
 import { Material } from '@/types/material';
-import { usePostMaterial as useApiPostMaterial } from '@/api/material/postMaterial';
 
 export function usePostMaterial() {
   const post = useApiPostMaterial();
-  
-  const crearMaterial = async (material: Omit<Material, 'id_material'>) => {
-    return await post.mutateAsync(material);
-  };
-  
+  const crearMaterial = async (data: Material) => post.mutateAsync(data);
   return { crearMaterial };
 }

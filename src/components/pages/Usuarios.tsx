@@ -1,18 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Alert } from "@heroui/react";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Eye } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { usuarioSchema } from "@/schemas/usuario.schema";
 import { useGetUsuarios } from "@/hooks/usuario/useGetUsuarios";
 import { usePostUsuario } from "@/hooks/usuario/usePostUsuario";
 import { usePutUsuario } from "@/hooks/usuario/usePutUsuario";
-// Eliminamos la importación de useDeleteUsuario ya que no lo usamos más
 import { useGetRoles } from "@/hooks/roles/useGetRoles";
 import { Usuario } from "@/types/usuario";
 import AnimatedContainer from "@/components/atomos/AnimatedContainer";
 import AlertDialog from "@/components/atomos/AlertDialog";
 import Boton from "@/components/atomos/Boton";
-
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 import Toggle from "@/components/atomos/Toggle";
@@ -32,10 +30,26 @@ const Usuarios = () => {
     message: "",
     onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
   });
-  // Eliminamos el estado deleteConfirm ya que no lo necesitamos más
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState("");
 
+  const renderRol = (rol_id: number) => {
+    const rol = roles.find(r => r.id_rol === rol_id);
+    return rol ? rol.nombre_rol : rol_id;
+  };
+  const renderAcciones = (usuario: Usuario) => (
+    <div className="flex gap-2">
+      <Boton
+        onPress={() => openModal(usuario)}
+        className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
+        aria-label="Editar"
+      >
+        <Pencil size={18} />
+      </Boton>
+    </div>
+  );
+
+  // Columnas centralizadas y limpias
   const columns: Column<Usuario>[] = [
     { key: "nombre", label: "Nombre", filterable: true },
     { key: "apellido", label: "Apellido", filterable: true },
@@ -47,123 +61,113 @@ const Usuarios = () => {
       key: "rol_id",
       label: "Rol",
       filterable: true,
-      render: (usuario) => {
-        const rol = roles.find((r) => r.id_rol === usuario.rol_id);
-        return rol ? rol.nombre_rol : usuario.rol_id;
-      },
+      render: usuario => renderRol(usuario.rol_id)
     },
-    { 
-      key: "estado", 
-      label: "Estado", 
+    {
+      key: "estado",
+      label: "Estado",
       filterable: true,
-      render: (usuario) => (
-        <Toggle 
-          isOn={usuario.estado} 
-          onToggle={() => handleToggleEstado(usuario)}
-        />
+      render: usuario => (
+        <Toggle isOn={usuario.estado} onToggle={() => handleToggleEstado(usuario)} />
       )
     },
     {
       key: "acciones",
       label: "Acciones",
-      render: (usuario) => (
-        <div className="flex gap-2">
-          <Boton
-            onPress={() => handleEdit(usuario)}
-            className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
-            aria-label="Editar"
-          >
-            <Pencil size={18} />
-          </Boton>
-          <Boton
-            onPress={() => handleViewDetails(usuario.id_usuario)}
-            className="bg-blue-500 text-white px-2 py-1 flex items-center justify-center"
-            aria-label="Detalles"
-          >
-            <Eye size={18} />
-          </Boton>
-        </div>
-      ),
-    },
+      render: usuario => renderAcciones(usuario)
+    }
   ];
 
+  // Campos de formulario centralizados
   const formFields: FormField[] = [
     { key: "nombre", label: "Nombre", type: "text", required: true },
     { key: "apellido", label: "Apellido", type: "text", required: true },
     { key: "edad", label: "Edad", type: "number", required: true },
     { key: "cedula", label: "Cédula", type: "text", required: true },
     { key: "email", label: "Email", type: "email", required: true },
-    {
-      key: "contrasena",
-      label: "Contraseña",
-      type: "password",
-      required: true,
-    },
+    { key: "contrasena", label: "Contraseña", type: "password", required: true },
     { key: "telefono", label: "Teléfono", type: "text", required: true },
     {
       key: "rol_id",
       label: "Rol",
       type: "select",
       required: true,
-      options: roles.map((r) => ({ label: r.nombre_rol, value: r.id_rol })),
-    },
+      options: roles.map(r => ({ label: r.nombre_rol, value: r.id_rol }))
+    }
   ];
 
-  // Crear o actualizar usuario
-  const handleSubmit = async (
-    values: Record<string, string | number | boolean>
-  ) => {
+  // Modal genérico para crear/editar usuario
+  const openModal = (usuario?: Usuario) => {
+    setFormData(usuario || {});
+    setEditingId(usuario ? usuario.id_usuario : null);
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setFormData({});
+    setEditingId(null);
+  };
+
+  // Crear o actualizar usuario (handler único y limpio)
+  // Función auxiliar para mostrar alertas de validación
+  const showValidationAlert = (title: string, message: string) => {
+    setAlert({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
+    });
+  };
+
+  // Función auxiliar para preparar datos de usuario
+  const buildUsuarioPayload = (values: Record<string, string | number | boolean>, id?: number): Usuario => ({
+    id_usuario: id ?? 0,
+    nombre: String(values.nombre),
+    apellido: String(values.apellido),
+    edad: Number(values.edad),
+    cedula: String(values.cedula),
+    email: String(values.email),
+    contrasena: String(values.contrasena),
+    telefono: String(values.telefono),
+    estado: values.estado !== undefined ? Boolean(values.estado) : true,
+    fecha_registro: typeof values.fecha_registro === 'string' ? values.fecha_registro : (values.fecha_registro ? String(values.fecha_registro) : new Date().toISOString().split('T')[0]),
+    rol_id: Number(values.rol_id)
+  });
+
+  const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
-      // Validar con zod
+      // Validación con zod
       const parsed = usuarioSchema.safeParse(values);
       if (!parsed.success) {
-        setAlert({
-          isOpen: true,
-          title: "Error de validación",
-          message: parsed.error.errors.map((e) => e.message).join("\n"),
-          onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
-        });
+        showValidationAlert("Error de validación", parsed.error.errors.map((e) => e.message).join("\n"));
         return;
       }
-      // Buscar el rol seleccionado por id_rol
-      const rolSeleccionado = roles.find(
-        (r) => r.id_rol === Number(values.rol_id)
+      // Validación de campos requeridos
+      const requiredFields = ["nombre", "apellido", "edad", "cedula", "email", "contrasena", "telefono", "rol_id"];
+      const missing = requiredFields.find(
+        field => values[field] === undefined || values[field] === null || (typeof values[field] === "string" && values[field] === "")
       );
-      const payload = {
-        ...values,
-        rol_id: rolSeleccionado ? rolSeleccionado.id_rol : undefined,
-        fecha_registro: new Date().toISOString(),
-        estado: values.estado === "true" ? true : false,
-      };
-      if (editingId) {
-        // Construir objeto Usuario completo para actualización
-        const usuarioActualizado: Usuario = {
-          id_usuario: editingId,
-          nombre: String(values.nombre),
-          apellido: String(values.apellido),
-          edad: Number(values.edad),
-          cedula: String(values.cedula),
-          email: String(values.email),
-          contrasena: String(values.contrasena),
-          telefono: String(values.telefono),
-          estado: values.estado === "true" ? true : false,
-          fecha_registro: payload.fecha_registro,
-          rol_id: Number(payload.rol_id),
-        };
-        await actualizarUsuario(editingId, usuarioActualizado);
-        setSuccessAlertText("El usuario fue actualizado correctamente.");
-        setShowSuccessAlert(true);
-        setTimeout(() => setShowSuccessAlert(false), 3000);
-      } else {
-        await crearUsuario(payload as Omit<Usuario, "id_usuario">);
-        setSuccessAlertText("El usuario fue creado correctamente.");
-        setShowSuccessAlert(true);
-        setTimeout(() => setShowSuccessAlert(false), 3000);
+      if (missing) {
+        showValidationAlert("Campo requerido", `El campo '${missing}' es obligatorio.`);
+        return;
       }
-      setIsModalOpen(false);
-      setFormData({});
-      setEditingId(null);
-    } catch (error) {
+      // Validar rol
+      if (!roles.some(r => r.id_rol === Number(values.rol_id))) {
+        showValidationAlert("Rol inválido", "Por favor selecciona un rol válido.");
+        return;
+      }
+      // Crear o actualizar
+      if (editingId) {
+        await actualizarUsuario(Number(editingId), buildUsuarioPayload(values, Number(editingId)));
+        setSuccessAlertText("El usuario fue actualizado correctamente.");
+      } else {
+        await crearUsuario(buildUsuarioPayload(values));
+        setSuccessAlertText("El usuario fue creado correctamente.");
+      }
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      closeModal();
+    } catch (error: any) {
       console.error("Error al guardar el usuario:", error);
       setAlert({
         isOpen: true,
@@ -174,39 +178,19 @@ const Usuarios = () => {
     }
   };
 
-  // Cambiar el estado (activo/inactivo) de un usuario
+  // Cambiar estado de usuario (más simple)
   const handleToggleEstado = async (usuario: Usuario) => {
     try {
-      // Preparar los datos para actualizar solo el estado
       const nuevoEstado = !usuario.estado;
-      
-      // Crear un objeto Usuario completo con los datos mínimos necesarios
-      // para la actualización, manteniendo los datos originales del usuario
-      const updateData: Usuario = {
-        ...usuario,
-        estado: nuevoEstado
-      };
-      
-      console.log(`Cambiando estado de usuario ${usuario.id_usuario} a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
-      
-      // Actualizar el usuario en el servidor
-      await actualizarUsuario(usuario.id_usuario, updateData);
-      
-      // Mostrar mensaje de éxito
+      await actualizarUsuario(usuario.id_usuario, { ...usuario, estado: nuevoEstado });
       setSuccessAlertText(`El usuario fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
-      
-          // No necesitamos hacer nada más aquí
-      // La invalidación de la cache de React Query se maneja automáticamente 
-      // en el hook usePutUsuario cuando se completa la mutación
-      // Esto hará que la tabla se actualice automáticamente sin recargar la página
-    } catch (error) {
-      console.error('Error al cambiar el estado:', error);
+    } catch (error: any) {
       setAlert({
         isOpen: true,
         title: 'Error',
-        message: `Error al cambiar el estado del usuario: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        message: `Error al cambiar el estado del usuario: ${error?.message || 'Error desconocido'}`,
         onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
       });
     }
@@ -218,19 +202,7 @@ const Usuarios = () => {
     setEditingId(null);
     setIsModalOpen(true);
   };
-
-  // Abrir modal para editar usuario existente
-  const handleEdit = (usuario: Usuario) => {
-    setFormData(usuario);
-    setEditingId(usuario.id_usuario);
-    setIsModalOpen(true);
-  };
-
-  // Ver detalles de usuario
-  const handleViewDetails = (id: number) => {
-    navigate(`/detalle-usuario/${id}`);
-  };
-
+  
   return (
     <>
       <div className="w-full">
@@ -351,4 +323,4 @@ const Usuarios = () => {
   );
 };
 
-export default React.memo(Usuarios);
+export default Usuarios;

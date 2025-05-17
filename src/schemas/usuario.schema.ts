@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 export const usuarioSchema = z.object({
   nombre: z.string()
-    .min(5, 'El nombre debe tener al menos 5 caracteres')
+    .min(3, 'El nombre debe tener al menos 5 caracteres')
     .max(50, 'El nombre no puede tener más de 50 caracteres'),
   apellido: z.string()
-    .min(5, 'El apellido debe tener al menos 5 caracteres')
+    .min(3, 'El apellido debe tener al menos 5 caracteres')
     .max(50, 'El apellido no puede tener más de 50 caracteres'),
   edad: z.union([z.string(), z.number()])
     .refine(val => !isNaN(Number(val)), { message: 'La edad debe ser un número' })

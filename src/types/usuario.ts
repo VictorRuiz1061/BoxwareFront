@@ -11,5 +11,3 @@ export interface Usuario {
   fecha_registro: string;
   rol_id: number;
 }
-
-export type NuevoUsuario = Omit<Usuario, 'id_usuario' | 'estado' | 'fecha_registro'>;
