@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Home, Users, Shield, Key, Box, Package, Boxes, RefreshCw, RotateCw,
   Building, Landmark, MapPin, Layout, Map, MapPinned, BookOpen, GraduationCap, Menu, LogOut,
   ChevronRight, BarChart, FileText, PieChart, TrendingUp } from "lucide-react";
-import AlertDialog from "../atomos/AlertDialog";
 import { useTheme } from "../../context/ThemeContext";
 
 const Sidebar = () => {
@@ -266,16 +265,6 @@ const Sidebar = () => {
           </button>
         </div>
       </div>
-
-      <AlertDialog
-        isOpen={showLogoutAlert}
-        title="Cerrar Sesión"
-        message="¿Estás seguro de que deseas cerrar sesión?"
-        confirmText="Sí, cerrar sesión"
-        cancelText="Cancelar"
-        onConfirm={handleLogout}
-        onCancel={() => setShowLogoutAlert(false)}
-      />
     </div>
   );
 };

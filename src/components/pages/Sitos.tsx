@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Alert } from "@heroui/react";
-
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
@@ -11,9 +10,6 @@ import { Sitio } from '../../types/sitio';
 import { useGetUsuarios } from '../../hooks/usuario/useGetUsuarios';
 import { useGetTiposSitio } from '../../hooks/tipoSitio/useGetTiposSitio';
 import Toggle from "../atomos/Toggle";
-import AlertDialog from "../atomos/AlertDialog";
-
-
 
 const Sitios = () => {
   const { sitios, loading } = useGetSitios();
@@ -24,12 +20,6 @@ const Sitios = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Sitio>>({});
-  const [alert, setAlert] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
-  });
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState("");
 
@@ -88,12 +78,9 @@ const Sitios = () => {
       const usuarioSeleccionado = usuarios.find(u => u.nombre === values.persona_encargada_id);
       const tipoSitioSeleccionado = tiposSitio.find(t => t.nombre_tipo_sitio === values.tipo_sitio_id);
       if (!tipoSitioSeleccionado) {
-        setAlert({
-          isOpen: true,
-          title: 'Error',
-          message: "Por favor selecciona un tipo de sitio válido.",
-          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-        });
+        setSuccessAlertText("Por favor selecciona un tipo de sitio válido.");
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
         return;
       }
       
@@ -132,12 +119,9 @@ const Sitios = () => {
       setEditingId(null);
     } catch (error) {
       console.error('Error al guardar el sitio:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al guardar el sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setSuccessAlertText(`Error al guardar el sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -172,12 +156,9 @@ const Sitios = () => {
       
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al cambiar el estado del sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setSuccessAlertText(`Error al cambiar el estado del sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -258,15 +239,6 @@ const Sitios = () => {
           />
         </div>
       )}
-      <AlertDialog
-        isOpen={alert.isOpen}
-        title={alert.title}
-        message={alert.message}
-        onConfirm={alert.onConfirm}
-        onCancel={alert.onConfirm}
-        confirmText="Aceptar"
-        cancelText=""
-      />
     </>
   );
 };

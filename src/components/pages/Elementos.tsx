@@ -9,7 +9,6 @@ import { CategoriaElemento } from '../../types/categoriaElemento';
 import { usePostCategoriaElemento } from '../../hooks/Elemento/usePostCategoriaElemento';
 import { usePutCategoriaElemento } from '../../hooks/Elemento/usePutCategoriaElemento';
 import Toggle from "../atomos/Toggle";
-import AlertDialog from '../atomos/AlertDialog';
 
 const Elementos = () => {
   const { categorias, loading, fetchCategorias } = useGetCategoriasElementos();
@@ -18,12 +17,6 @@ const Elementos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<CategoriaElemento>>({});
-  const [alert, setAlert] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-  });
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
 
@@ -103,12 +96,9 @@ const Elementos = () => {
       fetchCategorias();
     } catch (error) {
       console.error('Error al guardar la categoría:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al guardar la categoría: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setShowSuccessAlert(true);
+      setSuccessAlertText(`Error al guardar la categoría: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -130,12 +120,9 @@ const Elementos = () => {
       fetchCategorias(); // Actualizar la lista de categorías
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al cambiar el estado de la categoría: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setShowSuccessAlert(true);
+      setSuccessAlertText(`Error al cambiar el estado de la categoría: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -242,15 +229,6 @@ const Elementos = () => {
           />
         </div>
       )}
-      <AlertDialog
-        isOpen={alert.isOpen}
-        title={alert.title}
-        message={alert.message}
-        onConfirm={alert.onConfirm}
-        onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
-        confirmText="Aceptar"
-        cancelText="Cancelar"
-      />
     </>
   );
 };

@@ -3,7 +3,7 @@ import axiosInstance from "@/api/axiosConfig";
 import { CategoriaElemento } from "@/types/categoriaElemento";
 
 export async function getCategoriasElementos(): Promise<CategoriaElemento[]> {
-  const response = await axiosInstance.get<CategoriaElemento[]>("/categoria-elementos");
+  const response = await axiosInstance.get("/categoria-elementos");
   return response.data;
 }
 

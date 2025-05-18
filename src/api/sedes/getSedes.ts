@@ -3,7 +3,7 @@ import axiosInstance from "@/api/axiosConfig";
 import { Sede } from "@/types/sede";
 
 export async function getSedes(): Promise<Sede[]> {
-  const response = await axiosInstance.get<Sede[]>("/sedes");
+  const response = await axiosInstance.get("/sedes");
   return response.data;
 }
 

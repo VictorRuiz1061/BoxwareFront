@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
-import Boton from '../atomos/Boton';
-
-import GlobalTable, { Column } from "../organismos/Table";
-import Form, { FormField } from "../organismos/Form";
-import { useGetRoles } from '../../hooks/roles/useGetRoles';
-import { usePostRol } from '../../hooks/roles/usePostRol';
-import { usePutRol } from '../../hooks/roles/usePutRol';
-import AnimatedContainer from "../atomos/AnimatedContainer";
-import { rolSchema } from '@/schemas/rol.schema';
-import AlertDialog from '../atomos/AlertDialog';
 import { Pencil } from 'lucide-react';
+import GlobalTable, { Column } from "@/components/organismos/Table";
+import Form, { FormField } from "@/components/organismos/Form";
+import { useGetRoles } from '@/hooks/roles/useGetRoles';
+import { usePostRol } from '@/hooks/roles/usePostRol';
+import { usePutRol } from '@/hooks/roles/usePutRol';
+import Boton from '@/components/atomos/Boton';
+import AnimatedContainer from "@/components/atomos/AnimatedContainer";
+import { rolSchema } from '@/schemas/rol.schema';
 import { Alert } from "@heroui/react";
-import Toggle from "../atomos/Toggle";
-import { Rol } from '../../types/rol';
+import Toggle from "@/components/atomos/Toggle";
+import { Rol } from '@/types/rol';
 
 const Roles = () => {
   const { roles, loading } = useGetRoles();
@@ -20,23 +18,9 @@ const Roles = () => {
   const { actualizarRol } = usePutRol();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  // Usamos string para los valores del formulario para evitar problemas de tipo
-  type RolFormValues = {
-    nombre_rol: string;
-    descripcion: string;
-    estado?: string; // 'Activo' | 'Inactivo'
-    fecha_creacion: string;
-    fecha_modificacion?: string;
-  };
-  const [formData, setFormData] = useState<Partial<RolFormValues>>({});
+  const [formData, setFormData] = useState<Partial<Rol>>({});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
-  const [alert, setAlert] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
-  });
 
   const columns: Column<Rol & { key: number }>[] = [
     { key: "nombre_rol", label: "Nombre del Rol", filterable: true },
@@ -121,12 +105,8 @@ const Roles = () => {
       setEditingId(null);
     } catch (error) {
       console.error("Error al guardar el rol:", error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al guardar el rol: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -161,12 +141,9 @@ const Roles = () => {
       // en el hook usePutRol cuando se completa la mutación
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al cambiar el estado del rol: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setSuccessAlertText(`Error al cambiar el estado del rol: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -259,15 +236,6 @@ const Roles = () => {
               />
             </div>
           )}
-          <AlertDialog
-            isOpen={alert.isOpen}
-            title={alert.title}
-            message={alert.message}
-            onConfirm={alert.onConfirm}
-            onCancel={alert.onConfirm}
-            confirmText="Aceptar"
-            cancelText=""
-          />
         </div>
     </>
   );

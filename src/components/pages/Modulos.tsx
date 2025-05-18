@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";
@@ -7,8 +6,6 @@ import Toggle from "../atomos/Toggle";
 import { useGetModulos } from '../../hooks/modulos/useGetModulos';
 import { usePostModulo } from '../../hooks/modulos/usePostModulo';
 import { usePutModulo } from '../../hooks/modulos/usePutModulo';
-// Ya no necesitamos la función de eliminar
-// import { useDeleteModulo } from '../../hooks/modulos/useDeleteModulo';
 import { Modulo } from '@/types/modulo';
 import { Pencil } from 'lucide-react';
 import { Alert } from '@heroui/react';
@@ -19,8 +16,6 @@ const ModulosPage = () => {
   const { modulos, loading } = useGetModulos();
   const { crearModulo } = usePostModulo();
   const { actualizarModulo } = usePutModulo();
-  // Ya no necesitamos la función de eliminar
-  // const { eliminarModulo } = useDeleteModulo();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Modulo>>({});
@@ -93,21 +88,6 @@ const ModulosPage = () => {
       console.error('Error al guardar el módulo:', error);
     }
   };
-
-  // Ya no necesitamos la función de eliminar
-  /*
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este módulo?')) return;
-    try {
-      await eliminarModulo(id);
-      setSuccessAlertText('El módulo fue eliminado correctamente.');
-      setShowSuccessAlert(true);
-      setTimeout(() => setShowSuccessAlert(false), 3000);
-    } catch (error) {
-      console.error('Error al eliminar el módulo:', error);
-    }
-  };
-  */
 
   const handleToggleEstado = async (modulo: Modulo) => {
     try {

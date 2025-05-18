@@ -3,7 +3,7 @@ import axiosInstance from "@/api/axiosConfig";
 import { TipoMaterial } from "@/types/tipoMaterial";
 
 export async function getTipoMateriales(): Promise<TipoMaterial[]> {
-  const response = await axiosInstance.get<TipoMaterial[]>('/tipo-materiales');
+  const response = await axiosInstance.get("/tipo-materiales");
   return response.data;
 }
 

@@ -4,12 +4,23 @@ import { Municipio } from "@/types/municipio";
 
 export interface MunicipioUpdate {
   id_municipio: number;
-  // otros campos opcionales si es necesario
+  nombre_municipio?: string;
+  estado?: boolean;
+  fecha_creacion?: string;
+  fecha_modificacion?: string;
 }
 
-export async function putMunicipio(id: number, data: Omit<Municipio, 'id_municipio'>): Promise<Municipio> {
-  const response = await axiosInstance.put(`/municipios/${id}`, data);
-  return response.data;
+export async function putMunicipio(id: number, data: Partial<Omit<Municipio, 'id_municipio'>>): Promise<Municipio> {
+  try {
+    const response = await axiosInstance.put(`/municipios/${id}`, data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      const response = await axiosInstance.patch(`/municipios/${id}`, data);
+      return response.data;
+    }
+    throw error;
+  }
 }
 
 export function usePutMunicipio() {

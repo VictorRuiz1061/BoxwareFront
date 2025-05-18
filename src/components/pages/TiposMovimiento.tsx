@@ -1,38 +1,29 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Pencil } from 'lucide-react';
 import { Alert } from "@heroui/react";
-import { tipoMovimientoSchema } from '@/schemas/tipoMovimiento.schema';
 import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento/useGetTiposMovimiento';
 import { usePostTipoMovimiento } from '@/hooks/tipoMovimiento/usePostTipoMovimiento';
 import { usePutTipoMovimiento } from '@/hooks/tipoMovimiento/usePutTipoMovimiento';
-// La importación de useDeleteTipoMovimiento ha sido eliminada ya que no se utiliza más
-import { TipoMovimiento } from '@/types/tipoMovimiento';
-import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
 import Toggle from "@/components/atomos/Toggle";
-
+import { TipoMovimiento } from '@/types/tipoMovimiento';
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
+import { tipoMovimientoSchema } from '@/schemas/tipoMovimiento.schema';
 
 const TiposMovimiento = () => {
-  const { tiposMovimiento, loading, fetchTiposMovimiento } = useGetTiposMovimiento();
+  const { tiposMovimiento, loading } = useGetTiposMovimiento();
   const { crearTipoMovimiento } = usePostTipoMovimiento();
   const { actualizarTipoMovimiento } = usePutTipoMovimiento();
-  // La declaración de eliminarTipoMovimiento ha sido eliminada ya que no se utiliza más
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoMovimiento>>({});
-  const [alert, setAlert] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-  });
-  // La variable deleteConfirm ha sido eliminada ya que no se utiliza más
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [errorAlertText, setErrorAlertText] = useState('');
 
-  const columns: Column<TipoMovimiento & { key: any }>[] = [
+  const columns: Column<TipoMovimiento & { key: number }>[] = [
     { key: "id_tipo_movimiento", label: "ID", filterable: true },
     { key: "tipo_movimiento", label: "Tipo de Movimiento", filterable: true },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
@@ -54,7 +45,7 @@ const TiposMovimiento = () => {
       render: (tipoMovimiento) => (
         <div className="flex gap-2">
           <Boton
-            onPress={() => handleEdit(tipoMovimiento)}
+            onClick={() => handleEdit(tipoMovimiento)}
             className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
             aria-label="Editar"
           >
@@ -65,141 +56,90 @@ const TiposMovimiento = () => {
     },
   ];
 
-  const formFields: FormField[] = [
+  const formFieldsCreate: FormField[] = [
     { key: "tipo_movimiento", label: "Tipo de Movimiento", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+  ];
+
+  const formFieldsEdit: FormField[] = [
+    { key: "tipo_movimiento", label: "Tipo de Movimiento", type: "text", required: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true },
   ];
 
-  // Crear o actualizar tipo de movimiento
-  const handleSubmit = async (values: Record<string, string | number | boolean>) => {
+  const handleSubmit = async (values: Record<string, string>) => {
     try {
-      // Validar con zod
       const parsed = tipoMovimientoSchema.safeParse(values);
       if (!parsed.success) {
-        setAlert({
-          isOpen: true,
-          title: 'Error de validación',
-          message: parsed.error.errors.map(e => e.message).join('\n'),
-          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-        });
+        setSuccessAlertText(parsed.error.errors.map(e => e.message).join('\n'));
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
         return;
       }
       
-      // Asegurarse de que el campo estado sea booleano
-      const estado = typeof values.estado === 'boolean' ? values.estado : 
-                    values.estado === 'true' ? true : 
-                    Boolean(values.estado);
-      
-      try {
-        if (editingId) {
-          // Para actualización, preparar los datos necesarios
-          const updateData: Partial<TipoMovimiento> = {
-            tipo_movimiento: String(values.tipo_movimiento),
-            fecha_modificacion: new Date().toISOString().split('T')[0],
-            estado: estado
-          };
-          
-          console.log('Actualizando tipo de movimiento:', editingId, updateData);
-          await actualizarTipoMovimiento(editingId, updateData);
-          setSuccessAlertText('Tipo de movimiento actualizado con éxito');
-          setShowSuccessAlert(true);
-          setTimeout(() => setShowSuccessAlert(false), 3000);
-          setIsModalOpen(false);
-          setFormData({});
-          setEditingId(null);
-          fetchTiposMovimiento();
-        } else {
-          // Para creación, preparar todos los datos necesarios
-          const createData: Omit<TipoMovimiento, 'id_tipo_movimiento'> = {
-            tipo_movimiento: String(values.tipo_movimiento),
-            fecha_creacion: String(values.fecha_creacion),
-            fecha_modificacion: new Date().toISOString().split('T')[0],
-            estado: true
-          };
-          
-          console.log('Creando nuevo tipo de movimiento:', createData);
-          await crearTipoMovimiento(createData);
-          setSuccessAlertText('Tipo de movimiento creado con éxito');
-          setShowSuccessAlert(true);
-          setTimeout(() => setShowSuccessAlert(false), 3000);
-          setIsModalOpen(false);
-          setFormData({});
-          setEditingId(null);
-          fetchTiposMovimiento();
-        }
-      } catch (error) {
-        console.error('Error al guardar:', error);
-        setAlert({
-          isOpen: true,
-          title: 'Error',
-          message: `Error al ${editingId ? 'actualizar' : 'crear'} el tipo de movimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-        });
-        return;
+      const hoy = new Date().toISOString().slice(0, 10);
+      if (editingId) {
+        const payload = {
+          tipo_movimiento: String(values.tipo_movimiento),
+          estado: true,
+          fecha_modificacion: hoy,
+        };
+        
+        await actualizarTipoMovimiento(editingId, payload);
+        setSuccessAlertText('Tipo de movimiento actualizado con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
+      } else {
+        // Para creación, preparar todos los datos necesarios
+        const payload = {
+          tipo_movimiento: String(values.tipo_movimiento),
+          fecha_creacion: String(values.fecha_creacion),
+          fecha_modificacion: new Date().toISOString().split('T')[0],
+          estado: true
+        };
+        await crearTipoMovimiento(payload);
+        setSuccessAlertText('Tipo de movimiento creado con éxito');
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
       }
+      setIsModalOpen(false);
+      setFormData({});
+      setEditingId(null);
     } catch (error) {
-      console.error("Error al guardar el tipo de movimiento:", error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: 'Ocurrió un error al guardar el tipo de movimiento.',
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setErrorAlertText("Ocurrió un error al guardar el tipo de movimiento.");
+      setShowErrorAlert(true);
+      setTimeout(() => setShowErrorAlert(false), 3000);
     }
   };
 
-  // Cambiar el estado (activo/inactivo) de un tipo de movimiento
   const handleToggleEstado = async (tipoMovimiento: TipoMovimiento) => {
     try {
-      // Preparar los datos para actualizar solo el estado
-      const updateData: Partial<TipoMovimiento> = {
-        estado: !tipoMovimiento.estado, // Invertir el estado actual
+      const nuevoEstado = !tipoMovimiento.estado;
+
+      const updateData = {
+        id_tipo_movimiento: tipoMovimiento.id_tipo_movimiento,
+        estado: nuevoEstado,
         fecha_modificacion: new Date().toISOString().split('T')[0]
       };
       
-      console.log(`Cambiando estado de tipo de movimiento ${tipoMovimiento.id_tipo_movimiento} a ${!tipoMovimiento.estado ? 'Activo' : 'Inactivo'}`);
       await actualizarTipoMovimiento(tipoMovimiento.id_tipo_movimiento, updateData);
-      setSuccessAlertText(`El tipo de movimiento fue ${!tipoMovimiento.estado ? 'activado' : 'desactivado'} correctamente.`);
+      setSuccessAlertText(`El tipo de movimiento fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
-      fetchTiposMovimiento();
     } catch (error) {
-      console.error('Error al cambiar el estado:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al cambiar el estado del tipo de movimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setErrorAlertText("Error al cambiar el estado del tipo de movimiento.");
+      setShowErrorAlert(true);
+      setTimeout(() => setShowErrorAlert(false), 3000);
     }
   };
 
-  // La función confirmDelete ha sido eliminada ya que no se utiliza más
-
-  // Abrir modal para crear nuevo tipo de movimiento
   const handleCreate = () => {
-    // Inicializar con fechas actuales
-    const today = new Date().toISOString().split('T')[0];
-    setFormData({
-      fecha_creacion: today,
-      fecha_modificacion: today,
-      estado: true
-    });
+    setFormData({});
     setEditingId(null);
     setIsModalOpen(true);
   };
 
-  // Abrir modal para editar tipo de movimiento existente
-  const handleEdit = (tipoMovimiento: TipoMovimiento) => {
-    // Convertir fechas a formato string para los inputs date
-    const formattedTipoMovimiento = {
-      ...tipoMovimiento,
-      fecha_creacion: tipoMovimiento.fecha_creacion ? new Date(tipoMovimiento.fecha_creacion).toISOString().split('T')[0] : '',
-      fecha_modificacion: new Date().toISOString().split('T')[0] // Actualizar fecha de modificación
-    };
-    
-    setFormData(formattedTipoMovimiento);
+  const handleEdit = (tipoMovimiento: TipoMovimiento) => {    
+    setFormData(tipoMovimiento);
     setEditingId(tipoMovimiento.id_tipo_movimiento);
     setIsModalOpen(true);
   };
@@ -207,83 +147,91 @@ const TiposMovimiento = () => {
   return (
     <>
       <div className="w-full">
-          {/* Alerta de éxito */}
-          {showSuccessAlert && (
-            <div className="fixed top-4 right-4 z-50">
-              <Alert
-                hideIconWrapper
-                color="success"
-                description={successAlertText}
-                title="¡Éxito!"
-                variant="solid"
-                onClose={() => setShowSuccessAlert(false)}
+        <h1 className="text-xl font-bold mb-4">Gestión de Tipos de Movimiento</h1>
+
+        <Boton
+          onClick={handleCreate}
+          className="bg-blue-500 text-white px-4 py-2 mb-4"
+        >
+          Crear Nuevo Tipo de Movimiento
+        </Boton>
+
+        {loading ? (
+          <p>Cargando tipos de movimiento...</p>
+        ) : (
+          <GlobalTable 
+            columns={columns as Column<any>[]} 
+            data={tiposMovimiento
+              .map(tm => ({ ...tm, key: tm.id_tipo_movimiento }))
+              .sort((a, b) => {
+                if (a.estado === b.estado) return 0;
+                return a.estado ? -1 : 1;
+              })
+            }
+            rowsPerPage={6}
+            defaultSortColumn="estado"
+            defaultSortDirection="desc"
+          />
+        )}
+
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
+              {/* Botón X para cerrar en la esquina superior derecha */}
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+              >
+                <span className="text-gray-800 font-bold">×</span>
+              </button>
+              
+              <h2 className="text-lg font-bold mb-4 text-center">
+                {editingId ? "Editar Tipo de Movimiento" : "Crear Nuevo Tipo de Movimiento"}
+              </h2>
+              <Form
+                fields={editingId ? formFieldsEdit : formFieldsCreate}
+                onSubmit={handleSubmit}
+                buttonText={editingId ? "Actualizar" : "Crear"}
+                initialValues={{
+                  ...Object.entries(formData).reduce((acc, [key, value]) => {
+                    acc[key] = value !== undefined ? String(value) : '';
+                    return acc;
+                  }, {} as Record<string, string>),
+                }}
+                schema={tipoMovimientoSchema}
               />
             </div>
-          )}
+          </div> 
+        )}
+      </div>
 
-          <h1 className="text-xl font-bold mb-4">Gestión de Tipos de Movimiento</h1>
-
-          <Boton
-            onPress={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
-          >
-            Crear Nuevo Tipo de Movimiento
-          </Boton>
-
-          {/* Tabla de tipos de movimiento */}
-          {loading ? (
-            <p>Cargando tipos de movimiento...</p>
-          ) : (
-            <GlobalTable 
-              columns={columns} 
-              data={tiposMovimiento.map(tm => ({ ...tm, key: tm.id_tipo_movimiento }))} 
-              rowsPerPage={6} 
-            />
-          )}
-
-          {/* Modal para crear/editar */}
-          {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
-                {/* Botón X para cerrar en la esquina superior derecha */}
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Tipo de Movimiento" : "Crear Nuevo Tipo de Movimiento"}
-                </h2>
-                <Form
-                  fields={formFields}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    tipo_movimiento: formData.tipo_movimiento || '',
-                    fecha_creacion: formData.fecha_creacion || '',
-                    fecha_modificacion: formData.fecha_modificacion || '',
-                    estado: formData.estado !== undefined ? formData.estado : true
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Diálogo de alerta para errores */}
-          <AlertDialog
-            isOpen={alert.isOpen}
-            title={alert.title}
-            message={alert.message}
-            onConfirm={alert.onConfirm}
-            onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
+      {showSuccessAlert && (
+        <div className="fixed top-4 right-4 z-50">
+          <Alert
+            hideIconWrapper
+            color="success"
+            description={successAlertText}
+            title="¡Éxito!"
+            variant="solid"
+            onClose={() => setShowSuccessAlert(false)}
           />
-
-          {/* El diálogo de confirmación para eliminar ha sido eliminado */}
         </div>
+      )}
+      
+      {showErrorAlert && (
+        <div className="fixed top-4 right-4 z-50">
+          <Alert
+            hideIconWrapper
+            color="danger"
+            description={errorAlertText}
+            title="Error"
+            variant="solid"
+            onClose={() => setShowErrorAlert(false)}
+          />
+        </div>
+      )}
     </>
   );
 };
 
-export default React.memo(TiposMovimiento);
+export default TiposMovimiento;

@@ -8,7 +8,6 @@ import { usePostTipoMaterial } from '../../hooks/tipoMaterial/usePostTipoMateria
 import { usePutTipoMaterial } from '../../hooks/tipoMaterial/usePutTipoMaterial';
 import type { TipoMaterial } from '../../types/tipoMaterial';
 import Toggle from "@/components/atomos/Toggle";
-import AlertDialog from '@/components/atomos/AlertDialog';
 
 const TipoMaterial = () => {
   const { tipoMateriales, loading, fetchTipoMateriales } = useGetTipoMateriales();
@@ -17,12 +16,6 @@ const TipoMaterial = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoMaterial>>({});
-  const [alert, setAlert] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-  });
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
 
@@ -69,8 +62,6 @@ const TipoMaterial = () => {
     formFields.push({ key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true });
   }
 
-
-
   // Crear o actualizar tipo de material
   const handleSubmit = async (values: Record<string, string | number | boolean>) => {
     try {
@@ -102,12 +93,7 @@ const TipoMaterial = () => {
       fetchTipoMateriales();
     } catch (error) {
       console.error('Error al guardar el tipo de material:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al guardar el tipo de material: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      
     }
   };
 
@@ -130,12 +116,6 @@ const TipoMaterial = () => {
       fetchTipoMateriales(); // Actualizar la lista de tipos de material
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al cambiar el estado del tipo de material: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
     }
   };
 
@@ -214,15 +194,6 @@ const TipoMaterial = () => {
           />
         </div>
       )}
-      <AlertDialog
-        isOpen={alert.isOpen}
-        title={alert.title}
-        message={alert.message}
-        onConfirm={alert.onConfirm}
-        onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
-        confirmText="Aceptar"
-        cancelText="Cancelar"
-      />
     </>
   );
 };

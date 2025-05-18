@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-
 import GlobalTable, { Column } from "../organismos/Table";
 import Form, { FormField } from "../organismos/Form";
 import Boton from "../atomos/Boton";

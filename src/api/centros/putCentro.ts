@@ -13,8 +13,19 @@ export interface CentroUpdate {
 }
 
 export async function putCentro(data: CentroUpdate): Promise<Centro> {
-  const response = await axiosInstance.put(`/centros/${data.id_centro}`, data);
-  return response.data;
+  try {
+    console.log(`Intentando PUT a /centros/${data.id_centro}`, data);
+    const response = await axiosInstance.put(`/centros/${data.id_centro}`, data);
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      // Si falla con 404, intentar con PATCH en lugar de PUT
+      console.log(`Intentando PATCH a /centros/${data.id_centro}`, data);
+      const response = await axiosInstance.patch(`/centros/${data.id_centro}`, data);
+      return response.data;
+    }
+    throw error;
+  }
 }
 
 export function usePutCentro() {

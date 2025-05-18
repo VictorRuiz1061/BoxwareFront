@@ -14,7 +14,7 @@ import Roles from "./components/pages/Roles";
 import Permisos from "./components/pages/Permisos";
 
 // Inventario Pages
-// import Materiales from "./components/pages/Materiales";
+import Materiales from "./components/pages/Materiales";
 import Elementos from "./components/pages/Elementos";
 import TipoMaterial from "./components/pages/TipoMaterial";
 import Movimientos from "./components/pages/Movimientos";
@@ -24,7 +24,7 @@ import TiposMovimiento from "./components/pages/TiposMovimiento";
 import Sedes from "./components/pages/Sedes";
 import Centros from "./components/pages/Centros";
 import Municipios from "./components/pages/Municipios";
-import Areas from "./components/pages/area";
+import Areas from "./components/pages/Areas";
 import Sitios from "./components/pages/Sitos";
 import TiposSitio from "./components/pages/TiposSitio";
 
@@ -66,7 +66,7 @@ function App() {
         <Route path="/permisos" element={<Permisos />} />
         
         {/* Inventario */}
-        {/* <Route path="/materiales" element={<Materiales />} /> */}
+        <Route path="/materiales" element={<Materiales />} />
         <Route path="/elementos" element={<Elementos />} />
         <Route path="/tipo_materiales" element={<TipoMaterial />} />
         <Route path="/movimientos" element={<Movimientos />} />

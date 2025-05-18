@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert } from "@heroui/react";
-import { useNavigate } from "react-router-dom";
 import { Pencil } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { usuarioSchema } from "@/schemas/usuario.schema";
 import { useGetUsuarios } from "@/hooks/usuario/useGetUsuarios";
 import { usePostUsuario } from "@/hooks/usuario/usePostUsuario";
@@ -9,14 +9,13 @@ import { usePutUsuario } from "@/hooks/usuario/usePutUsuario";
 import { useGetRoles } from "@/hooks/roles/useGetRoles";
 import { Usuario } from "@/types/usuario";
 import AnimatedContainer from "@/components/atomos/AnimatedContainer";
-import AlertDialog from "@/components/atomos/AlertDialog";
 import Boton from "@/components/atomos/Boton";
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 import Toggle from "@/components/atomos/Toggle";
 
 const Usuarios = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
   const { usuarios, loading } = useGetUsuarios();
   const { crearUsuario } = usePostUsuario();
   const { actualizarUsuario } = usePutUsuario();
@@ -24,12 +23,7 @@ const Usuarios = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Usuario>>({});
-  const [alert, setAlert] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
-  });
+
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState("");
 
@@ -110,13 +104,10 @@ const Usuarios = () => {
 
   // Crear o actualizar usuario (handler único y limpio)
   // Función auxiliar para mostrar alertas de validación
-  const showValidationAlert = (title: string, message: string) => {
-    setAlert({
-      isOpen: true,
-      title,
-      message,
-      onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
-    });
+  const showValidationAlert = (message: string) => {
+    setShowSuccessAlert(true);
+    setSuccessAlertText(message);
+    setTimeout(() => setShowSuccessAlert(false), 3000);
   };
 
   // Función auxiliar para preparar datos de usuario
@@ -169,12 +160,9 @@ const Usuarios = () => {
       closeModal();
     } catch (error: any) {
       console.error("Error al guardar el usuario:", error);
-      setAlert({
-        isOpen: true,
-        title: "Error",
-        message: "Ocurrió un error al guardar el usuario.",
-        onConfirm: () => setAlert((a) => ({ ...a, isOpen: false })),
-      });
+      setShowSuccessAlert(true);
+      setSuccessAlertText("Ocurrió un error al guardar el usuario.");
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -187,12 +175,9 @@ const Usuarios = () => {
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
     } catch (error: any) {
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al cambiar el estado del usuario: ${error?.message || 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setShowSuccessAlert(true);
+      setSuccessAlertText(`Error al cambiar el estado del usuario: ${error?.message || 'Error desconocido'}`);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -310,15 +295,6 @@ const Usuarios = () => {
           />
         </div>
       )}
-      <AlertDialog
-        isOpen={alert.isOpen}
-        title={alert.title}
-        message={alert.message}
-        onConfirm={alert.onConfirm}
-        onCancel={alert.onConfirm}
-        confirmText="Aceptar"
-        cancelText=""
-      />
     </>
   );
 };

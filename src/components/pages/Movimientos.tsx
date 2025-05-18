@@ -7,7 +7,6 @@ import { usePutMovimiento } from '@/hooks/movimiento/usePutMovimiento';
 import { Movimiento } from '@/types/movimiento';
 import { useGetUsuarios } from '@/hooks/usuario/useGetUsuarios';
 import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento/useGetTiposMovimiento';
-import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
 import ToggleEstadoBoton from "@/components/atomos/Toggle";
 import { Alert } from "@heroui/react";
@@ -387,15 +386,6 @@ const Movimientos = () => {
               </div>
             </div>
           )}
-
-          {/* Diálogo de alerta para errores */}
-          <AlertDialog
-            isOpen={alert.isOpen}
-            title={alert.title}
-            message={alert.message}
-            onConfirm={alert.onConfirm}
-            onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
-          />
         </div>
     </>
   );

@@ -1,11 +1,12 @@
 import { z } from 'zod';
 
 export const fichaSchema = z.object({
-  id_ficha: z.string().min(4, 'El ID de la ficha debe tener al menos 4 caracteres'),
-  usuario_ficha_id: z.string().min(1, 'Debe seleccionar un usuario'),
-  programa_id: z.string().min(1, 'Debe seleccionar un programa'),
-  fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación').optional(),
-  fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación').optional(),
+  id_ficha: z.coerce.number().positive('El ID de la ficha debe ser un número positivo'),
+  usuario_id: z.coerce.number().positive('Debe seleccionar un usuario válido'),
+  programa_id: z.coerce.number().positive('Debe seleccionar un programa válido'),
+  fecha_creacion: z.string().optional(),
+  fecha_modificacion: z.string().optional(),
+  estado: z.boolean().optional().default(true),
 });
 
 export type FichaSchema = z.infer<typeof fichaSchema>; 

@@ -5,7 +5,6 @@ import { useGetTiposSitio } from '@/hooks/tipoSitio/useGetTiposSitio';
 import { usePostTipoSitio } from '@/hooks/tipoSitio/usePostTipoSitio';
 import { usePutTipoSitio } from '@/hooks/tipoSitio/usePutTipoSitio';
 import { TipoSitio } from '@/types/tipoSitio';
-import AlertDialog from '@/components/atomos/AlertDialog';
 import Boton from "@/components/atomos/Boton";
 import Toggle from "@/components/atomos/Toggle";
 
@@ -20,12 +19,6 @@ const TiposSitio = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<TipoSitio>>({});
-  const [alert, setAlert] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-  });
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
 
@@ -74,12 +67,9 @@ const TiposSitio = () => {
       // Validar con zod
       const parsed = tipoSitioSchema.safeParse(values);
       if (!parsed.success) {
-        setAlert({
-          isOpen: true,
-          title: 'Error de validación',
-          message: parsed.error.errors.map(e => e.message).join('\n'),
-          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-        });
+        setSuccessAlertText(parsed.error.errors.map(e => e.message).join('\n'));
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
         return;
       }
       
@@ -119,12 +109,9 @@ const TiposSitio = () => {
         }
       } catch (error) {
         console.error('Error al guardar:', error);
-        setAlert({
-          isOpen: true,
-          title: 'Error',
-          message: `Error al ${editingId ? 'actualizar' : 'crear'} el tipo de sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-          onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-        });
+        setSuccessAlertText(`Error al ${editingId ? 'actualizar' : 'crear'} el tipo de sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 3000);
         return;
       }
       
@@ -134,12 +121,9 @@ const TiposSitio = () => {
       setEditingId(null);
     } catch (error) {
       console.error("Error al guardar el tipo de sitio:", error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: 'Ocurrió un error al guardar el tipo de sitio.',
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setSuccessAlertText('Ocurrió un error al guardar el tipo de sitio.');
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -161,12 +145,9 @@ const TiposSitio = () => {
       fetchTiposSitio(); // Actualizar la lista de tipos de sitio
     } catch (error) {
       console.error('Error al cambiar el estado:', error);
-      setAlert({
-        isOpen: true,
-        title: 'Error',
-        message: `Error al cambiar el estado del tipo de sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        onConfirm: () => setAlert(a => ({ ...a, isOpen: false })),
-      });
+      setSuccessAlertText(`Error al cambiar el estado del tipo de sitio: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
     }
   };
 
@@ -254,15 +235,6 @@ const TiposSitio = () => {
               </div>
             </div>
           )}
-
-          {/* Diálogo de alerta para errores */}
-          <AlertDialog
-            isOpen={alert.isOpen}
-            title={alert.title}
-            message={alert.message}
-            onConfirm={alert.onConfirm}
-            onCancel={() => setAlert(a => ({ ...a, isOpen: false }))}
-          />
         </div>
     </>
   );

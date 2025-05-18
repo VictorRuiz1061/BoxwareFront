@@ -3,7 +3,7 @@ import axiosInstance from "@/api/axiosConfig";
 import { TipoSitio } from "@/types/tipoSitio";
 
 export async function getTiposSitio(): Promise<TipoSitio[]> {
-  const response = await axiosInstance.get<TipoSitio[]>('/tipo-sitios');
+  const response = await axiosInstance.get("/tipo-sitios");
   return response.data;
 }
 

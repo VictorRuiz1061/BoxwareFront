@@ -2,14 +2,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Ficha } from "@/types/ficha";
 
-// Modificando para permitir id_ficha opcional
+// Actualizado para coincidir exactamente con lo que espera el backend
 export interface NuevaFicha {
   id_ficha?: number; // Opcional para creación, el backend podría generarlo
   estado: boolean;
-  fecha_creacion: string;
-  fecha_modificacion: string;
+  fecha_creacion: string; // Requerido por el backend
+  fecha_modificacion: string; // Requerido por el backend
   usuario_id: number;
-  programa_id: number | null;
+  programa: number; // Cambiado de programa_id a programa según el error
 }
 
 export async function postFicha(data: NuevaFicha): Promise<Ficha> {
