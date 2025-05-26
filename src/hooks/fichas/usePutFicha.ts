@@ -3,6 +3,6 @@ import { Ficha } from "@/types/ficha";
 
 export function usePutFicha() {
   const put = useApiPutFicha();
-  const actualizarFicha = async (id_ficha: number, data: Partial<Ficha>) => put.mutateAsync({ id_ficha, ...data } as Ficha & { id_ficha: number });
+  const actualizarFicha = async (id: number, data: Ficha) => put.mutateAsync({ ...data, id });
   return { actualizarFicha };
 } 

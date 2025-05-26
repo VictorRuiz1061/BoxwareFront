@@ -12,4 +12,4 @@ export function useGetRoles() {
     queryKey: ["roles"],
     queryFn: getRoles,
   });
-} 
+}

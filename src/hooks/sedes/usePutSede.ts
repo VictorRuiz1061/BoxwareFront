@@ -1,12 +1,8 @@
 import { usePutSede as useApiPutSede } from "@/api/sedes/putSede";
-import { NuevaSede } from "@/api/sedes/postSede";
+import { Sede } from "@/types/sede";
 
 export function usePutSede() {
   const put = useApiPutSede();
-  const actualizarSede = async (id_sede: number, data: NuevaSede) => 
-    put.mutateAsync({
-      ...data,
-      id_sede // Aseguramos que el ID esté incluido
-    });
+  const actualizarSede = async (id: number, data: Sede) => put.mutateAsync({ ...data, id });
   return { actualizarSede };
 }

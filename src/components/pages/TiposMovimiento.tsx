@@ -55,7 +55,7 @@ const TiposMovimiento = () => {
       ),
     },
   ];
-
+ 
   const formFieldsCreate: FormField[] = [
     { key: "tipo_movimiento", label: "Tipo de Movimiento", type: "text", required: true },
     { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
@@ -176,7 +176,7 @@ const TiposMovimiento = () => {
 
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
+            <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
               {/* Botón X para cerrar en la esquina superior derecha */}
               <button 
                 onClick={() => setIsModalOpen(false)} 

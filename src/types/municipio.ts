@@ -5,4 +5,3 @@ export interface Municipio {
   fecha_creacion: string;
   fecha_modificacion: string;
 }
-

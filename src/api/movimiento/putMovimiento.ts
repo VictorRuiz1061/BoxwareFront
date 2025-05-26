@@ -2,9 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from '@/api/axiosConfig';
 import { Movimiento } from '@/types/movimiento';
 
-export async function putMovimiento(params: { id: number; data: Partial<Movimiento> }): Promise<Movimiento> {
-  const { id, data } = params;
-  const response = await axiosInstance.put<Movimiento>(`/movimientos/${id}`, data);
+export async function putMovimiento(data: Partial<Movimiento> & { id: number }): Promise<Movimiento> {
+  const response = await axiosInstance.put(`/movimientos/${data.id}`, data);
   return response.data;
 };
 

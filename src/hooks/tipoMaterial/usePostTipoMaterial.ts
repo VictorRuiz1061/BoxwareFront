@@ -1,17 +1,9 @@
 import { usePostTipoMaterial as useApiPostTipoMaterial } from "@/api/tipoMaterial/postTipoMaterial";
+import { TipoMaterial } from "@/types/tipoMaterial";
 
 export function usePostTipoMaterial() {
-  const mutation = useApiPostTipoMaterial();
+  const post = useApiPostTipoMaterial();
+  const crearTipoMaterial = async (data: TipoMaterial) => { post.mutateAsync(data); };
   
-  const crearTipoMaterial = async (data: any) => {
-    try {
-      await mutation.mutateAsync(data);
-      return { success: true };
-    } catch (error) {
-      console.error("Error al crear tipo de material:", error);
-      return { success: false, error };
-    }
-  };
-  
-  return { crearTipoMaterial, isLoading: mutation.isPending };
+  return { crearTipoMaterial };
 }

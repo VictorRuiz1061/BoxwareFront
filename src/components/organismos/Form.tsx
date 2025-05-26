@@ -36,19 +36,27 @@ const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "E
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submission started with data:', formData);
+    
     if (schema) {
+      console.log('Validating with schema:', schema);
       const parsed = schema.safeParse(formData);
       if (!parsed.success) {
+        console.error('Schema validation failed:', parsed.error);
         const fieldErrors: Record<string, string> = {};
         parsed.error.errors.forEach(err => {
           if (err.path && err.path[0]) {
             fieldErrors[err.path[0]] = err.message;
           }
         });
+        console.log('Field errors:', fieldErrors);
         setErrors(fieldErrors);
         return;
       }
+      console.log('Schema validation passed');
     }
+    
+    console.log('Calling onSubmit with data:', formData);
     onSubmit(formData as T);
   };
 

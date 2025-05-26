@@ -1,3 +1,7 @@
+import { CategoriaElemento } from "./categoriaElemento";
+import { TipoMaterial } from "./tipoMaterial";
+import { Sitio } from "./sitio";
+
 export interface Material {
   id_material: number;
   codigo_sena: string;
@@ -14,4 +18,7 @@ export interface Material {
   categoria_id: number;
   tipo_material_id: number;
   sitio_id: number;
+  categoria?: CategoriaElemento;
+  tipo_material?: TipoMaterial;
+  sitio?: Sitio;
 }

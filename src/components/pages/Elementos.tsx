@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import { Pencil } from 'lucide-react';
+import { useState } from "react";
 import { Alert } from "@heroui/react";
-import GlobalTable, { Column } from "../organismos/Table";
-import Form, { FormField } from "../organismos/Form";
-import Boton from "../atomos/Boton";
-import AnimatedContainer from "../atomos/AnimatedContainer";
-import { useGetCategoriasElementos } from '../../hooks/Elemento/useGetCategoriasElementos';
-import { CategoriaElemento } from '../../types/categoriaElemento';
-import { usePostCategoriaElemento } from '../../hooks/Elemento/usePostCategoriaElemento';
-import { usePutCategoriaElemento } from '../../hooks/Elemento/usePutCategoriaElemento';
-import Toggle from "../atomos/Toggle";
+import { useGetCategoriasElementos } from '@/hooks/Elemento/useGetCategoriasElementos';
+import { usePostCategoriaElemento } from '@/hooks/Elemento/usePostCategoriaElemento';
+import { usePutCategoriaElemento } from '@/hooks/Elemento/usePutCategoriaElemento';
+import { CategoriaElemento } from '@/types/categoriaElemento';
+import AnimatedContainer from "@/components/atomos/AnimatedContainer";
+import Toggle from "@/components/atomos/Toggle";
+import Boton from "@/components/atomos/Boton";
+import GlobalTable, { Column } from "@/components/organismos/Table";
+import Form, { FormField } from "@/components/organismos/Form";
 
 const Elementos = () => {
   const { categorias, loading, fetchCategorias } = useGetCategoriasElementos();
@@ -45,7 +46,7 @@ const Elementos = () => {
             onClick={() => handleEdit(categoria)}
             className="bg-yellow-500 text-white px-2 py-1 flex items-center justify-center"
           >
-            Editar
+            <Pencil size={18} />
           </Boton>
         </div>
       ),
@@ -181,17 +182,11 @@ const Elementos = () => {
           {/* Modal para crear/editar */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <AnimatedContainer
-                animation="scaleIn"
-                duration={300}
-                className="w-full max-w-lg"
-              >
-                <div className="bg-white p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
+              <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
+                <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
                   {/* Botón X para cerrar en la esquina superior derecha */}
-                  <button 
-                    onClick={() => setIsModalOpen(false)} 
-                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                  >
+                  <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
+                  
                     <span className="text-gray-800 font-bold">×</span>
                   </button>
                   
@@ -204,14 +199,6 @@ const Elementos = () => {
                     buttonText={editingId ? "Actualizar" : "Crear"}
                     initialValues={formData}
                   />
-                  <div className="flex justify-end mt-4">
-                    <Boton
-                      onClick={() => setIsModalOpen(false)}
-                      className="bg-gray-500 text-white px-4 py-2 mr-2"
-                    >
-                      Cancelar
-                    </Boton>
-                  </div>
                 </div>
               </AnimatedContainer>
             </div>
@@ -233,4 +220,4 @@ const Elementos = () => {
   );
 };
 
-export default React.memo(Elementos);
+export default Elementos;

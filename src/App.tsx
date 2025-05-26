@@ -53,8 +53,7 @@ function App() {
       <Route path="/" element={<Inicio />} />
       <Route path="/iniciosesion" element={<InicioSecion />} />
       <Route path="/registrarse" element={<Registrarse />} />
-      
-      {/* Rutas protegidas con MainLayout (Header + Sidebar) */}
+
       <Route element={<MainLayout />}>
         {/* Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />

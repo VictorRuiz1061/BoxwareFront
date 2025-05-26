@@ -12,4 +12,4 @@ export function useGetMunicipios() {
     queryKey: ["municipios"],
     queryFn: getMunicipios,
   });
-} 
+}

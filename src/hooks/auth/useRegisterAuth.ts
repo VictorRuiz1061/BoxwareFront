@@ -20,21 +20,28 @@ export function useRegisterAuth() {
   const register = async (values: RegisterFormValues) => {
     setValidationErrors(null);
     try {
+      // Formato de fecha ISO para el backend
       const now = new Date().toISOString();
+      
+      // Payload con el formato exacto que espera el backend
       const payload = {
         nombre: values.nombre,
         apellido: values.apellido,
-        edad: values.edad ? Number(values.edad) : undefined,
+        edad: values.edad ? Number(values.edad) : null,
         cedula: values.cedula,
         email: values.email,
-        contrasena: values.password,
+        contrasena: values.password, // El backend espera 'contrasena', no 'password'
         telefono: values.telefono,
-        inicio_sesion: now,
-        esta_activo: true,
+        estado: true,
         fecha_registro: now,
-        rol_id: 1,
+        rol_id: 1, // Rol por defecto (usuario normal)
       };
+      
+      console.log('Enviando datos de registro:', payload);
+      
       const response = await apiRegister(payload);
+      console.log('Respuesta del servidor:', response);
+      
       if (response.token) {
         setTokenCookie(response.token);
         navigate('/dashboard');

@@ -12,4 +12,4 @@ export function useGetCentros() {
     queryKey: ["centros"],
     queryFn: getCentros,
   });
-} 
+}

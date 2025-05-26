@@ -20,18 +20,31 @@ export function usePostAuth() {
   const login = async (values: LoginFormValues) => {
     setValidationErrors(null);
     try {
-      const response = await apiLogin({ ...values, contrasena: values.password });
+      // Crear el payload correcto para el backend (solo contrasena, no password)
+      const loginPayload = {
+        email: values.email,
+        contrasena: values.password // El backend espera 'contrasena', no 'password'
+      };
+      
+      console.log('[Auth] Intentando iniciar sesión con:', { email: loginPayload.email });
+      
+      const response = await apiLogin(loginPayload);
+      console.log('[Auth] Respuesta del servidor:', response);
+      
       if (response.token) {
+        console.log('[Auth] Token recibido, guardando en cookies');
         setTokenCookie(response.token);
         navigate('/dashboard');
         return { success: true };
       } else {
+        console.error('[Auth] No se recibió token en la respuesta:', response);
         throw new Error(response.message || 'Error al iniciar sesión');
       }
     } catch (error: any) {
+      console.error('[Auth] Error durante el inicio de sesión:', error.response?.data || error.message);
       return handleError(error, 'Error al iniciar sesión. Por favor, intenta nuevamente.');
     }
   };
 
   return { login, validationErrors };
-} 
+}

@@ -8,7 +8,6 @@ export const sedeSchema = z.object({
     .min(5, 'La dirección debe tener al menos 5 caracteres')
     .max(100, 'La dirección no puede tener más de 100 caracteres'),
   centro_id: z.string().min(1, 'Debe seleccionar un centro'),
-  // Las fechas y el estado ahora se manejan automáticamente en el backend
   estado: z.boolean().optional(),
   fecha_creacion: z.string().optional(),
   fecha_modificacion: z.string().optional(),

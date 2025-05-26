@@ -2,40 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Ficha } from "@/types/ficha";
 
-// Actualizado para coincidir exactamente con lo que espera el backend
-export interface NuevaFicha {
-  id_ficha?: number; // Opcional para creación, el backend podría generarlo
-  estado: boolean;
-  fecha_creacion: string; // Requerido por el backend
-  fecha_modificacion: string; // Requerido por el backend
-  usuario_id: number;
-  programa: number; // Cambiado de programa_id a programa según el error
-}
-
-export async function postFicha(data: NuevaFicha): Promise<Ficha> {
-  try {
-    console.log('Enviando datos a /fichas:', data);
-    // Verificar que el token JWT esté presente en los headers
-    const token = localStorage.getItem('token');
-    console.log('Token JWT disponible:', !!token);
-    
-    // Asegurar que axiosInstance tenga el token en los headers
-    if (token) {
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await axiosInstance.post("/fichas", data);
-    console.log('Respuesta exitosa del servidor:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error('Error detallado al crear ficha:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-      headers: error.response?.headers
-    });
-    throw error;
-  }
+export async function postFicha(data: Ficha): Promise<Ficha> {
+  const response = await axiosInstance.post("/fichas", data);
+  return response.data;
 }
 
 export function usePostFicha() {
@@ -46,4 +15,4 @@ export function usePostFicha() {
       queryClient.invalidateQueries({ queryKey: ["fichas"] });
     },
   });
-} 
+}

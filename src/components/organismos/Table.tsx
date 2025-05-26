@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Select, SelectItem, Input } from "@heroui/react";
-import { ChevronUp, ChevronDown, Search } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { useTheme } from "../../context/ThemeContext";
+import Toggle from "../atomos/Toggle";
+import Boton from "../atomos/Boton";
 
 // Tipo genérico para cualquier estructura de datos
 export type Column<T> = {
-  key: keyof T | "acciones";
+  key: keyof T | "acciones" | "estado";
   label: string;
   render?: (item: T) => React.ReactNode;
   sortable?: boolean; // Indica si la columna se puede ordenar
@@ -20,6 +22,13 @@ type Props<T extends { key: React.Key }> = {
   rowsPerPage?: number;
   defaultSortColumn?: keyof T; // Columna por defecto para ordenar
   defaultSortDirection?: 'asc' | 'desc'; // Dirección de ordenamiento por defecto
+  // Propiedades para funcionalidad de estado y acciones
+  onToggleEstado?: (item: T) => void;
+  onEdit?: (item: T) => void;
+  includeEstado?: boolean;
+  includeAcciones?: boolean;
+  estadoLabel?: string;
+  accionesLabel?: string;
 };
 
 type SortDirection = 'asc' | 'desc' | null;
@@ -30,8 +39,15 @@ const GlobalTable = <T extends { key: React.Key }>({
   columns, 
   data, 
   rowsPerPage: initialRowsPerPage = 10,
-  defaultSortColumn,
-  defaultSortDirection = 'asc'
+  defaultSortColumn = "estado" as keyof T,
+  defaultSortDirection = 'desc',
+  // Propiedades para funcionalidad de estado y acciones
+  onToggleEstado,
+  onEdit,
+  includeEstado = true,
+  includeAcciones = true,
+  estadoLabel = "Estado",
+  accionesLabel = "Acciones"
 }: Props<T>) => {
   const { darkMode } = useTheme();
   const [page, setPage] = useState(1);
@@ -87,6 +103,48 @@ const GlobalTable = <T extends { key: React.Key }>({
     );
   };
 
+  // Crear columnas mejoradas con estado y acciones si es necesario
+  const enhancedColumns = useMemo(() => {
+    const newColumns = [...columns];
+    
+    // Agregar columna de estado si se solicita y no existe ya
+    if (includeEstado && onToggleEstado && !newColumns.some(col => col.key === "estado")) {
+      const estadoColumn: Column<T> = {
+        key: "estado" as keyof T,
+        label: estadoLabel,
+        filterable: true,
+        sortable: true,
+        render: (item: any) => (
+          <Toggle
+            isOn={item.estado}
+            onToggle={() => onToggleEstado(item)}
+          />
+        )
+      };
+      newColumns.push(estadoColumn);
+    }
+    
+    // Agregar columna de acciones si se solicita y no existe ya
+    if (includeAcciones && onEdit && !newColumns.some(col => col.key === "acciones")) {
+      const accionesColumn: Column<T> = {
+        key: "acciones" as keyof T,
+        label: accionesLabel,
+        render: (item) => (
+          <div className="flex gap-2">
+            <Boton
+              onClick={() => onEdit(item)}
+              className="bg-yellow-500 text-white">
+              <Pencil size={18} />
+            </Boton>
+          </div>
+        )
+      };
+      newColumns.push(accionesColumn);
+    }
+    
+    return newColumns;
+  }, [columns, includeEstado, includeAcciones, onToggleEstado, onEdit, estadoLabel, accionesLabel]);
+
   // Procesar datos con ordenamiento y filtrado
   const processedData = useMemo(() => {
     let result = [...data];
@@ -130,7 +188,7 @@ const GlobalTable = <T extends { key: React.Key }>({
         <div className="flex items-center gap-2">
           <span className={`text-sm ${darkMode ? 'text-emerald-300' : 'text-gray-700'}`}>registros</span>
           <Select
-            className={`w-20 ${darkMode ? 'bg-slate-800 text-white border-slate-700' : 'bg-white text-gray-800 border-gray-300'}`}
+            className={`w-20 ${darkMode ? 'text-white border-slate-700' : 'bg-white text-gray-800 border-gray-300'}`}
             value={String(rowsPerPage)}
             onChange={(e) => setRowsPerPage(Number(e.target.value))}
             aria-label="Rows per page">
@@ -148,7 +206,7 @@ const GlobalTable = <T extends { key: React.Key }>({
           <div className="relative">
             <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${darkMode ? 'text-emerald-300' : 'text-gray-400'}`} size={18} />
             <Input
-              className={`pl-10 ${darkMode ? 'bg-slate-800 text-white border-slate-700 focus:border-emerald-400' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
+              className={`pl-10 ${darkMode ? 'text-white focus:border-emerald-400' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
               placeholder="Buscar..."
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
@@ -183,7 +241,7 @@ const GlobalTable = <T extends { key: React.Key }>({
         }}
       >
         <TableHeader>
-          {columns.map((col) => (
+          {enhancedColumns.map((col) => (
             <TableColumn 
               key={String(col.key)}
               className={col.sortable ? 'cursor-pointer select-none' : ''}
@@ -205,7 +263,7 @@ const GlobalTable = <T extends { key: React.Key }>({
         >
           {(item: T) => (
             <TableRow key={String(item.key)} className={darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-50'}>
-              {columns.map((col) => (
+              {enhancedColumns.map((col) => (
                 <TableCell key={String(col.key)}>
                   {col.render ? col.render(item) :
                     (() => {
@@ -231,5 +289,73 @@ const GlobalTable = <T extends { key: React.Key }>({
     </div>
   );
 };
+
+/**
+ * Función de ayuda para crear una tabla con datos de entidad
+ * Esta función simplifica la creación de tablas con las columnas comunes
+ * @param data Array de datos de la entidad
+ * @param columns Columnas personalizadas para la entidad
+ * @param idField Campo que se usará como key en la tabla
+ * @param handlers Manejadores para toggle y edición
+ * @param options Opciones adicionales para la tabla
+ */
+export function createEntityTable<T extends { [key: string]: any }>({
+  data,
+  columns,
+  idField,
+  handlers,
+  options = {}
+}: {
+  data: T[];
+  columns: Column<T & { key: React.Key }>[];
+  idField: keyof T;
+  handlers: {
+    onToggleEstado: (item: T & { key: React.Key }) => void;
+    onEdit: (item: T & { key: React.Key }) => void;
+  };
+  options?: {
+    rowsPerPage?: number;
+    defaultSortColumn?: keyof (T & { key: React.Key });
+    defaultSortDirection?: 'asc' | 'desc';
+    includeEstado?: boolean;
+    includeAcciones?: boolean;
+    estadoLabel?: string;
+    accionesLabel?: string;
+  };
+}) {
+  // Preparar los datos con la propiedad key
+  const preparedData = data.map(item => ({ ...item, key: item[idField] }));
+  
+  // Configuración por defecto
+  const defaultOptions = {
+    rowsPerPage: 6,
+    defaultSortColumn: "estado" as keyof (T & { key: React.Key }),
+    defaultSortDirection: 'desc' as 'asc' | 'desc',
+    includeEstado: true,
+    includeAcciones: true,
+    estadoLabel: "Estado",
+    accionesLabel: "Acciones"
+  };
+  
+  // Combinar opciones por defecto con las proporcionadas
+  const tableOptions = { ...defaultOptions, ...options };
+  
+  // Retornar el componente GlobalTable configurado
+  return (
+    <GlobalTable
+      columns={columns}
+      data={preparedData}
+      rowsPerPage={tableOptions.rowsPerPage}
+      defaultSortColumn={tableOptions.defaultSortColumn}
+      defaultSortDirection={tableOptions.defaultSortDirection}
+      onToggleEstado={handlers.onToggleEstado}
+      onEdit={handlers.onEdit}
+      includeEstado={tableOptions.includeEstado}
+      includeAcciones={tableOptions.includeAcciones}
+      estadoLabel={tableOptions.estadoLabel}
+      accionesLabel={tableOptions.accionesLabel}
+    />
+  );
+}
 
 export default GlobalTable;

@@ -2,13 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Municipio } from "@/types/municipio";
 
-// Tipo parcial para crear un nuevo municipio
-export type NuevoMunicipio = Partial<Omit<Municipio, "id_municipio">> & {
-  nombre_municipio: string; // Solo el nombre es obligatorio
-};
-
-export async function postMunicipio(data: NuevoMunicipio): Promise<Municipio> {
-  console.log('Enviando datos para crear municipio:', data);
+export async function postMunicipio(data: Municipio): Promise<Municipio> {
   const response = await axiosInstance.post("/municipios", data);
   return response.data;
 }

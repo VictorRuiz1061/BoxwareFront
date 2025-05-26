@@ -1,12 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-import { Permiso } from "./getPermisos";
+import { Permiso } from "@/types/permiso";
 
-export interface NuevoPermiso {
-  nombre: string;
-}
-
-export async function postPermiso(data: NuevoPermiso): Promise<Permiso> {
+export async function postPermiso(data: Permiso): Promise<Permiso> {
   const response = await axiosInstance.post("/permisos", data);
   return response.data;
 }

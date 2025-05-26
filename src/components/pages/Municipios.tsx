@@ -1,13 +1,12 @@
-import { Alert } from "@heroui/react";
 import { useState } from "react";
-import { Pencil } from 'lucide-react';
+import { Alert } from "@heroui/react";
 import { useGetMunicipios } from '@/hooks/municipios/useGetMunicipios';
 import { usePostMunicipio } from '@/hooks/municipios/usePostMunicipio';
 import { usePutMunicipio } from '@/hooks/municipios/usePutMunicipio';
 import { Municipio } from '@/types/municipio';
+import AnimatedContainer from "@/components/atomos/AnimatedContainer";
 import Boton from "@/components/atomos/Boton";
-import Toggle from "@/components/atomos/Toggle";
-import GlobalTable, { Column } from "@/components/organismos/Table";
+import { Column, createEntityTable } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 import { municipioSchema } from '@/schemas/municipio.schema';
 
@@ -25,45 +24,51 @@ const Municipios = () => {
     { key: "nombre_municipio", label: "Nombre del Municipio", filterable: true },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
-    {
-      key: "estado",
-      label: "Estado",
-      render: (municipio) => (
-        <div className="flex items-center justify-center">
-          <Toggle
-            isOn={municipio.estado}
-            onToggle={() => handleToggleEstado(municipio)}
-          />
-        </div>
-      )
-    },  
-    {
-      key: "acciones",
-      label: "Acciones",
-      render: (municipio) => (
-        <div className="flex gap-2">
-          <Boton
-            onPress={() => handleEdit(municipio)}
-            className="bg-yellow-500 text-white">
-            <Pencil size={18} />
-          </Boton>
-        </div>
-      ),
-    },
   ];
 
-  const getFormFields = (): FormField[] => {
-    const baseFields: FormField[] = [
-      { key: "nombre_municipio", label: "Nombre del Municipio", type: "text", required: true },
-    ];
-    if (editingId) {
-      baseFields.push({ key: "fecha_modificacion", label: "Fecha de Modificación", type: "date", required: true });
-    } else {
-      baseFields.push({ key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true });
-      baseFields.push({ key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true });
-    }
+  const formFields: FormField[] = [
+    { key: "nombre_municipio", label: "Nombre del Municipio", type: "text", required: true },
+  ];
     
-    return baseFields;
+  const handleSubmit = async (values: Record<string, string>) => {
+    try {      
+      // Fecha actual para timestamps
+      const currentDate = new Date().toISOString();
+      
+      if (editingId) {
+        // Actualizar municipio existente
+        const updatePayload = {
+          id_municipio: editingId,
+          nombre_municipio: values.nombre_municipio,
+          estado: true,
+          fecha_modificacion: currentDate,
+        };
+        
+        await actualizarMunicipio(editingId, updatePayload);
+        setSuccessAlertText('Municipio actualizado con éxito');
+      } else {
+        // Crear nuevo municipio
+        // No incluimos id_municipio ya que el backend lo generará automáticamente
+        const createPayload: Omit<Municipio, 'id_municipio'> = {
+          nombre_municipio: values.nombre_municipio,
+          estado: true,
+          fecha_creacion: currentDate,
+          fecha_modificacion: currentDate
+        };
+        
+        await crearMunicipio(createPayload as any);
+        setSuccessAlertText('Municipio creado con éxito');
+      }
+      
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      setIsModalOpen(false);
+      setFormData({});
+      setEditingId(null);
+    } catch (error) {
+      console.error('Error al guardar el municipio:', error);
+      alert('Error al guardar el municipio');
+    }
   };
 
   const handleToggleEstado = async (municipio: Municipio) => {
@@ -74,83 +79,28 @@ const Municipios = () => {
         estado: nuevoEstado,
         fecha_modificacion: new Date().toISOString(),
       };
+      
       await actualizarMunicipio(municipio.id_municipio, updateData);
-      setSuccessAlertText(
-        `El municipio fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`
-      );
+      setSuccessAlertText(`El municipio fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
     } catch (error) {
-      alert('Error al cambiar el estado del municipio');
-    }
-  };
-
-  const handleSubmit = async (values: Record<string, string>) => {
-    try {
-      const estadoValue = editingId
-        ? values.estado
-        : 'Activo';
-
-      const basePayload = {
-        nombre_municipio: values.nombre_municipio,
-        estado: estadoValue === 'Activo',
-      };
-      
-      if (editingId) {
-        const updatePayload = {
-          ...basePayload,
-          fecha_modificacion: values.fecha_modificacion 
-            ? new Date(values.fecha_modificacion).toISOString() 
-            : new Date().toISOString(),
-          fecha_creacion: values.fecha_creacion
-            ? new Date(values.fecha_creacion).toISOString()
-            : new Date().toISOString()
-        };
-        
-        await actualizarMunicipio(editingId, updatePayload);
-        setSuccessAlertText('Municipio actualizado con éxito');
-      } else {
-        const currentDate = new Date().toISOString();
-        const createPayload = {
-          ...basePayload,
-          fecha_creacion: values.fecha_creacion 
-            ? new Date(values.fecha_creacion).toISOString() 
-            : currentDate,
-          fecha_modificacion: currentDate
-        };
-        
-        await crearMunicipio(createPayload);
-        setSuccessAlertText('Municipio creado con éxito');
-      }
-      
+      setSuccessAlertText("Error al cambiar el estado del municipio.");
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
-      setIsModalOpen(false);
-      setFormData({});
-      setEditingId(null);
-    } catch (error) {
-      alert('Error al guardar el municipio');
     }
   };
 
   const handleCreate = () => {
-    const today = new Date().toISOString();
-    setFormData({
-      fecha_creacion: today.split('T')[0],
-      fecha_modificacion: today.split('T')[0],
-      estado: "Activo"
-    });
+    setFormData({});
     setEditingId(null);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (municipio: Municipio) => {
-    console.log('Datos del municipio a editar:', municipio);
+    const handleEdit = (municipio: Municipio) => {
+    // Asegurarse de que todos los campos necesarios estén presentes
     setFormData({
       nombre_municipio: municipio.nombre_municipio,
-      estado: municipio.estado ? "Activo" : "Inactivo",
-      fecha_creacion: municipio.fecha_creacion.split('T')[0],
-      fecha_modificacion: new Date().toISOString().split('T')[0]
     });
     setEditingId(municipio.id_municipio);
     setIsModalOpen(true);
@@ -159,40 +109,41 @@ const Municipios = () => {
   return (
     <>
       <div className="w-full">
-          <h1 className="text-xl font-bold mb-4">Gestión de Municipios</h1>
+      <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+        <h1 className="text-xl font-bold mb-4">Gestión de Municipios</h1>
+        </AnimatedContainer>
 
-          <Boton
-            onPress={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
-          >
-            Crear Nuevo Municipio
-          </Boton>
+          <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+        <Boton
+          onClick={handleCreate}
+          className="bg-blue-500 text-white px-4 py-2 mb-4"
+        >
+          Crear Nuevo Municipio
+        </Boton>
+      </AnimatedContainer>
 
-          {loading ? (
-            <p>Cargando municipios...</p>
-          ) : (
-            <GlobalTable
-              columns={columns}
-              data={municipios
-                .map((municipio) => ({ ...municipio, key: municipio.id_municipio }))
-                .sort((a, b) => {
-                  if (a.estado === b.estado) return 0;
-                  return a.estado ? -1 : 1;
-                })
-              }
-              rowsPerPage={6}
-              defaultSortColumn="estado"
-              defaultSortDirection="desc"
-            />
-          )}
+      {loading ? (
+          <p>Cargando municipios...</p>
+        ) : (
+        <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          {createEntityTable({
+            columns: columns as Column<any>[],
+            data: municipios,
+            idField: 'id_municipio',
+            handlers: {
+              onToggleEstado: handleToggleEstado,
+              onEdit: handleEdit
+            }
+          })}
+        </AnimatedContainer>)}
 
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
+            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
+              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
+                {/* Botón X para cerrar en la esquina superior derecha */}
+                <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
+                
                   <span className="text-gray-800 font-bold">×</span>
                 </button>
                 
@@ -200,12 +151,11 @@ const Municipios = () => {
                   {editingId ? "Editar Municipio" : "Crear Nuevo Municipio"}
                 </h2>
                 <Form
-                  fields={getFormFields()}
+                  fields={formFields}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
                     ...formData,
-                    ...(editingId ? {} : { estado: "Activo" }),
                     ...(editingId 
                       ? { fecha_modificacion: formData.fecha_modificacion ?? new Date().toISOString().split('T')[0] }
                       : { fecha_creacion: formData.fecha_creacion ?? new Date().toISOString().split('T')[0] })
@@ -213,6 +163,7 @@ const Municipios = () => {
                   schema={municipioSchema}
                 />
               </div>
+            </AnimatedContainer>
             </div>
           )}
 

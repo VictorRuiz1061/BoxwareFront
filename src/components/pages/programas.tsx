@@ -267,7 +267,7 @@ const Programas = () => {
 
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg relative">
+              <div className="p-6 rounded-lg shadow-lg w-full max-w-lg relative">
                 {/* Botón X para cerrar en la esquina superior derecha */}
                 <button 
                   onClick={() => setIsModalOpen(false)} 

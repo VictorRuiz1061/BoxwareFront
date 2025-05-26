@@ -54,5 +54,7 @@ export function useGetAuth() {
 } 
 
 function removeTokenCookie() {
-  throw new Error('Function not implemented.');
+  // Establecer la cookie con una fecha de expiración en el pasado para eliminarla
+  document.cookie = `${TOKEN_COOKIE_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=strict`;
+  console.log('[Auth] Token eliminado de las cookies');
 }

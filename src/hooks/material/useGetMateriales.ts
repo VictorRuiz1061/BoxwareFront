@@ -3,4 +3,4 @@ import { useGetMateriales as useApiGetMateriales } from '@/api/materiales/getMat
 export function useGetMateriales() {
   const { data: materiales = [], isLoading: loading } = useApiGetMateriales();
   return { materiales, loading };
-} 
+}

@@ -91,13 +91,8 @@ const InicioSesion = () => {
 
             <div className="text-center mt-4">
               <p className="text-xs text-gray-500">
-                ¿No tienes una cuenta? <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200"
-                  onClick={() => navigate('/registrarse')}
-                >
-                  Regístrate
-                </a>
+                ¿No tienes una cuenta? <a href="#" className="font-medium text-blue-600 hover:text-blue-700 
+                transition-colors duration-200" onClick={() => navigate('/registrarse')}>Regístrate</a>
               </p>
             </div>
           </div>

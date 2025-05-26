@@ -12,4 +12,4 @@ export function useGetAreas() {
     queryKey: ["areas"],
     queryFn: getAreas,
   });
-} 
+}

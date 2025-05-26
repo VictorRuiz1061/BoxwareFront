@@ -7,10 +7,8 @@ export const rolSchema = z.object({
   descripcion: z.string()
     .min(10, 'La descripción debe tener al menos 10 caracteres')
     .max(200, 'La descripción no puede tener más de 200 caracteres'),
-  estado: z.enum(['Activo', 'Inactivo'], {
-    errorMap: () => ({ message: 'Debe seleccionar un estado válido' })
-  }),
-  fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación'),
+  estado: z.boolean().optional(),
+  fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación').optional(),
   fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación').optional(),
 });
 

@@ -2,8 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Sitio } from "@/types/sitio";
 
-export async function postSitio(sitio: Omit<Sitio, 'id_sitio'>): Promise<Sitio> {
-  const response = await axiosInstance.post<Sitio>('/sitios', sitio);
+export async function postSitio(data: Sitio): Promise<Sitio> {
+  const response = await axiosInstance.post<Sitio>('/sitios', data);
   return response.data;
 }
 

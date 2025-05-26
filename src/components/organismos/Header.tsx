@@ -1,7 +1,8 @@
-import { Bell, User, Settings } from "lucide-react"; 
-import AnimatedContainer from "../atomos/AnimatedContainer";
-import ThemeToggle from "../atomos/ThemeToggle";
-import { useTheme } from "../../context/ThemeContext";
+import { Bell, Settings } from "lucide-react"; 
+import AnimatedContainer from "@/components/atomos/AnimatedContainer";
+import Image from "@/components/atomos/Imagen";
+import ThemeToggle from "@/components/atomos/ThemeToggle";
+import { useTheme } from "@/context/ThemeContext";
 
 const Header = ({ userName = "Usuario" }) => { 
   const { darkMode } = useTheme();
@@ -51,10 +52,15 @@ const Header = ({ userName = "Usuario" }) => {
             {/* Perfil de usuario */}
             <AnimatedContainer animation="slideUp" delay={400} duration={500}>
               <div className="flex items-center space-x-3 group cursor-pointer">
-                <div className={`w-10 h-10 ${darkMode ? 'bg-emerald-600 group-hover:bg-emerald-500' : 'bg-blue-500 group-hover:bg-blue-400'} rounded-lg flex items-center justify-center text-white shadow-md transition-all duration-300`}>
-                  <User
-                    size={20}
-                    className="group-hover:scale-110 transition-transform duration-300"
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-md transition-all duration-300 overflow-hidden`}>
+                  {/* Avatar del usuario */}
+                  <Image
+                    src="/assets/1.jpg"
+                    alt={userName || "Avatar"}
+                    isAvatar
+                    size="sm"
+                    radius="lg"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
                 <div className="flex flex-col">

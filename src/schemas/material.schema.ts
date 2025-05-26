@@ -1,20 +1,37 @@
 import { z } from 'zod';
 
-export const materialSchema = z.object({
-    codigo_sena: z.string().min(2, 'El código SENA es requerido'),
+// Schema base para validación de campos comunes
+const baseSchema = {
     nombre_material: z.string().min(1, 'El nombre del material es requerido'),
     descripcion_material: z.string().min(1, 'La descripción del material es requerida'),
-    stock: z.number().min(1, 'El stock debe ser mayor o igual a 0'),
+    stock: z.string().min(1, 'El stock debe ser mayor o igual a 0'),
     unidad_medida: z.string().min(1, 'La unidad de medida es requerida'),
-    imagen: z.string().min(1, 'La imagen es requerida'),
-    estado: z.boolean().default(true),
-    producto_perecedero: z.boolean().default(false),
-    fecha_vencimiento: z.string().min(1, 'La fecha de vencimiento es requerida'),
-    fecha_creacion: z.string().min(1, 'La fecha de creación es requerida'),
-    fecha_modificacion: z.string().min(1, 'La fecha de modificación es requerida'),
-    categoria_id: z.number().min(1, 'La categoría es requerida'),
-    tipo_material_id: z.number().min(1, 'El tipo de material es requerido'),
-    sitio_id: z.number().min(1, 'El sitio es requerido'),   
+    imagen: z.string().optional(),
+    producto_perecedero: z.string().optional(),
+    fecha_vencimiento: z.string().optional(),
+    categoria_id: z.string().min(1, 'La categoría es requerida'),
+    tipo_material_id: z.string().min(1, 'El tipo de material es requerido'),
+    sitio_id: z.string().min(1, 'El sitio es requerido')
+};
+
+// Schema para creación (incluye código SENA)
+export const materialCreateSchema = z.object({
+    ...baseSchema,
+    codigo_sena: z.string().min(2, 'El código SENA es requerido'),
+});
+
+// Schema para edición (no requiere código SENA)
+export const materialEditSchema = z.object({
+    ...baseSchema
+});
+
+// Schema general que puede usarse para ambos casos
+export const materialSchema = z.object({
+    ...baseSchema,
+    codigo_sena: z.string().optional(),
+    estado: z.boolean().optional(),
+    fecha_creacion: z.string().optional(),
+    fecha_modificacion: z.string().optional()
 })
 
 export type MaterialSchema = z.infer<typeof materialSchema>

@@ -5,8 +5,9 @@ export const areaSchema = z.object({
     .min(3, 'El nombre del área debe tener al menos 3 caracteres')
     .max(50, 'El nombre del área no puede tener más de 50 caracteres'),
   sede_id: z.string().min(1, 'Debe seleccionar una sede'),
+  estado: z.boolean().optional(),
   fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación'),
   fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación'),
 });
 
-export type AreaSchema = z.infer<typeof areaSchema>; 
+export type AreaSchema = z.infer<typeof areaSchema>;

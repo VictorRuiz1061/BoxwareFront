@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { Pencil } from 'lucide-react';
 import { Alert } from '@heroui/react';
 import { useGetPermisos } from '@/hooks/permisos/useGetPermisos';
@@ -9,120 +9,66 @@ import { useGetModulos } from '@/hooks/modulos/useGetModulos';
 import { Permiso } from '@/types/permiso';
 import Boton from "@/components/atomos/Boton";
 import Toggle from "@/components/atomos/Toggle";
-
 import GlobalTable, { Column } from "@/components/organismos/Table";
 import Form, { FormField } from "@/components/organismos/Form";
 import { permisoSchema } from '@/schemas/permiso.schema';
 
 const Permisos = () => {
-  const { permisos, loading } = useGetPermisos();
-  // Estado para controlar el toggle visual sin depender de la recarga de datos
-  const [toggleStates, setToggleStates] = useState<{[key: number]: boolean}>({});
-  
-  // Inicializar los estados de los toggles cuando los permisos se cargan
-  useEffect(() => {
-    if (permisos && permisos.length > 0) {
-      const initialStates: {[key: number]: boolean} = {};
-      permisos.forEach(permiso => {
-        // Convertir correctamente el estado a booleano
-        // Si es string "false" o false o 0 o null o undefined, debe ser false
-        const estado = permiso.estado;
-        initialStates[permiso.id_permiso] = estado === true || String(estado) === "true" || Number(estado) === 1;
-      });
-      setToggleStates(initialStates);
-    }
-  }, [permisos]);
+  const { permisos, loading: loadingPermisos } = useGetPermisos();
   const { crearPermiso } = usePostPermiso();
   const { actualizarPermiso } = usePutPermiso();
-  const { roles } = useGetRoles();
-  const { modulos } = useGetModulos();
+  const { roles, loading: loadingRoles } = useGetRoles();
+  const { modulos, loading: loadingModulos } = useGetModulos();
+  const loading = loadingPermisos || loadingRoles || loadingModulos;
   const [isModalOpen, setIsModalOpen] = useState(false);  
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Partial<Permiso>>({});
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [successAlertText, setSuccessAlertText] = useState('');
-
-  // Define a safe render function to handle any type of value
-  const safeRender = (value: any): string => {
-    if (value === null || value === undefined) return '';
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-    if (value instanceof Date) return value.toLocaleDateString();
-    // If it's an object, try to extract a meaningful name or description
-    if (typeof value === 'object') {
-      // For modules, use the description_ruta if available
-      if (value.descripcion_ruta) return value.descripcion_ruta;
-      // For roles, use the nombre_rol if available
-      if (value.nombre_rol) return value.nombre_rol;
-      // Otherwise convert to a simple string
-      return '[Objeto]';
-    }
-    return String(value);
-  };
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [errorAlertText, setErrorAlertText] = useState('');
 
   const columns: Column<Permiso & { key: number }>[] = [
-    { 
-      key: "nombre", 
-      label: "Nombre", 
-      filterable: true,
-      render: (permiso) => String(permiso.nombre || '')
-    },
-    { 
-      key: "codigo_nombre", 
-      label: "Código Nombre", 
-      filterable: true,
-      render: (permiso) => String(permiso.codigo_nombre || '')
-    },
+    { key: "nombre", label: "Nombre", filterable: true},
+    { key: "codigo_nombre", label: "Código Nombre", filterable: true},
     {
       key: "modulo_id",
       label: "Módulo",
       filterable: true,
-      render: (permiso) => {
-        // Find the module by ID and display only its description
-        const modulo = modulos.find(m => m.id_modulo === permiso.modulo_id);
-        if (modulo) {
-          return modulo.descripcion_ruta;
+      render: (permiso) =>{
+        if (permiso.modulo){
+          return permiso.modulo.descripcion_ruta;
         }
-        // If module not found, just show the ID without prefix
-        return String(permiso.modulo_id);
+        if (permiso.modulo_id && (!loadingModulos && modulos.length > 0)){
+          const modulo = modulos.find(m => m.id_modulo === permiso.modulo_id);
+          return modulo ? modulo.descripcion_ruta : `ID: ${permiso.modulo_id}`;
+        }
+        return 'No disponible';
       }
     },
     {
       key: "rol_id",
       label: "Rol",
       filterable: true,
-      render: (permiso) => {
-        // Find the role by ID and display only its name
-        const rol = roles.find(r => r.id_rol === permiso.rol_id);
-        if (rol) {
-          return rol.nombre_rol;
+      render: (permiso) =>{
+        if (permiso.rol){
+          return permiso.rol.nombre_rol;
         }
-        // If role not found, just show the ID without prefix
-        return String(permiso.rol_id);
+        if (permiso.rol_id && (!loadingRoles && roles.length > 0)){
+          const rol = roles.find(r => r.id_rol === permiso.rol_id);
+          return rol ? rol.nombre_rol : `ID: ${permiso.rol_id}`;
+        }
+        return 'No disponible';
       }
     },
-    { 
-      key: "fecha_creacion", 
-      label: "Fecha de Creación",
-      render: (permiso) => {
-        if (typeof permiso.fecha_creacion === 'string') {
-          try {
-            const date = new Date(permiso.fecha_creacion);
-            return date.toLocaleDateString();
-          } catch (e) {
-            return String(permiso.fecha_creacion);
-          }
-        }
-        return String(permiso.fecha_creacion || '');
-      }
-    },
+    { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
     {
       key: "estado",
       label: "Estado",
       render: (permiso) => (
         <div className="flex items-center justify-center">
           <Toggle
-            isOn={toggleStates[permiso.id_permiso] ?? (permiso.estado === true || String(permiso.estado) === "true" || Number(permiso.estado) === 1)}
+            isOn={permiso.estado === true || String(permiso.estado) === "true" || Number(permiso.estado) === 1}
             onToggle={() => handleToggleEstado(permiso)}
           />
         </div>
@@ -145,7 +91,7 @@ const Permisos = () => {
     },
   ];
 
-  const formFields: FormField[] = [
+  const formFieldsCreate: FormField[] = [
     { key: "nombre", label: "Nombre", type: "text", required: true },
     { key: "codigo_nombre", label: "Código Nombre", type: "text", required: true },
     { 
@@ -153,63 +99,136 @@ const Permisos = () => {
       label: "Módulo", 
       type: "select", 
       required: true, 
-      options: modulos?.map(m => ({ label: m.descripcion_ruta, value: String(m.id_modulo) })) ?? [] 
+      options: modulos && modulos.length > 0 
+        ? modulos.map(m => ({ label: String(m.descripcion_ruta), value: m.id_modulo }))
+        : []
     },
     { 
       key: "rol_id", 
       label: "Rol", 
       type: "select", 
       required: true, 
-      options: roles?.map(r => ({ label: r.nombre_rol, value: String(r.id_rol) })) ?? [] 
+      options: roles && roles.length > 0
+        ? roles.map(r => ({ label: String(r.nombre_rol), value: r.id_rol }))
+        : []
     },
-    { key: "estado", label: "Estado", type: "select", required: true, options: [{ label: "Activo", value: "Activo" }, { label: "Inactivo", value: "Inactivo" }] },
-    { key: "fecha_creacion", label: "Fecha de Creación", type: "date", required: true },
+  ];
+  
+  const formFieldsEdit: FormField[] = [
+    { key: "nombre", label: "Nombre", type: "text", required: true },
+    { key: "codigo_nombre", label: "Código Nombre", type: "text", required: true },
+    { 
+      key: "modulo_id", 
+      label: "Módulo", 
+      type: "select", 
+      required: true, 
+      options: modulos && modulos.length > 0 
+        ? modulos.map(m => ({ label: String(m.descripcion_ruta), value: m.id_modulo }))
+        : []
+    },
+    { 
+      key: "rol_id", 
+      label: "Rol", 
+      type: "select", 
+      required: true, 
+      options: roles && roles.length > 0
+        ? roles.map(r => ({ label: String(r.nombre_rol), value: r.id_rol }))
+        : []
+    },
   ];
 
-  const handleSubmit = async (values: Record<string, string | number>) => {
+  // Removed duplicate formFields as we're now using formFieldsCreate and formFieldsEdit
+
+  const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const moduloId = Number(values.modulo_id);
-      const rolId = Number(values.rol_id);
-
-      const moduloSeleccionado = modulos.find(m => m.id_modulo === moduloId);
-      const rolSeleccionado = roles.find(r => r.id_rol === rolId);
-
-      if (!moduloSeleccionado || !rolSeleccionado) {
-        alert("Por favor selecciona un módulo y un rol válidos.");
+      // Validar los datos con Zod
+      const parsed = permisoSchema.safeParse(values);
+      if (!parsed.success) {
+        setErrorAlertText(parsed.error.errors.map((e) => e.message).join("\n"));
+        setShowErrorAlert(true);
+        setTimeout(() => setShowErrorAlert(false), 3000);
         return;
       }
 
-      const payload = {
-        nombre: values.nombre as string,
-        codigo_nombre: values.codigo_nombre as string,
-        modulo_id: moduloId,
-        rol_id: rolId,
-        estado: values.estado === "Activo",
-        fecha_creacion: new Date(values.fecha_creacion as string).toISOString()
-      };
+      // Verificar que los valores de módulo y rol existan
+      const moduloId = Number(values.modulo_id);
+      const rolId = Number(values.rol_id);
+      
+      // Solo verificamos si los arrays están cargados
+      if (!loadingModulos && !loadingRoles && modulos.length > 0 && roles.length > 0) {
+        const moduloExiste = modulos.some(m => m.id_modulo === moduloId);
+        const rolExiste = roles.some(r => r.id_rol === rolId);
+        
+        if (!moduloExiste || !rolExiste) {
+          setErrorAlertText("El módulo o rol seleccionado no existe");
+          setShowErrorAlert(true);
+          setTimeout(() => setShowErrorAlert(false), 3000);
+          return;
+        }
+      }
 
+      // Preparar los datos para enviar al servidor según la estructura esperada por la API
+      const currentDate = new Date().toISOString().split('T')[0];
+      
+      // Si estamos editando, solo enviamos los campos que queremos actualizar
       if (editingId) {
-        await actualizarPermiso(editingId, { id: editingId, ...payload });
-        setSuccessAlertText('Permiso actualizado con éxito');
+        const updateData = {
+          id: editingId, // Usamos 'id' en lugar de 'id_permiso' para compatibilidad con la API
+          nombre: String(values.nombre).trim(),
+          codigo_nombre: String(values.codigo_nombre).trim(),
+          modulo_id: moduloId,
+          rol_id: rolId,
+          estado: true
+        };
+        
+        await actualizarPermiso(editingId, updateData);
+        setSuccessAlertText("Permiso actualizado correctamente");
       } else {
-        await crearPermiso(payload);
-        setSuccessAlertText('Permiso creado con éxito');
+        // Si estamos creando, enviamos un objeto completo según la interfaz Permiso
+        const newPermiso: Permiso = {
+          id_permiso: 0, // El backend ignorará este valor y asignará uno nuevo
+          nombre: String(values.nombre).trim(),
+          codigo_nombre: String(values.codigo_nombre).trim(),
+          modulo_id: moduloId,
+          rol_id: rolId,
+          estado: true,
+          fecha_creacion: currentDate
+        };
+        
+        await crearPermiso(newPermiso);
+        setSuccessAlertText("Permiso creado correctamente");
       }
       
+      // Mostrar mensaje de éxito y cerrar el modal
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
       setIsModalOpen(false);
-      setFormData({});
-      setEditingId(null);
-    } catch (error) {
-      console.error('Error al guardar el permiso:', error);
-      alert('Error al guardar el permiso');
+      return;
+
+      // Este código ya no es necesario porque lo hemos movido arriba
+
+      // Mostrar mensaje de éxito y cerrar el modal
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+      setIsModalOpen(false);
+    } catch (error: any) {
+      console.error("Error al guardar el permiso:", error);
+      
+      // Intentar obtener un mensaje de error más específico
+      const errorMessage = error.response?.data?.message
+        ? Array.isArray(error.response.data.message)
+          ? error.response.data.message.join('\n')
+          : error.response.data.message
+        : "Error al guardar el permiso";
+      
+      setErrorAlertText(errorMessage);
+      setShowErrorAlert(true);
+      setTimeout(() => setShowErrorAlert(false), 3000);
     }
   };
 
   const handleCreate = () => {
-    const today = new Date().toISOString().split('T')[0];
-    setFormData({ fecha_creacion: today });
+    setFormData({});
     setEditingId(null);
     setIsModalOpen(true);
   };
@@ -217,52 +236,27 @@ const Permisos = () => {
   // Cambiar el estado (activo/inactivo) de un permiso
   const handleToggleEstado = async (permiso: Permiso) => {
     try {
-      // Preparar los datos para actualizar solo el estado
-      // Determinar el estado actual correctamente
-      const estado = permiso.estado;
-      const estadoActual = toggleStates[permiso.id_permiso] ?? (estado === true || String(estado) === "true" || Number(estado) === 1);
-      const nuevoEstado = !estadoActual;
+      const nuevoEstado = !permiso.estado;
       
-      // Actualizar el estado visual del toggle inmediatamente
-      setToggleStates(prev => ({
-        ...prev,
-        [permiso.id_permiso]: nuevoEstado
-      }));
-      
-      // Mostrar mensaje de éxito inmediatamente
+      const updateData = {
+        id: permiso.id_permiso, // Usamos 'id' en lugar de 'id_permiso' para compatibilidad con la API
+        estado: nuevoEstado,
+        fecha_modificacion: new Date().toISOString().split('T')[0]
+      };
+
+      await actualizarPermiso(permiso.id_permiso, updateData);
       setSuccessAlertText(`El permiso fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
       setShowSuccessAlert(true);
       setTimeout(() => setShowSuccessAlert(false), 3000);
-      
-      // Crear un objeto Permiso para la actualización en el servidor
-      // Importante: Enviar el estado en el formato que espera el backend (false, no "false")
-      const updateData = {
-        id: permiso.id_permiso,
-        estado: nuevoEstado // Enviar como booleano
-      };
-      
-      console.log('Enviando actualización al servidor:', { id: permiso.id_permiso, estado: nuevoEstado });
-      
-      // Actualizar el permiso en el servidor
-      await actualizarPermiso(permiso.id_permiso, updateData);
-      
     } catch (error) {
-      console.error('Error al cambiar el estado:', error);
-      alert('Error al cambiar el estado del permiso');
-      
-      // Si hay un error, revertir el cambio visual
-      setToggleStates(prev => ({
-        ...prev,
-        [permiso.id_permiso]: toggleStates[permiso.id_permiso] ?? (permiso.estado === true || String(permiso.estado) === "true" || Number(permiso.estado) === 1)
-      }));
+      setErrorAlertText("Error al cambiar el estado del permiso.");
+      setShowErrorAlert(true);
+      setTimeout(() => setShowErrorAlert(false), 3000);
     }
   };
 
   const handleEdit = (permiso: Permiso) => {
-    setFormData({
-      ...permiso,
-      estado: permiso.estado
-    });
+    setFormData(permiso);
     setEditingId(permiso.id_permiso);
     setIsModalOpen(true);
   };
@@ -300,29 +294,11 @@ const Permisos = () => {
                   key: permiso.id_permiso
                 };
                 
-                // Convert any remaining object properties to strings to prevent rendering errors
-                Object.keys(safePermiso).forEach(key => {
-                  const value = safePermiso[key as keyof typeof safePermiso];
-                  if (typeof value === 'object' && value !== null) {
-                    (safePermiso as any)[key] = safeRender(value);
-                  }
-                });
-                
                 return safePermiso;
               })
-              // Ordenar por estado: activos primero, inactivos después
               .sort((a, b) => {
-                // Usar toggleStates para reflejar el estado actual, incluso si acaba de cambiar
-                const aActive = toggleStates[a.id_permiso] ?? (a.estado === true || String(a.estado) === "true" || Number(a.estado) === 1);
-                const bActive = toggleStates[b.id_permiso] ?? (b.estado === true || String(b.estado) === "true" || Number(b.estado) === 1);
-                
-                // Si los estados son diferentes, ordenar por estado
-                if (aActive !== bActive) {
-                  return aActive ? -1 : 1; // -1 pone a los activos primero
-                }
-                
-                // Si los estados son iguales, ordenar alfabéticamente por nombre
-                return (a.nombre || '').localeCompare(b.nombre || '');
+                if (a.estado === b.estado) return 0;
+                return a.estado ? -1 : 1;
               })}
               rowsPerPage={6}
               defaultSortColumn="estado"
@@ -332,7 +308,7 @@ const Permisos = () => {
 
           {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+              <div className="p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
                 <button 
                   onClick={() => setIsModalOpen(false)} 
                   className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
@@ -344,7 +320,7 @@ const Permisos = () => {
                   {editingId ? "Editar Permiso" : "Crear Nuevo Permiso"}
                 </h2>
                 <Form
-                  fields={formFields}
+                  fields={editingId ? formFieldsEdit : formFieldsCreate}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
@@ -352,8 +328,6 @@ const Permisos = () => {
                     codigo_nombre: formData?.codigo_nombre ?? '',
                     modulo_id: formData?.modulo_id ? String(formData.modulo_id) : '',
                     rol_id: formData?.rol_id ? String(formData.rol_id) : '',
-                    estado: formData?.estado ? "Activo" : "Inactivo",
-                    fecha_creacion: formData?.fecha_creacion ?? new Date().toISOString().split('T')[0]
                   }}
                   schema={permisoSchema}
                 />
@@ -373,9 +347,22 @@ const Permisos = () => {
               />
             </div>
           )}
+          
+          {showErrorAlert && (
+            <div className="fixed top-4 right-4 z-50">
+              <Alert
+                hideIconWrapper
+                color="danger"
+                description={errorAlertText}
+                title="Error"
+                variant="solid"
+                onClose={() => setShowErrorAlert(false)}
+              />
+            </div>
+          )}
         </div>
     </>
   );
 };
 
-export default React.memo(Permisos);
+export default Permisos;

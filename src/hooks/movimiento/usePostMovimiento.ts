@@ -1,29 +1,8 @@
-import { useState } from 'react';
-import { Movimiento } from '../../types/movimiento';
-import { postMovimiento } from '../../api/movimiento/postMovimiento';
+import { usePostMovimiento as useApiPostMovimiento } from '@/api/movimiento/postMovimiento';
+import { Movimiento } from '@/types/movimiento';
 
 export function usePostMovimiento() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const crearNuevoMovimiento = async (movimiento: Omit<Movimiento, 'id_movimiento'>) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resultado = await postMovimiento(movimiento);
-      setLoading(false);
-      return { success: true, data: resultado };
-    } catch (err) {
-      console.error('Error al crear movimiento:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      setLoading(false);
-      return { success: false, error: err instanceof Error ? err.message : 'Error desconocido' };
-    }
-  };
-
-  return {
-    crearMovimiento: crearNuevoMovimiento,
-    loading,
-    error
-  };
+  const post = useApiPostMovimiento();
+  const crearMovimiento = async (data: Movimiento) => post.mutateAsync(data);
+  return { crearMovimiento };
 }

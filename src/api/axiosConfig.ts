@@ -5,29 +5,31 @@ export function getTokenFromCookie() {
   const parts = value.split(`; token=`);
   if (parts.length === 2) {
     const result = parts.pop()?.split(';').shift();
-    console.log('[getTokenFromCookie] Token leído de las cookie');
+    // console.log('[getTokenFromCookie] Token leído de las cookies');
     return result || null;
   }
-  console.log('[getTokenFromCookie] No se encontró token en cookie');
+  console.log('[getTokenFromCookie] No se encontró token en cookies');
   return null;
 }
 
 export function getToken() {
-  // Try to get token from localStorage first (as mentioned in the memory)
-  const localToken = localStorage.getItem('token');
-  if (localToken) {
-    console.log('[getToken] Token encontrado en localStorage');
-    return localToken;
-  }
-  
-  // Fallback to cookie if not in localStorage
+  // Try to get token from cookie first
   const cookieToken = getTokenFromCookie();
   if (cookieToken) {
-    console.log('[getToken] Token encontrado en cookie');
+    // console.log('[getToken] Token encontrado en cookies');
     return cookieToken;
   }
   
-  console.log('[getToken] No se encontró token en ninguna fuente');
+  // Fallback to localStorage if not in cookie
+  const localToken = localStorage.getItem('token');
+  if (localToken) {
+    // console.log('[getToken] Token encontrado en localStorage');
+    // Store the token in a cookie for future use
+    document.cookie = `token=${localToken}; path=/; max-age=86400; samesite=strict`;
+    return localToken;
+  }
+  
+  // console.log('[getToken] No se encontró token en ninguna fuente');
   return null;
 }
 
@@ -44,20 +46,20 @@ axiosInstance.interceptors.request.use(
     const token = getToken();
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
-      console.log('[axios] Token agregado a los headers:', config.url);
+      // console.log('[axios] Token agregado a los headers:', config.url);
     } else {
-      console.warn('[axios] No hay token disponible para:', config.url);
+      // console.warn('[axios] No hay token disponible para:', config.url);
     }
     
     // Log the request payload for debugging
     if (config.data) {
-      console.log('[axios] Request payload:', config.data);
+      // console.log('[axios] Request payload:', config.data);
     }
     
     return config;
   },
   (error) => {
-    console.error('[axios] Error en interceptor de request:', error);
+    // console.error('[axios] Error en interceptor de request:', error);
     return Promise.reject(error);
   }
 );
@@ -65,22 +67,19 @@ axiosInstance.interceptors.request.use(
 // Add a response interceptor to handle common errors
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log('[axios] Respuesta exitosa:', response.config.url, response.status);
+    // console.log('[axios] Respuesta exitosa:', response.config.url, response.status);
     return response;
   },
   (error) => {
-    console.error('[axios] Error en respuesta:', error.response?.status, error.message);
+    // console.error('[axios] Error en respuesta:', error.response?.status, error.message);
     
     if (error.response?.data) {
-      console.error('[axios] Detalles del error:', error.response.data);
+      // console.error('[axios] Detalles del error:', error.response.data);
     }
     
     if (error.response?.status === 401) {
-      console.warn('[axios] Unauthorized access - token may be invalid or expired');
-      // Eliminar token de localStorage
-      localStorage.removeItem('token');
-      
-      // Eliminar token de cookie
+      // console.warn('[axios] Unauthorized access - token may be invalid or expired');
+      // Eliminar token de cookie (prioridad)
       document.cookie = 'token=; path=/; max-age=0; samesite=strict';
       document.cookie = 'token=; max-age=0; samesite=strict';
       

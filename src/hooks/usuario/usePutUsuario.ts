@@ -3,6 +3,6 @@ import { Usuario } from "@/types/usuario";
 
 export function usePutUsuario() {
   const put = useApiPutUsuario();
-  const actualizarUsuario = async (id: number, data: Usuario) => put.mutateAsync({ ...data, id });
+  const actualizarUsuario = async (id: number, data: Partial<Usuario>) => put.mutateAsync({ id, ...data });
   return { actualizarUsuario };
-} 
+}

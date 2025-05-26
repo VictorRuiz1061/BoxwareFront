@@ -2,20 +2,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Programa } from "@/types/programa";
 
-export interface ProgramaUpdate {
-  id_programa: number;
-  // otros campos opcionales si es necesario
-}
-
-export async function putPrograma(id: number, data: Partial<Programa>): Promise<Programa> {
-  const response = await axiosInstance.put(`/programas/${id}`, data);
+export async function putPrograma(data: Partial<Programa> & { id: number }): Promise<Programa> {
+  const response = await axiosInstance.put(`/programas/${data.id}`, data);
   return response.data;
 }
-
+  
 export function usePutPrograma() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id_programa, ...data }: Programa & { id_programa: number }) => putPrograma(id_programa, data),
+    mutationFn: putPrograma,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["programas"] });
     },
