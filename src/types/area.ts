@@ -4,5 +4,9 @@ export interface Area {
   estado: boolean;
   fecha_creacion: string;
   fecha_modificacion: string;
-  sede_id: number | null;
+  id_sede: number;
+  sede?: {
+    id_sede?: number;
+    nombre_sede?: string;
+  };
 }

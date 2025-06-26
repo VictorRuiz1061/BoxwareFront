@@ -4,6 +4,10 @@ export interface Modulo {
   rutas: string;
   descripcion_ruta: string;
   mensaje_cambio: string;
+  imagen: string;
   estado: boolean;
   fecha_creacion: string;
+  es_submenu: boolean;
+  modulo_padre_id?: number;
+  submodulos?: Modulo[];
 }

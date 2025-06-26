@@ -2,10 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Municipio } from "@/types/municipio";
 
-export type NuevoMunicipio = Omit<Municipio, "id_municipio">;
-
-export async function postMunicipio(data: NuevoMunicipio): Promise<Municipio> {
-  const response = await axiosInstance.post("/municipios/crear", data);
+export async function postMunicipio(data: Municipio): Promise<Municipio> {
+  const response = await axiosInstance.post("/municipios", data);
   return response.data;
 }
 

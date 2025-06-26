@@ -1,18 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-
-export interface Modulo {
-  id_modulo: number;
-  fecha_accion: string;
-  rutas: string;
-  descripcion_ruta: string;
-  mensaje_cambio: string;
-  bandera_accion: string | null;
-}
+import { Modulo } from "@/types/modulo";
+import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getModulos(): Promise<Modulo[]> {
-  const response = await axiosInstance.get("/modulo");
-  return response.data;
+  const response = await axiosInstance.get("/modulos");
+  return extractArrayData<Modulo>(response, 'getModulos');
 }
 
 export function useGetModulos() {

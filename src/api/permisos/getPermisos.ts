@@ -1,17 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-
-export interface Permiso {
-  id: number;
-  nombre: string;
-  codigo_nombre: string;
-  modulo_id: number;
-  rol_id: number;
-}
+import { Permiso } from "@/types/permiso";
+import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getPermisos(): Promise<Permiso[]> {
   const response = await axiosInstance.get("/permisos");
-  return response.data;
+  return extractArrayData<Permiso>(response, 'getPermisos');
 }
 
 export function useGetPermisos() {
@@ -19,4 +13,4 @@ export function useGetPermisos() {
     queryKey: ["permisos"],
     queryFn: getPermisos,
   });
-} 
+}

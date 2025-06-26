@@ -7,9 +7,8 @@ export interface Usuario {
   email: string;
   contrasena: string;
   telefono: string;
-  esta_activo: boolean;
+  imagen: string;
+  estado: boolean;
   fecha_registro: string;
   rol_id: number;
 }
-
-export type NuevoUsuario = Omit<Usuario, 'id_usuario' | 'esta_activo' | 'fecha_registro'>;

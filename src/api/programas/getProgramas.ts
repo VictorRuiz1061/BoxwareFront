@@ -1,14 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Programa } from "@/types/programa";
+import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getProgramas(): Promise<Programa[]> {
-  const response = await axiosInstance.get<{datos: Programa[]}>("/programa");
-  if (response.data.datos && Array.isArray(response.data.datos)) {
-    return response.data.datos;
-  } else {
-    throw new Error('Formato de respuesta incorrecto');
-  }
+  const response = await axiosInstance.get("/programas");
+  return extractArrayData<Programa>(response, 'getProgramas');
 }
 
 export function useGetProgramas() {
@@ -16,4 +13,4 @@ export function useGetProgramas() {
     queryKey: ["programas"],
     queryFn: getProgramas,
   });
-} 
+}

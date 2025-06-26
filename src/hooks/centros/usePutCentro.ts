@@ -1,8 +1,8 @@
-import { usePutCentro as useApiPutCentro } from "@/api/centros/putCentro";
-import { CentroUpdate } from "@/api/centros/putCentro";
+import { usePutCentro as useApiPutCentro } from "@/api/centros";
+import { Centro } from "@/types/centro";
 
 export function usePutCentro() {
   const put = useApiPutCentro();
-  const actualizarCentro = async (id_centro: number, data: CentroUpdate) => put.mutateAsync({ ...data, id_centro });
+  const actualizarCentro = async (id: number, data: Partial<Centro>) => put.mutateAsync({ id, ...data });
   return { actualizarCentro };
-} 
+}

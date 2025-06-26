@@ -1,49 +1,37 @@
 import axios from 'axios';
 
-export function getTokenFromCookie() {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; token=`);
-  if (parts.length === 2) {
-    const result = parts.pop()?.split(';').shift();
-    console.log('[getTokenFromCookie] Token leído de las cookie');
-    return result || null;
-  }
-  console.log('[getTokenFromCookie] No se encontró token en cookie');
-  return null;
-}
+const TOKEN_KEY = 'token';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3002/',
+  baseURL: 'http://localhost:3000/',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = getTokenFromCookie();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+const getCookie = (key: string): string | null => {
+  const match = document.cookie.match(new RegExp(`(^| )${key}=([^;]+)`));
+  return match ? match[2] : null;
+};
+
+const clearCookie = (key: string) => {
+  document.cookie = `${key}=; path=/; max-age=0; samesite=strict`;
+};
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = getCookie(TOKEN_KEY);
+  if (token) config.headers['Authorization'] = `Bearer ${token}`;
+  return config;
+}, Promise.reject);
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // Eliminar la cookie del token
-      const removeTokenCookie = () => {
-        document.cookie = 'token=; path=/; max-age=0; samesite=strict';
-        document.cookie = 'token=; max-age=0; samesite=strict';
-      };
-      removeTokenCookie();
-      // Redirigir al usuario a la página de inicio de sesión
+  res => res,
+  err => {
+    if (err.response?.status === 401) {
+      clearCookie(TOKEN_KEY);
       window.location.href = '/iniciosesion';
     }
-    return Promise.reject(error);
+    return Promise.reject(err);
   }
 );
 

@@ -1,12 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-import { Rol } from "./getRoles";
+import { Rol } from "@/types/rol";
 
-export interface NuevoRol {
-  nombre: string;
-}
-
-export async function postRol(data: NuevoRol): Promise<Rol> {
+export async function postRol(data: Rol): Promise<Rol> {
   const response = await axiosInstance.post("/roles", data);
   return response.data;
 }
@@ -19,4 +15,4 @@ export function usePostRol() {
       queryClient.invalidateQueries({ queryKey: ["roles"] });
     },
   });
-} 
+}
