@@ -87,7 +87,7 @@ const Header = () => {
 
             {/* Configuración */}
             <AnimatedContainer animation="slideUp" delay={200} duration={400}>
-              <a href="/settings" className={`p-2 text-white ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-blue-500'} rounded-lg transition-all duration-300 group`}>
+              <a href="/configuraciones" className={`p-2 text-white ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-blue-500'} rounded-lg transition-all duration-300 group`}>
                 <Settings size={20} className="group-hover:scale-110 transition-transform duration-300" />
               </a>
             </AnimatedContainer>

@@ -29,6 +29,7 @@ export interface RegisterData {
   email: string;
   contrasena: string;
   telefono?: string;
+  rol_id: number;
 }
 
 // Formulario de registro (Frontend)

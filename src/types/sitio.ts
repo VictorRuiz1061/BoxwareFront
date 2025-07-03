@@ -7,6 +7,4 @@ export interface Sitio {
   fecha_creacion: string;
   fecha_modificacion: string;
   tipo_sitio_id: number;
-  sede_id?: number;
-  persona_encargada_id?: number;
 }

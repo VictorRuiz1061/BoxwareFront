@@ -10,6 +10,7 @@ export const sitioSchema = z.object({
   ficha_tecnica: z.string()
     .min(3, 'La ficha técnica debe tener al menos 3 caracteres')
     .max(200, 'La ficha técnica no puede tener más de 200 caracteres'),
+  tipo_sitio_id: z.string().min(1, 'Debe seleccionar un tipo de sitio'),
   estado: z.boolean().optional(), // Opcional para creación
   fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación').optional(),
   fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación').optional(),

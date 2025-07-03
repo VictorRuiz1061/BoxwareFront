@@ -36,7 +36,7 @@ export const useAuth = () => {
     document.cookie = `token=; path=/; max-age=0; samesite=strict`;
     localStorage.removeItem('user');
     setUser(null);
-    window.location.href = '/';
+    navigate('/');
   };
 
   return { loginUser, registerUser, logoutUser };

@@ -141,14 +141,15 @@ const columns: Column<PermisoWithKey>[] = [
       const modulo_id = parseInt(values.modulo_id);
       const rol_id = parseInt(values.rol_id);
       
-      // Fecha actual para timestamps
+      // Fecha actual para timestamps - mantener el formato completo ISO
       const currentDate = new Date().toISOString();
       
       // Convertir valores de toggle a booleanos
       const puede_ver = Boolean(values.puede_ver);
       const puede_crear = Boolean(values.puede_crear);
       const puede_actualizar = Boolean(values.puede_actualizar);
-      const puede_eliminar = Boolean(values.puede_eliminar);
+      // Manejar puede_eliminar como null si no está definido
+      const puede_eliminar = values.puede_eliminar !== undefined ? Boolean(values.puede_eliminar) : null;
       
       if (editingId) {
         // Buscar el permiso original para mantener los campos requeridos
@@ -168,8 +169,7 @@ const columns: Column<PermisoWithKey>[] = [
           puede_ver,
           puede_crear,
           puede_actualizar,
-          puede_eliminar,
-          fecha_creacion: permisoOriginal.fecha_creacion || currentDate.split('T')[0],
+          fecha_creacion: permisoOriginal.fecha_creacion || currentDate,
         };
         
         await actualizarPermiso(editingId, updatePayload);
@@ -186,13 +186,13 @@ const columns: Column<PermisoWithKey>[] = [
           puede_ver,
           puede_crear,
           puede_actualizar,
-          puede_eliminar,
-          fecha_creacion: currentDate.split('T')[0],
+          fecha_creacion: currentDate,
         };
         
+        console.log('Enviando permiso:', newPermiso);
         // Usamos type assertion para satisfacer TypeScript
         await crearPermiso(newPermiso as any);
-        showSuccessToast('Permiso creado correctamente');
+        showSuccessToast('Permiso creado correctamente');  
       }
       
       setIsModalOpen(false);

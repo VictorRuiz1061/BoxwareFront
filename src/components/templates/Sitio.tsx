@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useGetSitios, usePostSitio, usePutSitio } from '@/hooks/sitio';
+import { useGetTiposSitio } from '@/hooks/tipoSitio';
 import type { Sitio } from '@/types';
-import {  AnimatedContainer,  Boton,  showSuccessToast,  showErrorToast } from "@/components/atomos";
-import {  createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { sitioSchema } from '@/schemas';
 
@@ -10,12 +11,16 @@ const Sitios = () => {
   const { sitios, loading } = useGetSitios();
   const { crearSitio } = usePostSitio();
   const { actualizarSitio } = usePutSitio();
+  const { tiposSitio } = useGetTiposSitio();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
   const columns: Column<Sitio>[] = [
     { key: "nombre_sitio", label: "Nombre del Sitio", filterable: true },
+    { key: "ubicacion", label: "Ubicación", filterable: true },
+    { key: "ficha_tecnica", label: "Ficha Técnica", filterable: true },
+    { key: "tipo_sitio_id", label: "Tipo de Sitio", filterable: true },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
     { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
   ];
@@ -24,44 +29,65 @@ const Sitios = () => {
   const formFieldsCreate: FormField[] = [
     { key: "nombre_sitio", label: "Nombre del Sitio", type: "text", required: true },
     { key: "ubicacion", label: "Ubicación", type: "text", required: true },
-    { key: "ficha_tecnica", label: "Ficha Técnica", type: "text", required: true }
+    { key: "ficha_tecnica", label: "Ficha Técnica", type: "text", required: true },
+    { 
+      key: "tipo_sitio_id", 
+      label: "Tipo de Sitio", 
+      type: "select", 
+      required: true,
+      options: tiposSitio.map(tipo => ({ label: tipo.nombre_tipo_sitio, value: tipo.id_tipo_sitio }))
+    }
   ];
   const formFieldsEdit: FormField[] = [
     { key: "nombre_sitio", label: "Nombre del Sitio", type: "text", required: true },
     { key: "ubicacion", label: "Ubicación", type: "text", required: true },
-    { key: "ficha_tecnica", label: "Ficha Técnica", type: "text", required: true }
+    { key: "ficha_tecnica", label: "Ficha Técnica", type: "text", required: true },
+    { 
+      key: "tipo_sitio_id", 
+      label: "Tipo de Sitio", 
+      type: "select", 
+      required: true,
+      options: tiposSitio.map(tipo => ({ label: tipo.nombre_tipo_sitio, value: tipo.id_tipo_sitio }))
+    }
   ];
 
 
-  const handleSubmit = async (values: Record<string, string>) => {
+  const handleSubmit = async (values: Record<string, any>) => {
     try {
       // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
       
+      // Convertir tipo_sitio_id a número
+      const tipo_sitio_id = parseInt(values.tipo_sitio_id);
+      
       if (editingId) {
-        // Actualizar tipo de material existente
+        // Actualizar sitio existente
         const updatePayload = {
           id_sitio: editingId,
           nombre_sitio: values.nombre_sitio,
           ubicacion: values.ubicacion,
           ficha_tecnica: values.ficha_tecnica,
+          tipo_sitio_id: tipo_sitio_id,
           estado: true,
           fecha_modificacion: currentDate,
         } as Sitio;
         
+        console.log('Actualizando sitio:', updatePayload);
         await actualizarSitio(editingId, updatePayload);
         showSuccessToast('Sitio actualizado con éxito');
       } else {
-        // Crear nuevo tipo de material
+        // Crear nuevo sitio
         const createPayload = {
           nombre_sitio: values.nombre_sitio,
           ubicacion: values.ubicacion,
           ficha_tecnica: values.ficha_tecnica,
+          tipo_sitio_id: tipo_sitio_id,
           estado: true,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
         } as Sitio;
 
+        console.log('Creando sitio:', createPayload);
         await crearSitio(createPayload);
         showSuccessToast('Sitio creado con éxito');
       }
@@ -69,6 +95,7 @@ const Sitios = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
+      console.error('Error:', error);
       showErrorToast('Error al guardar el sitio');
     }
   };
@@ -81,6 +108,7 @@ const Sitios = () => {
         nombre_sitio: sitio.nombre_sitio,
         ubicacion: sitio.ubicacion,
         ficha_tecnica: sitio.ficha_tecnica,
+        tipo_sitio_id: sitio.tipo_sitio_id,
         estado: nuevoEstado,
         fecha_modificacion: new Date().toISOString()
       } as Sitio;
@@ -88,6 +116,7 @@ const Sitios = () => {
       await actualizarSitio(sitio.id_sitio, updateData);
       showSuccessToast(`El sitio fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
     } catch (error) {
+      console.error('Error:', error);
       showErrorToast("Error al cambiar el estado del sitio.");
     }
   };
@@ -103,6 +132,7 @@ const Sitios = () => {
       nombre_sitio: sitio.nombre_sitio,
       ubicacion: sitio.ubicacion,
       ficha_tecnica: sitio.ficha_tecnica,
+      tipo_sitio_id: sitio.tipo_sitio_id.toString()
     });
     setEditingId(sitio.id_sitio);
     setIsModalOpen(true);
@@ -157,12 +187,7 @@ const Sitios = () => {
                   fields={editingId ? formFieldsEdit : formFieldsCreate}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
+                  initialValues={formData}
                   schema={sitioSchema}
                 />
               </div>

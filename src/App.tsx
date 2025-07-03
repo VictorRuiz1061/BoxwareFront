@@ -35,6 +35,7 @@ import TiposSitio from "./components/pages/TiposSitio";
 import Programas from "./components/pages/programas";
 import Fichas from "./components/pages/fichas";
 import NotFound from "./components/templates/Not404";
+import Configuraciones from "@/components/templates/Configuracion";
 
 // Informes Pages
 // import Informes from "./components/pages/Informes";
@@ -86,7 +87,9 @@ function App() {
         
         {/* Educación */}
         <Route path="/programas" element={<Programas />} />
-        <Route path="/fichas" element={<Fichas />} />        
+        <Route path="/fichas" element={<Fichas />} />
+        <Route path="/configuraciones" element={<Configuraciones />} />
+
         {/* <Route path="/informes" element={<Informes />} />
         <Route path="/informes/materiales-por-usuario" element={<MaterialesPorUsuario />} />
         <Route path="/informes/inventario-por-sede-area" element={<InventarioPorSedeArea />} />

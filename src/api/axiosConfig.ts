@@ -4,9 +4,7 @@ const TOKEN_KEY = 'token';
 
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:3000/',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // Removemos el Content-Type por defecto para que axios lo maneje automáticamente
 });
 
 const getCookie = (key: string): string | null => {
@@ -21,6 +19,12 @@ const clearCookie = (key: string) => {
 axiosInstance.interceptors.request.use((config) => {
   const token = getCookie(TOKEN_KEY);
   if (token) config.headers['Authorization'] = `Bearer ${token}`;
+  
+  // Solo establecer Content-Type como application/json si no es FormData
+  if (!(config.data instanceof FormData)) {
+    config.headers['Content-Type'] = 'application/json';
+  }
+  
   return config;
 }, Promise.reject);
 
