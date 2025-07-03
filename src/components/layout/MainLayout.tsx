@@ -13,7 +13,7 @@ const MainLayout = () => {
         
         {/* Contenido principal */}
         <div className="flex flex-col flex-1 overflow-hidden">
-          <Header userName="Admin" />
+          <Header />
           <main className={`flex-1 overflow-y-auto p-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-100'} transition-colors duration-300`}>
             {/* Outlet renderiza el contenido de la ruta anidada */}
             <Outlet />

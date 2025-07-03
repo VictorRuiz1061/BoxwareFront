@@ -1,137 +1,121 @@
-import { useState } from "react";
-import Boton from "../atomos/Boton";
-import { ZodSchema } from "zod";
-import { useTheme } from "../../context/ThemeContext";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/atomos";
 
 export type FormField = {
   key: string;
   label: string;
-  type: string;
+  type: 'text' | 'password' | 'email' | 'number' | 'select' | 'date' | 'file' | 'toggle';
   required?: boolean;
-  options?: Array<string | { value: string | number; label: string }>;
+  options?: { label: string; value: string | number }[];
+  extraButton?: {
+    icon: string;
+    onClick: () => void;
+    className?: string;
+  };
   conditional?: (values: Record<string, any>) => boolean;
   description?: string; // Para mostrar una descripción adicional del campo
 };
 
-type Props<T extends Record<string, any>> = {
+interface FormProps {
   fields: FormField[];
-  onSubmit: (values: T) => void;
-  buttonText: string;
-  initialValues?: Partial<T>;
-  className?: string;
-  schema?: ZodSchema<any>;
-  onChange?: (key: string, value: string | boolean) => void;
-};
+  onSubmit: (values: Record<string, string>) => void;
+  buttonText?: string;
+  initialValues?: Record<string, string>;
+  schema?: any;
+}
 
-const Form = <T extends Record<string, any>>({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, className = "", schema, onChange }: Props<T>) => {
-  const { darkMode } = useTheme();
-  const [formData, setFormData] = useState<Partial<T>>(initialValues);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+const Form = ({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, schema }: FormProps) => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm({
+    resolver: schema ? zodResolver(schema) : undefined,
+    defaultValues: initialValues,
+  });
 
-  const handleChange = (key: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[key];
-      return newErrors;
-    });
-    
-    // Si hay un manejador de cambio externo, lo llamamos
-    if (onChange) {
-      onChange(key, value);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (schema) {
-      const parsed = schema.safeParse(formData);
-      if (!parsed.success) {
-        const fieldErrors: Record<string, string> = {};
-        parsed.error.errors.forEach(err => {
-          if (err.path && err.path[0]) {
-            fieldErrors[err.path[0]] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
-        return;
-      }
-    }
-    
-    onSubmit(formData as T);
-  };
+  const watchAllFields = watch();
 
   return (
-    <form onSubmit={handleSubmit} className={`flex flex-col gap-4 p-4 border rounded-lg shadow-md ${darkMode ? 'bg-gradient-to-b from-slate-900 to-slate-800 text-white border-slate-700' : 'bg-white text-gray-800 border-gray-300'} ${className}`}>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {fields.map((field) => {
         // Si el campo tiene una condición y no se cumple, no lo mostramos
-        if (field.conditional && !field.conditional(formData as Record<string, any>)) {
+        if (field.conditional && !field.conditional(watchAllFields)) {
           return null;
         }
-        
+
+        const { ref, ...registerProps } = register(field.key);
+
         return (
-          <div key={field.key} className="flex flex-col">
-            <label className={`font-semibold ${darkMode ? 'text-emerald-300' : 'text-gray-700'}`}>{field.label}</label>
-            {field.type === "select" ? (
-            <select
-              required={field.required}
-              value={formData[field.key] || ""}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleChange(field.key, e.target.value)}
-              className={`border p-2 rounded ${darkMode ? 'bg-slate-800 text-white border-slate-700 focus:border-emerald-400 focus:outline-none' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
-            >
-              <option key="default-option" value="">Seleccione...</option>
-              {field.options?.map((option, idx) => {
-                if (typeof option === 'string') {
-                  return (
-                    <option key={`str-${option}-${idx}`} value={option}>
-                      {option}
-                    </option>
-                  );
-                } else {
-                  return (
-                    <option key={`obj-${option.value}`} value={option.value}>
-                      {option.label}
-                    </option>
-                  );
-                }
-              })}
-            </select>
-          ) : field.type === "toggle" ? (
-            <div className="flex items-center mt-1">
-              <div 
-                className={`relative inline-block w-12 h-6 rounded-full cursor-pointer ${formData[field.key] ? (darkMode ? 'bg-emerald-500' : 'bg-blue-500') : (darkMode ? 'bg-slate-600' : 'bg-gray-300')}`}
-                onClick={() => handleChange(field.key, !formData[field.key])}
-              >
-                <span 
-                  className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ${formData[field.key] ? 'transform translate-x-6' : ''}`}
-                ></span>
-              </div>
-              <span className="ml-3 text-sm">{formData[field.key] ? 'Sí' : 'No'}</span>
-              {field.description && (
-                <span className={`ml-2 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {field.description}
-                </span>
+          <div key={field.key} className="space-y-2">
+            <div className="flex items-center">
+              <label htmlFor={field.key} className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                {field.label}
+                {field.required && <span className="text-red-500">*</span>}
+              </label>
+              {field.extraButton && (
+                <button
+                  type="button"
+                  onClick={field.extraButton.onClick}
+                  className={field.extraButton.className}
+                >
+                  {field.extraButton.icon}
+                </button>
               )}
             </div>
-          ) : (
-            <input
-              type={field.type}
-              required={field.required}
-              value={formData[field.key] || ""}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              className={`border p-2 rounded ${darkMode ? 'bg-slate-800 text-white border-slate-700 focus:border-emerald-400 focus:outline-none' : 'bg-white text-gray-800 border-gray-300 focus:border-blue-500'}`}
-            />
-          )}
-          {errors[field.key] && (
-            <span className={`${darkMode ? 'text-red-300' : 'text-red-600'} text-xs mt-1`}>{errors[field.key]}</span>
-          )}
+
+            {field.description && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">{field.description}</p>
+            )}
+
+            {field.type === "select" ? (
+              <select
+                {...registerProps}
+                ref={ref}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="">Seleccione una opción</option>
+                {field.options?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : field.type === "toggle" ? (
+              <Input
+                type="checkbox"
+                {...registerProps}
+                ref={ref}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+            ) : (
+              <Input
+                type={field.type}
+                {...registerProps}
+                ref={ref}
+                className="mt-1 block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            )}
+
+            {errors[field.key] && (
+              <p className="mt-2 text-sm text-red-600">
+                {errors[field.key]?.message as string}
+              </p>
+            )}
           </div>
         );
       })}
-      <Boton color="primary" variant="shadow" type="submit">
-        {buttonText}
-      </Boton>
+
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+        >
+          {buttonText}
+        </button>
+      </div>
     </form>
   );
 };

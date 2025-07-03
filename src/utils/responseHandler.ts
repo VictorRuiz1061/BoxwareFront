@@ -13,7 +13,7 @@
  * @param endpoint El nombre del endpoint (para propósitos de logging)
  * @returns El array de datos extraído o un array vacío si no se encontraron datos válidos
  */
-export function extractArrayData<T>(response: any, endpoint: string): T[] {
+export function extractArrayData<T>(response: any): T[] {
   // Caso 1: Respuesta directa (formato original de BoxWare-Nest)
   if (Array.isArray(response.data)) {
     return response.data;
@@ -46,7 +46,7 @@ export function extractArrayData<T>(response: any, endpoint: string): T[] {
  * @param endpoint El nombre del endpoint (para propósitos de logging)
  * @returns El objeto extraído o null si no se encontraron datos válidos
  */
-export function extractObjectData<T>(response: any, endpoint: string): T | null {
+export function extractObjectData<T>(response: any): T | null {
   // Caso 1: Respuesta directa (formato original)
   if (response.data && typeof response.data === 'object' && !('data' in response.data) && !Array.isArray(response.data)) {
     return response.data;

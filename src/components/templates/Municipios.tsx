@@ -6,7 +6,12 @@ import { createEntityTable, Form } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { municipioSchema } from '@/schemas';
 
-const Municipios = () => {
+interface MunicipiosProps {
+  isInModal?: boolean;
+  onMunicipioCreated?: () => void;
+}
+
+const Municipios = ({ isInModal = false, onMunicipioCreated }: MunicipiosProps) => {
   const { municipios, loading } = useGetMunicipios();
   const { crearMunicipio } = usePostMunicipio();
   const { actualizarMunicipio } = usePutMunicipio();
@@ -36,14 +41,13 @@ const Municipios = () => {
           nombre_municipio: values.nombre_municipio,
           estado: true,
           fecha_modificacion: currentDate,
-          fecha_creacion: formData.fecha_creacion || currentDate, // Asegurar que fecha_creacion esté presente
+          fecha_creacion: formData.fecha_creacion || currentDate,
         };
         
         await actualizarMunicipio(editingId, updatePayload);
         showSuccessToast('Municipio actualizado con éxito');
       } else {
         // Crear nuevo municipio
-        // No incluimos id_municipio ya que el backend lo generará automáticamente
         const createPayload: Omit<Municipio, 'id_municipio'> = {
           nombre_municipio: values.nombre_municipio,
           estado: true,
@@ -53,6 +57,10 @@ const Municipios = () => {
         
         await crearMunicipio(createPayload as any);
         showSuccessToast('Municipio creado con éxito');
+        
+        if (isInModal && onMunicipioCreated) {
+          onMunicipioCreated();
+        }
       }
       
       setIsModalOpen(false);
@@ -66,7 +74,6 @@ const Municipios = () => {
   const handleToggleEstado = async (municipio: Municipio) => {
     try {
       const nuevoEstado = !municipio.estado;
-      // Asegurarse de que todos los campos requeridos estén presentes
       const updateData: Municipio = {
         id_municipio: municipio.id_municipio,
         nombre_municipio: municipio.nombre_municipio,
@@ -88,8 +95,7 @@ const Municipios = () => {
     setIsModalOpen(true);
   };
 
-    const handleEdit = (municipio: Municipio) => {
-    // Asegurarse de que todos los campos necesarios estén presentes
+  const handleEdit = (municipio: Municipio) => {
     setFormData({
       nombre_municipio: municipio.nombre_municipio,
     });
@@ -97,44 +103,61 @@ const Municipios = () => {
     setIsModalOpen(true);
   };
 
+  // Si está en modo modal, mostrar solo el formulario
+  if (isInModal) {
+    return (
+      <div className="w-full">
+        <h2 className="text-lg font-bold mb-4 text-center">Crear Nuevo Municipio</h2>
+        <Form
+          fields={formFields}
+          onSubmit={handleSubmit}
+          buttonText="Crear"
+          initialValues={{
+            fecha_creacion: new Date().toISOString().split('T')[0]
+          }}
+          schema={municipioSchema}
+        />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="w-full">
-      <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-        <h1 className="text-xl font-bold mb-4">Gestión de Municipios</h1>
+        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+          <h1 className="text-xl font-bold mb-4">Gestión de Municipios</h1>
         </AnimatedContainer>
 
-          <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-        <Boton
-          onClick={handleCreate}
-          className="bg-blue-500 text-white px-4 py-2 mb-4"
-        >
-          Crear Nuevo Municipio
-        </Boton>
-      </AnimatedContainer>
+        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+          <Boton
+            onClick={handleCreate}
+            className="bg-blue-500 text-white px-4 py-2 mb-4"
+          >
+            Crear Nuevo Municipio
+          </Boton>
+        </AnimatedContainer>
 
-      {loading ? (
+        {loading ? (
           <p>Cargando municipios...</p>
         ) : (
-        <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
-          {createEntityTable({
-            columns: columns as Column<any>[],
-            data: municipios,
-            idField: 'id_municipio',
-            handlers: {
-              onToggleEstado: handleToggleEstado,
-              onEdit: handleEdit
-            }
-          })}
-        </AnimatedContainer>)}
+          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+            {createEntityTable({
+              columns: columns as Column<any>[],
+              data: municipios,
+              idField: 'id_municipio',
+              handlers: {
+                onToggleEstado: handleToggleEstado,
+                onEdit: handleEdit
+              }
+            })}
+          </AnimatedContainer>
+        )}
 
-          {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
-                {/* Botón X para cerrar en la esquina superior derecha */}
+              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
                 <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                
                   <span className="text-gray-800 font-bold">×</span>
                 </button>
                 
@@ -155,13 +178,11 @@ const Municipios = () => {
                 />
               </div>
             </AnimatedContainer>
-            </div>
-          )}
-
-
-        </div>
+          </div>
+        )}
+      </div>
     </>
   );
 };
 
-export default (Municipios);
+export default Municipios;
