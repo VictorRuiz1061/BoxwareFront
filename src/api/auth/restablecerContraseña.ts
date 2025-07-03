@@ -23,7 +23,7 @@ export const forgotPassword = async (email: string) => {
       const response = await axios.post('/restablecer', { 
         email,
         codigo,
-        nuevaContrasena 
+        nuevaContrasena
       });
       return response.data;
     } catch (error) {

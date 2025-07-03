@@ -6,7 +6,12 @@ import { createEntityTable, Form } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { moduloSchema } from '@/schemas';
 
-const Modulos = () => {
+interface ModulosProps {
+  isInModal?: boolean;
+  onModuloCreated?: () => void;
+}
+
+const Modulos = ({ isInModal = false, onModuloCreated }: ModulosProps) => {
   const { modulos, loading } = useGetModulos();
   const { crearModulo } = usePostModulo();
   const { actualizarModulo } = usePutModulo();
@@ -43,12 +48,35 @@ const Modulos = () => {
   ];
 
   // Campos de formulario centralizados
-  const formFieldsCreate: FormField[] = [
-    { key: 'imagen', label: 'Icono', type: 'text', required: true },
-    { key: 'rutas', label: 'Ruta', type: 'text', required: true },
-    { key: 'descripcion_ruta', label: 'Descripción', type: 'text', required: true },
-    { key: 'mensaje_cambio', label: 'Mensaje', type: 'text', required: true },
-    { key: 'fecha_creacion', label: 'Fecha de Creación', type: 'date', required: true },
+  const formFields: FormField[] = [
+    { 
+      key: 'imagen', 
+      label: 'Icono', 
+      type: 'text', 
+      required: true,
+      className: "col-span-1"
+    },
+    { 
+      key: 'rutas', 
+      label: 'Ruta', 
+      type: 'text', 
+      required: true,
+      className: "col-span-1"
+    },
+    { 
+      key: 'descripcion_ruta', 
+      label: 'Descripción', 
+      type: 'text', 
+      required: true,
+      className: "col-span-2"
+    },
+    { 
+      key: 'mensaje_cambio', 
+      label: 'Mensaje', 
+      type: 'text', 
+      required: true,
+      className: "col-span-2"
+    },
     { 
       key: 'es_submenu', 
       label: 'Es submódulo', 
@@ -57,53 +85,24 @@ const Modulos = () => {
         { value: 'false', label: 'No (Módulo principal)' },
         { value: 'true', label: 'Sí (Submódulo)' }
       ],
-      required: true 
+      required: true,
+      className: "col-span-1"
     },
     { 
       key: 'modulo_padre_id', 
       label: 'Pertenece al módulo', 
       type: 'select', 
       options: modulos
-        .filter(m => !m.es_submenu) // Solo mostrar módulos principales como opciones
+        .filter(m => !m.es_submenu && (!editingId || m.id_modulo !== editingId)) // Evitar que se seleccione a sí mismo
         .map(m => ({ 
           value: m.id_modulo.toString(), 
           label: m.descripcion_ruta 
         })),
       required: false,
-      conditional: (values) => values.es_submenu === 'true'
-    },
+      conditional: (values) => values.es_submenu === 'true',
+      className: "col-span-1"
+    }
   ];
-
-  const formFieldsEdit: FormField[] = [
-    { key: 'rutas', label: 'Ruta', type: 'text', required: true },
-    { key: 'imagen', label: 'Icono', type: 'text', required: true },
-    { key: 'descripcion_ruta', label: 'Descripción', type: 'text', required: true },
-    { key: 'mensaje_cambio', label: 'Mensaje', type: 'text', required: true },
-    { 
-      key: 'es_submenu', 
-      label: 'Es submódulo', 
-      type: 'select', 
-      options: [
-        { value: 'false', label: 'No (Módulo principal)' },
-        { value: 'true', label: 'Sí (Submódulo)' }
-      ],
-      required: true 
-    },
-    { 
-      key: 'modulo_padre_id', 
-      label: 'Pertenece al módulo', 
-      type: 'select', 
-      options: modulos
-        .filter(m => !m.es_submenu && m.id_modulo !== editingId) // Evitar que se seleccione a sí mismo
-        .map(m => ({ 
-          value: m.id_modulo.toString(), 
-          label: m.descripcion_ruta 
-        })),
-      required: false,
-      conditional: (values) => values.es_submenu === 'true'
-    },
-  ];
-
 
   const handleSubmit = async (formValues: any) => {
     try {
@@ -153,6 +152,11 @@ const Modulos = () => {
 
         await crearModulo(createPayload as Modulo); 
         showSuccessToast("Modulo creado correctamente");
+        
+        // Si estamos en modo modal y hay callback, lo llamamos
+        if (isInModal && onModuloCreated) {
+          onModuloCreated();
+        }
       }
 
       setIsModalOpen(false);
@@ -206,65 +210,83 @@ const Modulos = () => {
   return (
     <>
       <div className="w-full">
-      <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-        <h1 className="text-xl font-bold mb-4">Gestión de Modulos</h1>
-        </AnimatedContainer>
+        {!isInModal && (
+          <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+            <h1 className="text-xl font-bold mb-4">Gestión de Módulos</h1>
+          </AnimatedContainer>
+        )}
       
-      <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-        <Boton
-          onClick={handleCreate}
-          className="bg-blue-500 text-white px-4 py-2 mb-4"
-        >
-          Crear Nuevo Modulo
-        </Boton>
-      </AnimatedContainer>
+        {!isInModal && (
+          <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+            <Boton
+              onClick={handleCreate}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mb-4 rounded-md"
+            >
+              Crear Nuevo Módulo
+            </Boton>
+          </AnimatedContainer>
+        )}
 
-        {loading ? (
-          <p>Cargando modulos...</p>
+        {!isInModal && loading ? (
+          <div className="flex justify-center items-center py-8">
+            <p className="text-gray-500">Cargando módulos...</p>
+          </div>
+        ) : !isInModal ? (
+          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+            {createEntityTable({
+              columns: columns as Column<any>[],
+              data: modulos,
+              idField: 'id_modulo',
+              handlers: {
+                onToggleEstado: handleToggleEstado,
+                onEdit: handleEdit
+              }
+            })}
+          </AnimatedContainer>
         ) : (
-        <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
-          {createEntityTable({
-            columns: columns as Column<any>[],
-            data: modulos,
-            idField: 'id_modulo',
-            handlers: {
-              onToggleEstado: handleToggleEstado,
-              onEdit: handleEdit
-            }
-          })}
-        </AnimatedContainer>)}
+          <div className="p-4">
+            <h2 className="text-lg font-bold mb-4">Crear Nuevo Módulo</h2>
+            <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+              <Form
+                fields={formFields}
+                onSubmit={handleSubmit}
+                buttonText="Crear"
+                schema={moduloSchema}
+              />
+            </div>
+          </div>
+        )}
 
-        {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-                <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
-                  {/* Botón X para cerrar en la esquina superior derecha */}
-                  <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                  
-                    <span className="text-gray-800 font-bold">×</span>
-                  </button>
-                  
-                  <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Modulo" : "Crear Nuevo Modulo"}
+        {/* Modal para crear/editar módulo */}
+        {!isInModal && isModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-4xl">
+              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                >
+                  <span className="text-gray-800 font-bold">×</span>
+                </button>
+                
+                <h2 className="text-lg font-bold mb-4 text-center">
+                  {editingId ? "Editar Módulo" : "Crear Nuevo Módulo"}
                 </h2>
-                {/* Componente para seleccionar imágenes */}
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
-                  schema={moduloSchema}
-                />
+                
+                <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+                  <Form
+                    fields={formFields}
+                    onSubmit={handleSubmit}
+                    buttonText={editingId ? "Actualizar" : "Crear"}
+                    initialValues={formData}
+                    schema={moduloSchema}
+                  />
+                </div>
               </div>
             </AnimatedContainer>  
-            </div> 
-          )}
-        </div>
+          </div> 
+        )}
+      </div>
     </>
   );
 };

@@ -6,7 +6,12 @@ import { createEntityTable, Form } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { tipoSitioSchema } from '@/schemas';
 
-const TiposSitio = () => {
+interface TiposSitioProps {
+  isInModal?: boolean;
+  onTipoSitioCreated?: () => void;
+}
+
+const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) => {
   const { tiposSitio, loading } = useGetTiposSitio();
   const { crearTipoSitio } = usePostTipoSitio();
   const { actualizarTipoSitio } = usePutTipoSitio();
@@ -31,38 +36,45 @@ const TiposSitio = () => {
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
       
       if (editingId) {
-        // Actualizar tipo de material existente
         const updatePayload = {
           id_tipo_sitio: editingId,
           nombre_tipo_sitio: values.nombre_tipo_sitio,
           estado: true,
+          fecha_creacion: values.fecha_creacion || currentDate,
           fecha_modificacion: currentDate,
-          fecha_creacion: currentDate,  
         } as TipoSitio;
         
         await actualizarTipoSitio(editingId, updatePayload);
-        showSuccessToast('Tipo de material actualizado con éxito');
+        showSuccessToast('Tipo de sitio actualizado con éxito');
       } else {
-        // Crear nuevo tipo de material
         const createPayload = {
           nombre_tipo_sitio: values.nombre_tipo_sitio,
           estado: true,
           fecha_creacion: currentDate,
-          fecha_modificacion: currentDate,  
+          fecha_modificacion: currentDate,
         } as TipoSitio;
 
         await crearTipoSitio(createPayload);
-        showSuccessToast('Tipo de material creado con éxito');
+        showSuccessToast('Tipo de sitio creado con éxito');
+        
+        if (onTipoSitioCreated) {
+          onTipoSitioCreated();
+        } else {
+          window.location.reload(); // Solo recargar si no estamos en modo modal
+        }
       }
-      setIsModalOpen(false);
+
+      if (!isInModal) {
+        setIsModalOpen(false);
+      }
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      showErrorToast('Error al guardar el tipo de material');
+      console.error('Error al guardar el tipo de sitio:', error);
+      showErrorToast('Error al guardar el tipo de sitio');
     }
   };
 
@@ -77,9 +89,9 @@ const TiposSitio = () => {
       } as TipoSitio;
 
       await actualizarTipoSitio(tipoSitio.id_tipo_sitio, updateData);
-      showSuccessToast(`El tipo de material fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
+      showSuccessToast(`El tipo de sitio fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
     } catch (error) {
-      showErrorToast("Error al cambiar el estado del tipo de material.");
+      showErrorToast("Error al cambiar el estado del tipo de sitio.");
     }
   };
 
@@ -97,25 +109,56 @@ const TiposSitio = () => {
     setIsModalOpen(true);
   };
 
+  if (isInModal) {
+    return (
+      <div className="w-full">
+        <Form
+          fields={formFieldsCreate}
+          onSubmit={async (values) => {
+            try {
+              const currentDate = new Date().toISOString();
+              const createPayload = {
+                nombre_tipo_sitio: values.nombre_tipo_sitio,
+                estado: true,
+                fecha_creacion: currentDate,
+                fecha_modificacion: currentDate,
+              } as TipoSitio;
+
+              await crearTipoSitio(createPayload);
+              showSuccessToast('Tipo de sitio creado con éxito');
+              if (onTipoSitioCreated) {
+                onTipoSitioCreated();
+              }
+            } catch (error) {
+              console.error('Error al crear tipo de sitio:', error);
+              showErrorToast('Error al crear el tipo de sitio');
+            }
+          }}
+          buttonText="Crear"
+          schema={tipoSitioSchema}
+        />
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="w-full">
-      <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-        <h1 className="text-xl font-bold mb-4">Gestión de Tipos de Material</h1>
+        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+          <h1 className="text-xl font-bold mb-4">Gestión de Tipos de Sitio</h1>
         </AnimatedContainer>
       
-      <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-        <Boton
-          onClick={handleCreate}
-          className="bg-blue-500 text-white px-4 py-2 mb-4"
-        >
-          Crear Nuevo Tipo de Material
-        </Boton>
-      </AnimatedContainer>
+        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+          <Boton
+            onClick={handleCreate}
+            className="bg-blue-500 text-white px-4 py-2 mb-4"
+          >
+            Crear Nuevo Tipo de Sitio
+          </Boton>
+        </AnimatedContainer>
 
         {loading ? (
-          <p>Cargando tipos de material...</p>
+          <p>Cargando tipos de sitio...</p>
         ) : (
         <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
           {createEntityTable({
@@ -140,7 +183,7 @@ const TiposSitio = () => {
                   </button>
                   
                   <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Tipo de Material" : "Crear Nuevo Tipo de Material"}
+                  {editingId ? "Editar Tipo de Sitio" : "Crear Nuevo Tipo de Sitio"}
                 </h2>
                 <Form
                   fields={editingId ? formFieldsEdit : formFieldsCreate}

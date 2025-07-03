@@ -9,10 +9,12 @@ export interface Material {
   unidad_medida: string;
   producto_perecedero: boolean;
   estado: boolean;
-  fecha_vencimiento: string;
+  fecha_vencimiento: string | null;
   imagen: string;
   categoria_id: number;
   tipo_material_id: number;
   categoria?: CategoriaElemento;
   tipo_material?: TipoMaterial;
+  fecha_creacion?: string;
+  fecha_modificacion?: string;
 }

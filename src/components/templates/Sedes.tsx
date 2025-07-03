@@ -81,7 +81,6 @@ const Sedes = () => {
         };
         
         await actualizarSede(editingId, updatePayload);
-        // Usar el nuevo Toast en lugar de la alerta
         showSuccessToast('Sede actualizada con éxito');
       } else {
         const createPayload = {
@@ -100,7 +99,6 @@ const Sedes = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      // Reemplazar alert con nuestro nuevo Toast
       showErrorToast('Error al guardar la sede');
     }
   };
@@ -119,10 +117,8 @@ const Sedes = () => {
       };
 
       await actualizarSede(sede.id_sede, updateData);
-      // Usar el nuevo Toast en lugar de la alerta
       showSuccessToast(`La sede fue ${nuevoEstado ? 'activada' : 'desactivada'} correctamente.`);
     } catch (error) {
-      // Usar el nuevo Toast para mostrar el error
       showErrorToast("Error al cambiar el estado de la sede.");
     }
   };
@@ -134,7 +130,6 @@ const Sedes = () => {
   };
 
   const handleEdit = (sede: Sede) => {
-    // Convertir los valores a string para el formulario
     setFormData({
       nombre_sede: sede.nombre_sede,
       direccion_sede: sede.direccion_sede || '',
@@ -173,15 +168,17 @@ const Sedes = () => {
               onEdit: handleEdit
             }
           })}
-        </AnimatedContainer>)}
+          </AnimatedContainer>
+        )}
 
         {isModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-                <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
-                  {/* Botón X para cerrar en la esquina superior derecha */}
-                  <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                  
+            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
+              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                >
                     <span className="text-gray-800 font-bold">×</span>
                   </button>
                   

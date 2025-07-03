@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Input } from "@/components/atomos";
+import { z } from "zod";
+import { Input, Toggle } from "@/components/atomos";
 
 export type FormField = {
   key: string;
@@ -14,7 +15,9 @@ export type FormField = {
     className?: string;
   };
   conditional?: (values: Record<string, any>) => boolean;
-  description?: string; // Para mostrar una descripción adicional del campo
+  description?: string;
+  className?: string;
+  onChange?: (value: string) => void;
 };
 
 interface FormProps {
@@ -31,6 +34,7 @@ const Form = ({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, sch
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm({
     resolver: schema ? zodResolver(schema) : undefined,
     defaultValues: initialValues,
@@ -40,80 +44,109 @@ const Form = ({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, sch
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
       {fields.map((field) => {
-        // Si el campo tiene una condición y no se cumple, no lo mostramos
-        if (field.conditional && !field.conditional(watchAllFields)) {
-          return null;
-        }
+          if (field.conditional && !field.conditional(watchAllFields)) {
+            return null;
+          }
 
-        const { ref, ...registerProps } = register(field.key);
+          const { ref, ...registerProps } = register(field.key);
+        
+          return (
+            <div key={field.key} className={`space-y-2 ${field.className || 'col-span-2'}`}>
+              <div className="flex items-center">
+                <label htmlFor={field.key} className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  {field.label}
+                  {field.required && <span className="text-red-500">*</span>}
+                </label>
+                {field.extraButton && (
+                  <button
+                    type="button"
+                    onClick={field.extraButton.onClick}
+                    className={field.extraButton.className}
+                  >
+                    {field.extraButton.icon}
+                  </button>
+                )}
+              </div>
 
-        return (
-          <div key={field.key} className="space-y-2">
-            <div className="flex items-center">
-              <label htmlFor={field.key} className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                {field.label}
-                {field.required && <span className="text-red-500">*</span>}
-              </label>
-              {field.extraButton && (
-                <button
-                  type="button"
-                  onClick={field.extraButton.onClick}
-                  className={field.extraButton.className}
+              {field.description && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{field.description}</p>
+              )}
+
+              {field.type === "select" ? (
+                <select
+                  {...registerProps}
+                  ref={ref}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  onChange={(e) => {
+                    registerProps.onChange(e); // Mantener el comportamiento original de react-hook-form
+                    
+                    // Si el campo es producto_perecedero, limpiar fecha_vencimiento cuando sea false
+                    if (field.key === 'producto_perecedero') {
+                      if (e.target.value === 'false') {
+                        setValue('fecha_vencimiento', '');
+                      }
+                    }
+                  }}
                 >
-                  {field.extraButton.icon}
-                </button>
+                  <option value="">Seleccione una opción</option>
+                  {field.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : field.type === "toggle" ? (
+                <div className="mt-1">
+                  <Toggle
+                    isOn={watchAllFields[field.key] === 'true'}
+                    onToggle={() => {
+                      const newValue = watchAllFields[field.key] !== 'true' ? 'true' : 'false';
+                      setValue(field.key, newValue, { shouldValidate: true });
+                      
+                      // Si el campo es producto_perecedero, limpiar fecha_vencimiento cuando sea false
+                      if (field.key === 'producto_perecedero' && newValue === 'false') {
+                        setValue('fecha_vencimiento', '', { shouldValidate: true });
+                      }
+
+                      // Llamar al onChange personalizado si existe
+                      field.onChange?.(newValue);
+                    }}
+                  />
+                </div>
+              ) : field.type === "date" ? (
+                <Input
+                  type="date"
+                  {...registerProps}
+                  ref={ref}
+                  className="mt-1 block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              ) : (
+                <Input
+                  type={field.type}
+                  {...registerProps}
+                  ref={ref}
+                  className="mt-1 block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              )}
+
+              {errors[field.key] && (
+                <p className="mt-2 text-sm text-red-600">
+                  {errors[field.key]?.message as string}
+                </p>
               )}
             </div>
+          );
+        })}
+      </div>
 
-            {field.description && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{field.description}</p>
-            )}
-
-            {field.type === "select" ? (
-              <select
-                {...registerProps}
-                ref={ref}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">Seleccione una opción</option>
-                {field.options?.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            ) : field.type === "toggle" ? (
-              <Input
-                type="checkbox"
-                {...registerProps}
-                ref={ref}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-            ) : (
-              <Input
-                type={field.type}
-                {...registerProps}
-                ref={ref}
-                className="mt-1 block w-full shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              />
-            )}
-
-            {errors[field.key] && (
-              <p className="mt-2 text-sm text-red-600">
-                {errors[field.key]?.message as string}
-              </p>
-            )}
-          </div>
-        );
-      })}
-
-      <div className="flex justify-end">
+      <div className="flex justify-end mt-4">
         <button
           type="submit"
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
         >
-          {buttonText}
+          {buttonText || 'Enviar'}
         </button>
       </div>
     </form>

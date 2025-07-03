@@ -9,6 +9,10 @@ import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/co
 import { createEntityTable, Form } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { movimientoSchema } from '@/schemas';
+import Materiales from "./Materiales";
+import TipoMaterial from "./TipoMaterial";
+import Sitio from "./Sitio";
+import UsuarioForm from "./UsuarioForm";
 
 const Movimientos = () => {
   const { movimientos, loading } = useGetMovimientos();
@@ -19,6 +23,10 @@ const Movimientos = () => {
   const { materiales } = useGetMateriales();
   const { sitios } = useGetSitios();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
+  const [isTipoMovimientoModalOpen, setIsTipoMovimientoModalOpen] = useState(false);
+  const [isSitioModalOpen, setIsSitioModalOpen] = useState(false);
+  const [isUsuarioModalOpen, setIsUsuarioModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
@@ -33,12 +41,6 @@ const Movimientos = () => {
       label: "Usuario",
       filterable: true,
       render: (movimiento) => {
-        // Verificar si usuario_id es un objeto con nombre
-        const usuarioId = movimiento.usuario_id as any;
-        if (usuarioId && typeof usuarioId === 'object' && usuarioId.nombre) {
-          return usuarioId.nombre;
-        }
-        // Verificar si el objeto usuario existe y tiene la propiedad nombre
         if (movimiento.usuario && movimiento.usuario.nombre) {
           return movimiento.usuario.nombre;
         }
@@ -46,18 +48,12 @@ const Movimientos = () => {
       }
     },
     {
-      key: "tipo_movimiento",
+      key: "tipo_movimiento_id",
       label: "Tipo de Movimiento",
       filterable: true,
       render: (movimiento) => {
-        // Verificar si tipo_movimiento_id es un objeto con tipo_movimiento
-        const tipoMovimientoId = movimiento.tipo_movimiento_id as any;
-        if (tipoMovimientoId && typeof tipoMovimientoId === 'object' && tipoMovimientoId.tipo_movimiento) {
-          return tipoMovimientoId.tipo_movimiento;
-        }
-        // Verificar si el objeto tipo_movimiento existe y tiene la propiedad tipo_movimiento
-        if (movimiento.tipo_movimiento && movimiento.tipo_movimiento.tipo_movimiento) {
-          return movimiento.tipo_movimiento.tipo_movimiento;
+        if (movimiento.tipo_movimiento_id && movimiento.tipo_movimiento_id.tipo_movimiento) {
+          return movimiento.tipo_movimiento_id.tipo_movimiento;
         }
         return 'No disponible';
       }
@@ -67,12 +63,6 @@ const Movimientos = () => {
       label: "Material",
       filterable: true,
       render: (movimiento) => {
-        // Verificar si material_id es un objeto con nombre_material
-        const materialId = movimiento.material_id as any;
-        if (materialId && typeof materialId === 'object' && materialId.nombre_material) {
-          return materialId.nombre_material;
-        }
-        // Verificar si el objeto material existe y tiene la propiedad nombre_material
         if (movimiento.material && movimiento.material.nombre_material) {
           return movimiento.material.nombre_material;
         }
@@ -84,12 +74,6 @@ const Movimientos = () => {
       label: "Sitio",
       filterable: true,
       render: (movimiento) => {
-        // Verificar si sitio_id es un objeto con nombre_sitio
-        const sitioId = movimiento.sitio_id as any;
-        if (sitioId && typeof sitioId === 'object' && sitioId.nombre_sitio) {
-          return sitioId.nombre_sitio;
-        }
-        // Verificar si el objeto sitio existe y tiene la propiedad nombre_sitio
         if (movimiento.sitio && movimiento.sitio.nombre_sitio) {
           return movimiento.sitio.nombre_sitio;
         }
@@ -105,35 +89,60 @@ const Movimientos = () => {
       key: "cantidad",
       label: "Cantidad",
       type: "number",
-      required: true
+      required: true,
+      className: "col-span-1"
     },
     {
       key: "usuario",
       label: "Usuario",
       type: "select",
       required: true,
-      options: usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` }))
+      className: "col-span-1",
+      options: usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsUsuarioModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
     {
       key: "sitio",
       label: "Sitio",
       type: "select",
       required: true,
-      options: sitios.map(s => ({ value: s.id_sitio, label: s.nombre_sitio }))
+      className: "col-span-1",
+      options: sitios.map(s => ({ value: s.id_sitio, label: s.nombre_sitio })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsSitioModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
     {
       key: "tipo_movimiento",
       label: "Tipo de Movimiento",
       type: "select",
       required: true,
-      options: tiposMovimiento.map(t => ({ value: t.id_tipo_movimiento, label: t.tipo_movimiento }))
+      className: "col-span-1",
+      options: tiposMovimiento.map(t => ({ value: t.id_tipo_movimiento, label: t.tipo_movimiento })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsTipoMovimientoModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
     {
       key: "material",
       label: "Material",
       type: "select",
       required: true,
-      options: materiales.map(m => ({ value: m.id_material, label: m.nombre_material }))
+      className: "col-span-1",
+      options: materiales.map(m => ({ value: m.id_material, label: m.nombre_material })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsMaterialModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
   ];
 
@@ -142,35 +151,60 @@ const Movimientos = () => {
       key: "cantidad",
       label: "Cantidad",
       type: "number",
-      required: true
+      required: true,
+      className: "col-span-1"
     },
     {
       key: "usuario",
       label: "Usuario",
       type: "select",
       required: true,
-      options: usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` }))
+      className: "col-span-1",
+      options: usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsUsuarioModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
     {
       key: "sitio",
       label: "Sitio",
       type: "select",
       required: true,
-      options: sitios.map(s => ({ value: s.id_sitio, label: s.nombre_sitio }))
+      className: "col-span-1",
+      options: sitios.map(s => ({ value: s.id_sitio, label: s.nombre_sitio })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsSitioModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
     {
       key: "tipo_movimiento",
       label: "Tipo de Movimiento",
       type: "select",
       required: true,
-      options: tiposMovimiento.map(t => ({ value: t.id_tipo_movimiento, label: t.tipo_movimiento }))
+      className: "col-span-1",
+      options: tiposMovimiento.map(t => ({ value: t.id_tipo_movimiento, label: t.tipo_movimiento })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsTipoMovimientoModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
     {
       key: "material",
       label: "Material",
       type: "select",
       required: true,
-      options: materiales.map(m => ({ value: m.id_material, label: m.nombre_material }))
+      className: "col-span-1",
+      options: materiales.map(m => ({ value: m.id_material, label: m.nombre_material })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsMaterialModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
   ];
 
@@ -179,26 +213,31 @@ const Movimientos = () => {
       // Convertir ids a números
       const usuario_id = parseInt(values.usuario);
       const sitio_id = parseInt(values.sitio);
-      const tipo_movimiento_id = parseInt(values.tipo_movimiento);
+      const tipo_movimiento = parseInt(values.tipo_movimiento);
       const material_id = parseInt(values.material);
-      const cantidad = parseInt(values.cantidad);
+      const cantidad = values.cantidad;
       
       // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
       
       if (editingId) {
         // Actualizar movimiento existente
+        const original = movimientos.find(m => m.id_movimiento === editingId);
+        if (!original) {
+          throw new Error('No se encontró el movimiento original');
+        }
+
         const updatePayload = {
           id_movimiento: editingId,
           usuario_id,
           sitio_id,
-          tipo_movimiento_id,
+          tipo_movimiento,
           material_id,
-          cantidad,
+          cantidad: parseInt(cantidad),
           estado: true,
-          fecha_creacion: movimientos.find(m => m.id_movimiento === editingId)?.fecha_creacion || currentDate,
+          fecha_creacion: original.fecha_creacion || currentDate,
           fecha_modificacion: currentDate,
-        };
+        } as Movimiento;
         
         await actualizarMovimiento(editingId, updatePayload);
         showSuccessToast('Movimiento actualizado con éxito');
@@ -207,37 +246,45 @@ const Movimientos = () => {
         const createPayload = {
           usuario_id,
           sitio_id,
-          tipo_movimiento_id,
+          tipo_movimiento,
           material_id,
-          cantidad,
+          cantidad: parseInt(cantidad),
           estado: true,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
-        };
+        } as Movimiento;
 
-        await crearMovimiento(createPayload as unknown as Movimiento);
+        await crearMovimiento(createPayload);
         showSuccessToast('Movimiento creado con éxito');
       }
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
+      console.error('Error al guardar el movimiento:', error);
       showErrorToast('Error al guardar el movimiento');
     }
   };
 
   const handleToggleEstado = async (movimiento: Movimiento) => {
     try {
-      const nuevoEstado = !movimiento.estado;
-      const updateData: Partial<Movimiento> = {
+      const updateData = {
         id_movimiento: movimiento.id_movimiento,
-        estado: nuevoEstado,
-        fecha_modificacion: new Date().toISOString().split('T')[0]
-      };
+        usuario_id: movimiento.usuario_id,
+        sitio_id: movimiento.sitio_id,
+        tipo_movimiento: movimiento.tipo_movimiento,
+        material_id: movimiento.material_id,
+        cantidad: movimiento.cantidad,
+        estado: !movimiento.estado,
+        fecha_modificacion: new Date().toISOString()
+      } as Movimiento;
 
-      await actualizarMovimiento(movimiento.id_movimiento, updateData as unknown as Movimiento);
-      showSuccessToast(`El movimiento fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
+      if (movimiento.id_movimiento) {
+        await actualizarMovimiento(movimiento.id_movimiento, updateData);
+        showSuccessToast(`El movimiento fue ${!movimiento.estado ? 'activado' : 'desactivado'} correctamente.`);
+      }
     } catch (error) {
+      console.error('Error:', error);
       showErrorToast("Error al cambiar el estado del movimiento.");
     }
   };
@@ -249,36 +296,14 @@ const Movimientos = () => {
   };
 
   const handleEdit = (movimiento: Movimiento) => {
-    // Función para extraer el ID correcto según el tipo de campo
-    const extractId = (field: any, idProperty: string): string => {
-      if (!field) return '';
-      
-      // Si es un objeto con la propiedad ID específica
-      if (typeof field === 'object' && field[idProperty]) {
-        return field[idProperty].toString();
-      }
-      
-      // Si es un objeto pero no tiene la propiedad ID específica
-      if (typeof field === 'object') {
-        // Buscar cualquier propiedad que comience con 'id_'
-        for (const key in field) {
-          if (key.startsWith('id_')) {
-            return field[key].toString();
-          }
-        }
-      }
-      
-      // Si es un valor primitivo
-      return field.toString();
-    };
+    if (!movimiento.id_movimiento) return;
     
-    // Extraer los valores correctos para el formulario
     const formValues = {
-      usuario: extractId(movimiento.usuario_id || movimiento.usuario, 'id_usuario'),
-      sitio: extractId(movimiento.sitio_id || movimiento.sitio, 'id_sitio'),
-      tipo_movimiento: extractId(movimiento.tipo_movimiento_id, 'id_tipo_movimiento'),
-      material: extractId(movimiento.material_id, 'id_material'),
-      cantidad: movimiento.cantidad ? movimiento.cantidad.toString() : ''
+      usuario: movimiento.usuario_id.toString(),
+      sitio: movimiento.sitio_id.toString(),
+      tipo_movimiento: movimiento.tipo_movimiento.toString(),
+      material: movimiento.material_id.toString(),
+      cantidad: movimiento.cantidad.toString()
     };
     
     setFormData(formValues);
@@ -289,64 +314,143 @@ const Movimientos = () => {
   return (
     <>
       <div className="w-full">
-      <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-        <h1 className="text-xl font-bold mb-4">Gestión de Movimientos</h1>
+        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+          <h1 className="text-xl font-bold mb-4">Gestión de Movimientos</h1>
         </AnimatedContainer>
       
-      <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-        <Boton
-          onClick={handleCreate}
-          className="bg-blue-500 text-white px-4 py-2 mb-4"
-        >
-          Crear Nuevo Movimiento
-        </Boton>
-      </AnimatedContainer>
+        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+          <Boton
+            onClick={handleCreate}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mb-4 rounded-md"
+          >
+            Crear Nuevo Movimiento
+          </Boton>
+        </AnimatedContainer>
 
         {loading ? (
-          <p>Cargando movimientos...</p>
+          <div className="flex justify-center items-center py-8">
+            <p className="text-gray-500">Cargando movimientos...</p>
+          </div>
         ) : (
-        <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
-          {createEntityTable({
-            columns: columns as Column<any>[],
-            data: movimientos,
-            idField: 'id_movimiento',
-            handlers: {
-              onToggleEstado: handleToggleEstado,
-              onEdit: handleEdit
-            }
-          })}
-        </AnimatedContainer>)}
+          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+            {createEntityTable({
+              columns: columns as Column<any>[],
+              data: movimientos,
+              idField: 'id_movimiento',
+              handlers: {
+                onToggleEstado: handleToggleEstado,
+                onEdit: handleEdit
+              }
+            })}
+          </AnimatedContainer>
+        )}
 
+        {/* Modal principal para crear/editar movimiento */}
         {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-                <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
-                  {/* Botón X para cerrar en la esquina superior derecha */}
-                  <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                  
-                    <span className="text-gray-800 font-bold">×</span>
-                  </button>
-                  
-                  <h2 className="text-lg font-bold mb-4 text-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-4xl">
+              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                >
+                  <span className="text-gray-800 font-bold">×</span>
+                </button>
+                
+                <h2 className="text-lg font-bold mb-4 text-center">
                   {editingId ? "Editar Movimiento" : "Crear Nuevo Movimiento"}
                 </h2>
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
-                  schema={movimientoSchema}
-                />
+                
+                <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+                  <Form
+                    fields={editingId ? formFieldsEdit : formFieldsCreate}
+                    onSubmit={handleSubmit}
+                    buttonText={editingId ? "Actualizar" : "Crear"}
+                    initialValues={{
+                      ...formData,
+                      ...(editingId 
+                        ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                        : { fecha_creacion: new Date().toISOString().split('T')[0] })
+                    }}
+                    schema={movimientoSchema}
+                  />
+                </div>
               </div>
             </AnimatedContainer>  
-            </div> 
-          )}
-        </div>
+          </div> 
+        )}
+
+        {/* Modal para crear material */}
+        {isMaterialModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-4xl relative">
+              <button 
+                onClick={() => setIsMaterialModalOpen(false)}
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+              >
+                <span className="text-gray-800 font-bold">×</span>
+              </button>
+              <Materiales isInModal={true} onMaterialCreated={() => {
+                setIsMaterialModalOpen(false);
+              }} />
+            </div>
+          </div>
+        )}
+
+        {/* Modal para crear tipo de movimiento */}
+        {isTipoMovimientoModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
+              <button 
+                onClick={() => setIsTipoMovimientoModalOpen(false)}
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+              >
+                <span className="text-gray-800 font-bold">×</span>
+              </button>
+              <TipoMaterial isInModal={true} onTipoMaterialCreated={() => {
+                setIsTipoMovimientoModalOpen(false);
+              }} />
+            </div>
+          </div>
+        )}
+
+        {/* Modal para crear sitio */}
+        {isSitioModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
+              <button 
+                onClick={() => setIsSitioModalOpen(false)}
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+              >
+                <span className="text-gray-800 font-bold">×</span>
+              </button>
+              <Sitio 
+                isInModal={true} 
+                onSitioCreated={() => {
+                  setIsSitioModalOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Modal para crear usuario */}
+        {isUsuarioModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-4xl relative">
+              <button 
+                onClick={() => setIsUsuarioModalOpen(false)}
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+              >
+                <span className="text-gray-800 font-bold">×</span>
+              </button>
+              <UsuarioForm onUsuarioCreated={() => {
+                setIsUsuarioModalOpen(false);
+              }} />
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 };

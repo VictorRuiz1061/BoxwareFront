@@ -22,12 +22,12 @@ export const useForgotPassword = () => {
     const resetPasswordMutation = useMutation({
       mutationFn: ({ 
         email, 
-        codigo, 
+        codigo,
         nuevaContrasena 
       }: { 
-        email: string; 
-        codigo: string; 
-        nuevaContrasena: string 
+        email: string;
+        codigo: string;
+        nuevaContrasena: string;
       }) => resetPassword(email, codigo, nuevaContrasena),
     });
   

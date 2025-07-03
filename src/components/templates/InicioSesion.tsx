@@ -111,6 +111,7 @@ const InicioSesion = () => {
       setShowVerifyCode(false);
       setShowResetPassword(true);
     } catch (error: any) {
+      console.error('Error al verificar código:', error);
       showErrorToast(error.response?.data?.message || 'Código de verificación inválido');
     }
   };
@@ -129,21 +130,35 @@ const InicioSesion = () => {
       return;
     }
 
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{6,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      showErrorToast('La contraseña debe contener al menos una letra mayúscula, una minúscula y un número');
+      return;
+    }
+
     try {
-      await resetPassword({ 
-        email: recoveryEmail, 
-        codigo: verificationCode, 
-        nuevaContrasena: newPassword 
+      const response = await resetPassword({ 
+        email: recoveryEmail,
+        codigo: verificationCode,
+        nuevaContrasena: newPassword
       });
       
       showSuccessToast('Contraseña actualizada correctamente');
-      setShowResetPassword(false);
-      // Limpiar estados
       setNewPassword('');
       setVerificationCode('');
       setRecoveryEmail('');
+      setEmail('');
+      setPassword('');
+      setShowResetPassword(false);
+      
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
     } catch (error: any) {
-      showErrorToast(error.response?.data?.message || 'Error al actualizar la contraseña');
+      console.error('Error al restablecer contraseña:', error);
+      const errorMessage = error.response?.data?.message || 
+                         'Error al actualizar la contraseña. Verifica que la contraseña cumpla con los requisitos.';
+      showErrorToast(errorMessage);
     }
   };
 
@@ -241,7 +256,7 @@ const InicioSesion = () => {
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Ingresa tu correo electrónico y te enviaremos un código de verificación.
+            Ingresa tu correo electrónico y te enviaremos un correo con las instrucciones.
           </p>
           {error && (
             <div className="p-2 text-center text-red-600 text-sm font-medium bg-red-50 rounded-lg border border-red-200">
@@ -270,7 +285,7 @@ const InicioSesion = () => {
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
             onClick={handleForgotPassword}
           >
-            Enviar Código
+            Enviar Instrucciones
           </button>
         </div>
       </Modal>

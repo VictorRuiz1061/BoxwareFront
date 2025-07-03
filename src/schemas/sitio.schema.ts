@@ -13,7 +13,7 @@ export const sitioSchema = z.object({
   tipo_sitio_id: z.string().min(1, 'Debe seleccionar un tipo de sitio'),
   estado: z.boolean().optional(), // Opcional para creación
   fecha_creacion: z.string().min(4, 'Debe ingresar una fecha de creación').optional(),
-  fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación').optional(),
+  fecha_modificacion: z.string().min(4, 'Debe ingresar una fecha de modificación').optional(), // Opcional para creación
 });
 
 export type SitioSchema = z.infer<typeof sitioSchema>;
