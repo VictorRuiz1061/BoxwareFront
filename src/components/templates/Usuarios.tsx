@@ -106,7 +106,13 @@ const Usuarios = () => {
     setResultadoCarga(null);
   };
 
-  const renderRol = (rol_id: number) => {
+  const renderRol = (rol_id: number | number[]) => {
+    if (Array.isArray(rol_id)) {
+      return rol_id.map(id => {
+        const rol = roles.find(r => r.id_rol === id);
+        return rol ? rol.nombre_rol : id;
+      }).join(', ');
+    }
     const rol = roles.find(r => r.id_rol === rol_id);
     return rol ? rol.nombre_rol : rol_id;
   };
