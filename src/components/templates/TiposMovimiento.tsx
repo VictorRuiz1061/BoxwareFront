@@ -65,7 +65,6 @@ const TiposMovimiento = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el tipo de movimiento:', error);
       showErrorToast('Error al guardar el tipo de movimiento');
     }
   };
@@ -84,7 +83,6 @@ const TiposMovimiento = () => {
       await actualizarTipoMovimiento(tipoMovimiento.id_tipo_movimiento, updateData);
       showSuccessToast(`El tipo de movimiento fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
     } catch (error) {
-      console.error('Error al cambiar el estado del tipo de movimiento:', error);
       showErrorToast("Error al cambiar el estado del tipo de movimiento.");
     }
   };

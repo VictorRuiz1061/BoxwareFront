@@ -71,7 +71,14 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
   ];
 
   const formFieldsModal: FormField[] = [
-    { key: "nombre_centro", label: "Nombre del Centro", type: "text", required: true }
+    { key: "nombre_centro", label: "Nombre del Centro", type: "text", required: true },
+    { 
+      key: "id_municipio", 
+      label: "Municipio", 
+      type: "select", 
+      required: true, 
+      options: municipios.map(m => ({ label: m.nombre_municipio, value: m.id_municipio }))
+    }
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
@@ -93,7 +100,7 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
       } else {
         const createPayload = {
           nombre_centro: values.nombre_centro,
-          id_municipio: isInModal ? 1 : parseInt(values.id_municipio), // ID por defecto en modo modal
+          id_municipio: parseInt(values.id_municipio),
           estado: true,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
@@ -210,7 +217,7 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
                   {editingId ? "Editar Centro" : "Crear Nuevo Centro"}
                 </h2>
                 <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
+                  fields={editingId ? formFieldsEdit : (isInModal ? formFieldsModal : formFieldsCreate)}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{

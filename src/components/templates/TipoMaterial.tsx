@@ -69,7 +69,6 @@ const TipoMaterial = ({ isInModal, onTipoMaterialCreated }: TipoMaterialProps) =
         setEditingId(null);
       }
     } catch (error) {
-      console.error('Error al guardar el tipo de material', error);
       showErrorToast('Error al guardar el tipo de material');
     }
   };

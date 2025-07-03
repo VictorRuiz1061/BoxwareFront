@@ -14,7 +14,7 @@ const InicioSesion = () => {
   const { setUser } = useAuthContext();
   const { mutateAsync: forgotPassword } = useForgotPassword();
   const { mutateAsync: verifyCode } = useVerifyCode();
-  const { mutateAsync: resetPassword } = useResetPassword();
+  useResetPassword();
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -111,7 +111,6 @@ const InicioSesion = () => {
       setShowVerifyCode(false);
       setShowResetPassword(true);
     } catch (error: any) {
-      console.error('Error al verificar código:', error);
       showErrorToast(error.response?.data?.message || 'Código de verificación inválido');
     }
   };
@@ -137,11 +136,6 @@ const InicioSesion = () => {
     }
 
     try {
-      const response = await resetPassword({ 
-        email: recoveryEmail,
-        codigo: verificationCode,
-        nuevaContrasena: newPassword
-      });
       
       showSuccessToast('Contraseña actualizada correctamente');
       setNewPassword('');
@@ -155,7 +149,6 @@ const InicioSesion = () => {
         window.location.href = '/';
       }, 1500);
     } catch (error: any) {
-      console.error('Error al restablecer contraseña:', error);
       const errorMessage = error.response?.data?.message || 
                          'Error al actualizar la contraseña. Verifica que la contraseña cumpla con los requisitos.';
       showErrorToast(errorMessage);
@@ -240,9 +233,9 @@ const InicioSesion = () => {
               <p className="text-xs text-gray-500">
                 ¿No tienes una cuenta? <a href="#" className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200" onClick={() => navigate('/registrarse')}>Regístrate</a>
               </p>
-              <p className="text-xs text-gray-500">
+              {/* <p className="text-xs text-gray-500">
                 <a href="#" className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200" onClick={() => setShowForgotPassword(true)}>¿Olvidaste tu contraseña?</a>
-              </p>
+              </p> */}
             </div>
           </div>
         </div>

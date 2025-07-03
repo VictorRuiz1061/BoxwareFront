@@ -73,7 +73,6 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el tipo de sitio:', error);
       showErrorToast('Error al guardar el tipo de sitio');
     }
   };
@@ -130,7 +129,6 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
                 onTipoSitioCreated();
               }
             } catch (error) {
-              console.error('Error al crear tipo de sitio:', error);
               showErrorToast('Error al crear el tipo de sitio');
             }
           }}

@@ -22,16 +22,36 @@ const Permisos = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
     
-  const renderModulo = (modulo_id: number | Modulo) => {
-    if (typeof modulo_id === 'object' && modulo_id !== null) {
-      return String(modulo_id.descripcion_ruta || '');
+  const renderModulo = (modulo_id: number | Modulo | number[] | Modulo[]) => {
+    if (Array.isArray(modulo_id)) {
+      return modulo_id
+        .map(m =>
+          typeof m === 'object' && m !== null
+            ? String((m as Modulo).descripcion_ruta || '')
+            : String(m)
+        )
+        .join(', ');
     }
+    if (typeof modulo_id === 'object' && modulo_id !== null) {
+      return String((modulo_id as Modulo).descripcion_ruta || '');
+    }
+    return String(modulo_id ?? '');
   };
 
-  const renderRol = (rol_id: number | Rol) => {
-    if (typeof rol_id === 'object' && rol_id !== null) {
-      return String(rol_id.nombre_rol || '');
+  const renderRol = (rol_id: number | Rol | number[] | Rol[]) => {
+    if (Array.isArray(rol_id)) {
+      return rol_id
+        .map(r =>
+          typeof r === 'object' && r !== null
+            ? String((r as Rol).nombre_rol || '')
+            : String(r)
+        )
+        .join(', ');
     }
+    if (typeof rol_id === 'object' && rol_id !== null) {
+      return String((rol_id as Rol).nombre_rol || '');
+    }
+    return String(rol_id ?? '');
   };
 
   // Extendiendo el tipo para incluir los nuevos campos de permisos
@@ -143,8 +163,8 @@ const Permisos = () => {
         const updatePayload: Permiso = {
           id_permiso: editingId,
           nombre: values.nombre,
-          modulo_id: modulo_id,
-          rol_id: rol_id,
+          modulo_id: [modulo_id],
+          rol_id: [rol_id],
           estado: true,
           puede_ver,
           puede_crear,
@@ -159,17 +179,14 @@ const Permisos = () => {
         // ya que este será generado por el backend
         const newPermiso: Omit<Permiso, 'id_permiso'> & { id_permiso?: never } = {
           nombre: values.nombre,
-          modulo_id: modulo_id,
-          rol_id: rol_id,
+          modulo_id: [modulo_id],
+          rol_id: [rol_id],
           estado: true,
           puede_ver,
           puede_crear,
           puede_actualizar,
           fecha_creacion: currentDate,
         };
-        
-        console.log('Enviando permiso:', newPermiso);
-        // Usamos type assertion para satisfacer TypeScript
         await crearPermiso(newPermiso as any);
         showSuccessToast('Permiso creado correctamente');  
       }
@@ -206,8 +223,23 @@ const Permisos = () => {
   const handleEdit = (permiso: Permiso) => {
     setFormData({
       nombre: permiso.nombre,
-      modulo_id: typeof permiso.modulo_id === 'object' ? permiso.modulo_id.id_modulo.toString() : permiso.modulo_id.toString(),
-      rol_id: typeof permiso.rol_id === 'object' ? permiso.rol_id.id_rol.toString() : permiso.rol_id.toString(),
+
+      modulo_id: Array.isArray(permiso.modulo_id)
+        ? (typeof permiso.modulo_id[0] === 'object' && permiso.modulo_id[0] !== null
+            ? (permiso.modulo_id[0] as Modulo).id_modulo?.toString() ?? ''
+            : permiso.modulo_id[0] != null ? String(permiso.modulo_id[0]) : '')
+        : (typeof permiso.modulo_id === 'object' && permiso.modulo_id !== null
+            ? (permiso.modulo_id as Modulo).id_modulo?.toString() ?? ''
+            : permiso.modulo_id != null ? String(permiso.modulo_id) : ''),
+
+      rol_id: Array.isArray(permiso.rol_id)
+        ? (typeof permiso.rol_id[0] === 'object' && permiso.rol_id[0] !== null
+            ? (permiso.rol_id[0] as Rol).id_rol?.toString() ?? ''
+            : permiso.rol_id[0] != null ? String(permiso.rol_id[0]) : '')
+        : (typeof permiso.rol_id === 'object' && permiso.rol_id !== null
+            ? (permiso.rol_id as Rol).id_rol?.toString() ?? ''
+            : permiso.rol_id != null ? String(permiso.rol_id) : ''),
+            
       puede_ver: permiso.puede_ver || false,
       puede_crear: permiso.puede_crear || false,
       puede_actualizar: permiso.puede_actualizar || false,

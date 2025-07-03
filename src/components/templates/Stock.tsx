@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 // Importaciones desde los barrel files de hooks
 import { useGetCaracteristicas, usePostCaracteristica, usePutCaracteristica } from "@/hooks/caracteristicas";
 import { useGetInventario, usePostInventario, usePutInventario } from "@/hooks/inventario";
@@ -40,8 +40,7 @@ const StockPage = () => {
   const [isModalInventarioOpen, setModalInventarioOpen] = useState(false);
   const [formCaracteristica, setFormCaracteristica] = useState<Record<string, any>>({});
   const [formInventario, setFormInventario] = useState<Record<string, any>>({});
-  const [showPlacaSena, setShowPlacaSena] = useState(false);
-  const [showDescripcion, setShowDescripcion] = useState(false);
+  const [selectedMaterialCaracteristicas, setSelectedMaterialCaracteristicas] = useState<Caracteristica | null>(null);
 
   // Campos del formulario de características
   const fieldsCaracteristica: FormField[] = [
@@ -56,18 +55,63 @@ const StockPage = () => {
     { key: "descripcion", label: "¿Requiere Descripción?", type: "toggle", required: true },
   ];
 
-  // Campos del formulario de inventario (se modifican según flags)
-  const baseFieldsInventario: FormField[] = [
-    { key: "material_id", label: "Material", type: "select", options: materiales?.map((material) => ({ value: material.id_material, label: material.nombre_material })) || [], required: true },
-    { key: "sitio_id", label: "Sitio", type: "select", options: sitios?.map((sitio) => ({ value: sitio.id_sitio, label: sitio.nombre_sitio })) || [], required: true },
-    { key: "stock", label: "Stock", type: "number", required: true },
-  ];
-  if (showPlacaSena) {
-    baseFieldsInventario.push({ key: "placa_sena", label: "Placa SENA", type: "text", required: true });
-  }
-  if (showDescripcion) {
-    baseFieldsInventario.push({ key: "descripcion", label: "Descripción", type: "text", required: true });
-  }
+  // Efecto para actualizar los campos del inventario según el material seleccionado
+  useEffect(() => {
+    if (formInventario.material_id) {
+      const materialCaracteristicas = caracteristicas?.find(
+        (c) => c.material_id === parseInt(formInventario.material_id)
+      );
+      setSelectedMaterialCaracteristicas(materialCaracteristicas || null);
+    } else {
+      setSelectedMaterialCaracteristicas(null);
+    }
+  }, [formInventario.material_id, caracteristicas]);
+
+  // Campos del formulario de inventario (se modifican según características)
+  const getInventarioFields = (): FormField[] => {
+    const baseFields: FormField[] = [
+      {
+        key: "material_id",
+        label: "Material",
+        type: "select",
+        options: materiales?.map((material) => ({ value: material.id_material, label: material.nombre_material })) || [],
+        required: true,
+        onChange: (value) => {
+          setFormInventario(prev => ({ ...prev, material_id: value }));
+        }
+      },
+      {
+        key: "sitio_id",
+        label: "Sitio",
+        type: "select",
+        options: sitios?.map((sitio) => ({ value: sitio.id_sitio, label: sitio.nombre_sitio })) || [],
+        required: true
+      },
+      { key: "stock", label: "Stock", type: "number", required: true },
+    ];
+
+    // Agregar campos según las características del material
+    if (selectedMaterialCaracteristicas) {
+      if (selectedMaterialCaracteristicas.placa_sena) {
+        baseFields.push({
+          key: "placa_sena",
+          label: "Placa SENA",
+          type: "text",
+          required: true,
+        });
+      }
+      if (selectedMaterialCaracteristicas.descripcion) {
+        baseFields.push({
+          key: "descripcion",
+          label: "Descripción",
+          type: "text",
+          required: true,
+        });
+      }
+    }
+
+    return baseFields;
+  };
 
   const handleCreateCaracteristica = () => {
     setFormCaracteristica({});
@@ -78,6 +122,7 @@ const StockPage = () => {
   const handleCreateInventario = () => {
     setFormInventario({});
     setEditingInventarioId(null);
+    setSelectedMaterialCaracteristicas(null);
     setModalInventarioOpen(true);
   };
 
@@ -87,8 +132,8 @@ const StockPage = () => {
         // Actualizar característica existente
         const caracteristicaActualizada: Partial<Caracteristica> = {
           material_id: parseInt(values.material_id),
-          placa_sena: !!values.placa_sena,
-          descripcion: !!values.descripcion,
+          placa_sena: values.placa_sena === true,
+          descripcion: values.descripcion === true,
         };
         await actualizarCaracteristica(editingCaracteristicaId, caracteristicaActualizada);
         showSuccessToast("Característica actualizada con éxito");
@@ -98,26 +143,34 @@ const StockPage = () => {
         const nuevaCaracteristica: Caracteristica = {
           id_caracteristica: 0,
           material_id: parseInt(values.material_id),
-          placa_sena: !!values.placa_sena,
-          descripcion: !!values.descripcion,
+          placa_sena: values.placa_sena === true,
+          descripcion: values.descripcion === true,
         };
         await crearCaracteristica(nuevaCaracteristica);
         showSuccessToast("Característica creada con éxito");
       }
       
-      // Activar los campos condicionales basados en los valores del formulario
-      setShowPlacaSena(!!values.placa_sena);
-      setShowDescripcion(!!values.descripcion);
-
       setModalCaracteristicaOpen(false);
     } catch (err) {
-      console.error("Error al procesar la característica:", err);
+      console.error('Error al procesar la característica:', err);
       showErrorToast("Error al procesar la característica");
     }
   };
 
   const handleSubmitInventario = async (values: Record<string, any>) => {
     try {
+      // Validar campos requeridos según características
+      if (selectedMaterialCaracteristicas) {
+        if (selectedMaterialCaracteristicas.placa_sena && !values.placa_sena) {
+          showErrorToast("La placa SENA es requerida para este material");
+          return;
+        }
+        if (selectedMaterialCaracteristicas.descripcion && !values.descripcion) {
+          showErrorToast("La descripción es requerida para este material");
+          return;
+        }
+      }
+
       if (editingInventarioId) {
         // Actualizar inventario existente
         const inventarioActualizado: Inventario = {
@@ -125,8 +178,8 @@ const StockPage = () => {
           material_id: parseInt(values.material_id),
           sitio_id: parseInt(values.sitio_id),
           stock: parseInt(values.stock),
-          placa_sena: values.placa_sena || undefined,
-          descripcion: values.descripcion || undefined,
+          placa_sena: values.placa_sena,
+          descripcion: values.descripcion,
         };
         await actualizarInventario(editingInventarioId, inventarioActualizado);
         showSuccessToast("Inventario actualizado con éxito");
@@ -138,20 +191,19 @@ const StockPage = () => {
           material_id: parseInt(values.material_id),
           sitio_id: parseInt(values.sitio_id),
           stock: parseInt(values.stock),
-          placa_sena: values.placa_sena || undefined,
-          descripcion: values.descripcion || undefined,
+          placa_sena: values.placa_sena,
+          descripcion: values.descripcion,
         };
         await crearInventario(nuevoInventario);
         showSuccessToast("Inventario creado con éxito");
       }
       setModalInventarioOpen(false);
     } catch (err) {
-      console.error("Error al procesar el inventario:", err);
       showErrorToast("Error al procesar el inventario");
     }
   };
 
-  const columnsCaracteristica: Column<Caracteristica & { key: number }>[] = [
+  const columnsCaracteristica: Column<any>[] = [
     {
       key: "material_id",
       label: "Material",
@@ -175,7 +227,7 @@ const StockPage = () => {
     },
   ];
 
-  const columnsInventario: Column<Inventario & { key: number }>[] = [
+  const columnsInventario: Column<any>[] = [
     {
       key: "material_id",
       label: "Material",
@@ -199,8 +251,16 @@ const StockPage = () => {
       }
     },
     { key: "stock", label: "Stock" },
-    { key: "placa_sena", label: "Placa SENA" },
-    { key: "descripcion", label: "Descripción" },
+    { 
+      key: "placa_sena", 
+      label: "Placa SENA",
+      render: (item) => item.placa_sena || '-'
+    },
+    { 
+      key: "descripcion", 
+      label: "Descripción",
+      render: (item) => item.descripcion || '-'
+    },
   ];
 
   return (
@@ -242,9 +302,7 @@ const StockPage = () => {
                     setModalCaracteristicaOpen(true);
                   }
                 },
-                onToggleEstado: function (item: any): void {
-                  // Esta función es requerida por el componente pero no se utiliza en este caso
-                  console.log("Toggle estado característica", item);
+                onToggleEstado: function (): void {
                 }
               }
             })}
@@ -272,9 +330,7 @@ const StockPage = () => {
                     setModalInventarioOpen(true);
                   }
                 },
-                onToggleEstado: function (item: any): void {
-                  // Esta función es requerida por el componente pero no se utiliza en este caso
-                  console.log("Toggle estado inventario", item);
+                onToggleEstado: function (): void {
                 }
               }
             })}
@@ -286,15 +342,17 @@ const StockPage = () => {
       {isModalCaracteristicaOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-            <div className="p-6 rounded-lg shadow-lg relative">
-              <button onClick={() => setModalCaracteristicaOpen(false)} className="absolute top-2 right-2">×</button>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg relative">
+              <button onClick={() => setModalCaracteristicaOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
+                <span className="text-gray-800 font-bold">×</span>
+              </button>
               <h2 className="text-center font-bold text-lg mb-4">
                 {editingCaracteristicaId ? "Editar Característica" : "Nueva Característica"}
               </h2>
               <Form
                 fields={fieldsCaracteristica}
                 onSubmit={handleSubmitCaracteristica}
-                buttonText="Crear"
+                buttonText={editingCaracteristicaId ? "Actualizar" : "Crear"}
                 initialValues={formCaracteristica}
               />
             </div>
@@ -306,15 +364,17 @@ const StockPage = () => {
       {isModalInventarioOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-            <div className="p-6 rounded-lg shadow-lg relative">
-              <button onClick={() => setModalInventarioOpen(false)} className="absolute top-2 right-2">×</button>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg relative">
+              <button onClick={() => setModalInventarioOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
+                <span className="text-gray-800 font-bold">×</span>
+              </button>
               <h2 className="text-center font-bold text-lg mb-4">
                 {editingInventarioId ? "Editar Inventario" : "Nuevo Inventario"}
               </h2>
               <Form
-                fields={baseFieldsInventario}
+                fields={getInventarioFields()}
                 onSubmit={handleSubmitInventario}
-                buttonText="Crear"
+                buttonText={editingInventarioId ? "Actualizar" : "Crear"}
                 initialValues={formInventario}
               />
             </div>

@@ -6,13 +6,20 @@ import {  AnimatedContainer,  Boton,  showSuccessToast, showErrorToast } from "@
 import {  createEntityTable, Form } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { sedeSchema } from '@/schemas';
+import Centros from './Centros';
 
-const Sedes = () => {
+interface SedesProps {
+  isInModal?: boolean;
+  onSedeCreated?: () => void;
+}
+
+const Sedes = ({ isInModal = false, onSedeCreated }: SedesProps) => {
   const { sedes, loading } = useGetSedes();
   const { crearSede } = usePostSede();
   const { actualizarSede } = usePutSede();
   const { centros, loading: loadingCentros } = useGetCentros();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCentroModalOpen, setIsCentroModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
@@ -42,9 +49,15 @@ const Sedes = () => {
       label: "Centro", 
       type: "select", 
       required: true, 
-      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro })) 
+      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsCentroModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
   ];
+
   const formFieldsEdit: FormField[] = [
     { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
     { key: "direccion_sede", label: "Dirección de la Sede", type: "text", required: true },
@@ -53,18 +66,22 @@ const Sedes = () => {
       label: "Centro", 
       type: "select", 
       required: true, 
-      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro })) 
+      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsCentroModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
+  ];
+
+  const formFieldsModal: FormField[] = [
+    { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
+    { key: "direccion_sede", label: "Dirección de la Sede", type: "text", required: true }
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      // Convertir centro_id a número
-      const centro_id = parseInt(values.centro_id);
-      if (isNaN(centro_id)) {
-        throw new Error("El centro seleccionado no es válido");
-      }
-      
       // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
       
@@ -72,11 +89,11 @@ const Sedes = () => {
         // Actualizar sede existente
         const updatePayload: Sede = {
           id_sede: editingId,
-          centro_id: centro_id,
+          centro_id: parseInt(values.centro_id),
           nombre_sede: values.nombre_sede,
           direccion_sede: values.direccion_sede,
           estado: true,
-          fecha_creacion: formData.fecha_creacion || currentDate, // Mantener fecha de creación original
+          fecha_creacion: formData.fecha_creacion || currentDate,
           fecha_modificacion: currentDate,
         };
         
@@ -86,7 +103,7 @@ const Sedes = () => {
         const createPayload = {
           nombre_sede: values.nombre_sede,
           direccion_sede: values.direccion_sede,
-          centro_id: centro_id,
+          centro_id: isInModal ? 1 : parseInt(values.centro_id), // ID por defecto en modo modal
           estado: true,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
@@ -94,6 +111,9 @@ const Sedes = () => {
 
         await crearSede(createPayload as any);
         showSuccessToast('Sede creada con éxito');
+        if (onSedeCreated) {
+          onSedeCreated();
+        }
       }
       setIsModalOpen(false);
       setFormData({});
@@ -113,7 +133,7 @@ const Sedes = () => {
         centro_id: sede.centro_id,
         estado: nuevoEstado,
         fecha_creacion: sede.fecha_creacion,
-        fecha_modificacion: new Date().toISOString().split('T')[0]
+        fecha_modificacion: new Date().toISOString()
       };
 
       await actualizarSede(sede.id_sede, updateData);
@@ -139,54 +159,70 @@ const Sedes = () => {
     setIsModalOpen(true);
   };
 
+  // Si está en modo modal, mostrar directamente el formulario
+  if (isInModal) {
+    return (
+      <div className="w-full">
+        <Form
+          fields={formFieldsModal}
+          onSubmit={handleSubmit}
+          buttonText="Crear"
+          initialValues={{
+            fecha_creacion: new Date().toISOString().split('T')[0]
+          }}
+          schema={sedeSchema}
+        />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="w-full">
-      <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-        <h1 className="text-xl font-bold mb-4">Gestión de Sedes</h1>
+        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+          <h1 className="text-xl font-bold mb-4">Gestión de Sedes</h1>
         </AnimatedContainer>
       
-      <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-        <Boton
-          onClick={handleCreate}
-          className="bg-blue-500 text-white px-4 py-2 mb-4"
-        >
-          Crear Nueva Sede
-        </Boton>
-      </AnimatedContainer>
+        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+          <Boton
+            onClick={handleCreate}
+            className="bg-blue-500 text-white px-4 py-2 mb-4"
+          >
+            Crear Nueva Sede
+          </Boton>
+        </AnimatedContainer>
 
         {loading || loadingCentros ? (
           <p>Cargando datos...</p>
         ) : (
-        <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
-          {createEntityTable({
-            columns: columns as Column<any>[],
-            data: sedes,
-            idField: 'id_sede',
-            handlers: {
-              onToggleEstado: handleToggleEstado,
-              onEdit: handleEdit
-            }
-          })}
+          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+            {createEntityTable({
+              columns: columns as Column<any>[],
+              data: sedes,
+              idField: 'id_sede',
+              handlers: {
+                onToggleEstado: handleToggleEstado,
+                onEdit: handleEdit
+              }
+            })}
           </AnimatedContainer>
         )}
 
-        {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        {(isModalOpen || isInModal) && (
+          <div className={isInModal ? "" : "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
             <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
+              <div className={`p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative ${isInModal ? "" : "bg-white dark:bg-gray-800"}`}>
+                {!isInModal && (
+                  <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
                     <span className="text-gray-800 font-bold">×</span>
                   </button>
-                  
-                  <h2 className="text-lg font-bold mb-4 text-center">
+                )}
+                
+                <h2 className="text-lg font-bold mb-4 text-center">
                   {editingId ? "Editar Sede" : "Crear Nueva Sede"}
                 </h2>
                 <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
+                  fields={editingId ? formFieldsEdit : (isInModal ? formFieldsModal : formFieldsCreate)}
                   onSubmit={handleSubmit}
                   buttonText={editingId ? "Actualizar" : "Crear"}
                   initialValues={{
@@ -199,9 +235,26 @@ const Sedes = () => {
                 />
               </div>
             </AnimatedContainer>  
-            </div> 
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Modal para crear centro */}
+        {isCentroModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
+              <button 
+                onClick={() => setIsCentroModalOpen(false)}
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+              >
+                <span className="text-gray-800 font-bold">×</span>
+              </button>
+              <Centros isInModal={true} onCentroCreated={() => {
+                setIsCentroModalOpen(false);
+              }} />
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 };

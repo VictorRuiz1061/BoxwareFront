@@ -384,18 +384,6 @@ console.log('[CONFIGURACION] loading:', loading);
               </div>
             </div>
           </AnimatedContainer>
-
-          <AnimatedContainer animation="slideUp" delay={400} duration={500}>
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100">
-              <h3 className="font-bold text-gray-800 mb-3">¿Necesitas Ayuda?</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Si tienes problemas con tu cuenta o necesitas asistencia, contáctanos.
-              </p>
-              <Boton className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm">
-                Contactar Soporte
-              </Boton>
-            </div>
-          </AnimatedContainer>
         </div>
       </div>
     </div>

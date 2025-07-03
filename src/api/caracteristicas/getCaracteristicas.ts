@@ -5,12 +5,12 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getCaracteristicas(): Promise<Caracteristica[]> {
   const response = await axiosInstance.get("/caracteristicas");
-  return extractArrayData<Caracteristica>(response, 'getCaracteristicas');
+  return extractArrayData<Caracteristica>(response);
 }
 
 export async function getCaracteristicasByMaterial(materialId: number): Promise<Caracteristica[]> {
   const response = await axiosInstance.get(`/materiales/${materialId}`);
-  return extractArrayData<Caracteristica>(response, 'getCaracteristicasByMaterial');
+  return extractArrayData<Caracteristica>(response);
 }
 
 export function useGetCaracteristicas() {

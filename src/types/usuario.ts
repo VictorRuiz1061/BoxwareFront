@@ -10,5 +10,5 @@ export interface Usuario {
   imagen: string;
   estado: boolean;
   fecha_registro: string;
-  rol_id: number;
+  rol_id: number[];
 }

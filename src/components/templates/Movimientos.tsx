@@ -261,7 +261,6 @@ const Movimientos = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el movimiento:', error);
       showErrorToast('Error al guardar el movimiento');
     }
   };
@@ -284,7 +283,6 @@ const Movimientos = () => {
         showSuccessToast(`El movimiento fue ${!movimiento.estado ? 'activado' : 'desactivado'} correctamente.`);
       }
     } catch (error) {
-      console.error('Error:', error);
       showErrorToast("Error al cambiar el estado del movimiento.");
     }
   };

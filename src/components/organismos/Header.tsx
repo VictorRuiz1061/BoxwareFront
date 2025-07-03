@@ -1,4 +1,4 @@
-import { Bell, Settings } from "lucide-react";
+import {  Settings } from "lucide-react";
 import AnimatedContainer from "@/components/atomos/AnimatedContainer";
 import Image from "@/components/atomos/Imagen";
 import ThemeToggle from "@/components/atomos/ThemeToggle";
@@ -29,11 +29,11 @@ const Header = () => {
         // Buscar el rol por id_rol o id (para manejar diferentes formatos)
         const rol = roles.find((r) => {
           const roleId = typeof rolId === 'string' ? parseInt(rolId) : rolId;
-          return r.id_rol === roleId || r.id === roleId;
+          return r.id_rol === roleId;
         });
         
         if (rol) {
-          setRolNombre(rol.nombre_rol || rol.nombre || '');
+          setRolNombre(rol.nombre_rol || '');
         } else {
           const roleIdNum = typeof rolId === 'string' ? parseInt(rolId) : rolId;
           setRolNombre(roleIdNum === 1 ? "Administrador" : roleIdNum === 2 ? "Vendedor" : "Usuario");
@@ -76,14 +76,14 @@ const Header = () => {
             </AnimatedContainer>
 
             {/* Notificaciones */}
-            <AnimatedContainer animation="slideUp" delay={100} duration={400}>
+            {/* <AnimatedContainer animation="slideUp" delay={100} duration={400}>
               <button className={`relative p-2 text-white ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-blue-500'} rounded-lg transition-all duration-300 group`}>
                 <Bell size={20} className="group-hover:scale-110 transition-transform duration-300" />
                 <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110">
                   3
                 </span>
               </button>
-            </AnimatedContainer>
+            </AnimatedContainer> */}
 
             {/* Configuración */}
             <AnimatedContainer animation="slideUp" delay={200} duration={400}>

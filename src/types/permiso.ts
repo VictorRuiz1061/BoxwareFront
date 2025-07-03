@@ -6,10 +6,10 @@ export interface Permiso {
   nombre: string;
   estado: boolean;
   fecha_creacion: string;
-  modulo_id: number | Modulo;
-  rol_id: number | Rol;
-  modulo?: Modulo;
-  rol?: Rol;
+  modulo_id: number [] | Modulo[];
+  rol_id: number [] | Rol[];
+  modulo?: Modulo[];
+  rol?: Rol[];
   puede_ver?: boolean;
   puede_crear?: boolean;
   puede_actualizar?: boolean;
