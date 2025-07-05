@@ -5,6 +5,7 @@ export interface UserAuth {
   apellido?: string;
   email: string;
   rol_id: number;
+  imagen?: string;
 }
 
 // Credenciales para inicio de sesión (API)
@@ -28,6 +29,7 @@ export interface RegisterData {
   email: string;
   contrasena: string;
   telefono?: string;
+  rol_id: number;
 }
 
 // Formulario de registro (Frontend)
@@ -43,10 +45,11 @@ export interface RegisterFormValues {
 }
 
 // Respuesta de la API de autenticación
+// Actualizado para reflejar la estructura real de la respuesta del backend
 export interface AuthResponse {
   message: string;
-  token?: string;
-  user?: UserAuth;
+  token: string;
+  user: UserAuth;
 }
 
 // Estado de autenticación

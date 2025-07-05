@@ -2,22 +2,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Municipio } from "@/types/municipio";
 
-export interface MunicipioUpdate {
-  id_municipio: number;
-  // otros campos opcionales si es necesario
-}
-
-export async function putMunicipio(id: number, data: Omit<Municipio, 'id_municipio'>): Promise<Municipio> {
-  const response = await axiosInstance.put(`/municipios/${id}`, data);
+export async function putMunicipio(data: Partial<Municipio> & { id: number }): Promise<Municipio> {
+  const response = await axiosInstance.put(`/municipios/${data.id}`, data);
   return response.data;
 }
 
 export function usePutMunicipio() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id_municipio, ...data }: Municipio & { id_municipio: number }) => putMunicipio(id_municipio, data),
+    mutationFn: putMunicipio,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["municipios"] });
     },
   });
-} 
+}

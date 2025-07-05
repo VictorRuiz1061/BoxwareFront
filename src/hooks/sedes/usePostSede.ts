@@ -1,7 +1,8 @@
-import { usePostSede as useApiPostSede, NuevaSede } from "@/api/sedes/postSede";
+import { usePostSede as useApiPostSede } from "@/api/sedes";
+import { Sede } from "@/types";
 
 export function usePostSede() {
   const post = useApiPostSede();
-  const crearSede = async (data: NuevaSede) => post.mutateAsync(data);
+  const crearSede = async (data: Sede) => post.mutateAsync(data);
   return { crearSede };
 } 

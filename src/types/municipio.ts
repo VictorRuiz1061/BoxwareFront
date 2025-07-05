@@ -5,5 +5,3 @@ export interface Municipio {
   fecha_creacion: string;
   fecha_modificacion: string;
 }
-
-export type NuevoMunicipio = Omit<Municipio, 'id_municipio'>;

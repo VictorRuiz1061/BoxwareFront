@@ -1,9 +1,8 @@
-import { usePutMunicipio as useApiPutMunicipio } from "@/api/municipios/putMunicipio";
-import { Municipio } from "@/types/municipio";
+import { usePutMunicipio as useApiPutMunicipio } from "@/api/municipios";
+import { Municipio } from "@/types";
 
 export function usePutMunicipio() {
   const put = useApiPutMunicipio();
-  const actualizarMunicipio = async (id_municipio: number, data: Omit<Municipio, 'id_municipio'>) => 
-    put.mutateAsync({ ...data, id_municipio });
+  const actualizarMunicipio = async (id: number, data: Municipio) => put.mutateAsync({ ...data, id });
   return { actualizarMunicipio };
-} 
+}
