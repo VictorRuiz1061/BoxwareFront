@@ -1,4 +1,4 @@
-import { useGetProgramas as useApiGetProgramas } from "@/api/programas/getProgramas";
+import { useGetProgramas as useApiGetProgramas } from "@/api/programas";
 
 export function useGetProgramas() {
   const { data: programas = [], isLoading: loading } = useApiGetProgramas();
