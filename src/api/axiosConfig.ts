@@ -18,7 +18,7 @@ const clearCookie = (key: string) => {
 
 axiosInstance.interceptors.request.use((config) => {
   const token = getCookie(TOKEN_KEY);
-  if (token) config.headers['Authorization'] = `Bearer ${token}`;
+  if (token) config.headers['Authorization'] = `Bearer ${token}`; 
   
   // Solo establecer Content-Type como application/json si no es FormData
   if (!(config.data instanceof FormData)) {
