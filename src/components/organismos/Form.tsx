@@ -1,6 +1,5 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Input, Toggle } from "@/components/atomos";
 
 export type FormField = {
@@ -18,13 +17,14 @@ export type FormField = {
   description?: string;
   className?: string;
   onChange?: (value: string) => void;
+  multiple?: boolean;
 };
 
 interface FormProps {
   fields: FormField[];
-  onSubmit: (values: Record<string, string>) => void;
+  onSubmit: (values: Record<string, any>) => void;
   buttonText?: string;
-  initialValues?: Record<string, string>;
+  initialValues?: Record<string, any>;
   schema?: any;
 }
 
@@ -45,13 +45,13 @@ const Form = ({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, sch
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-      {fields.map((field) => {
+        {fields.map((field) => {
           if (field.conditional && !field.conditional(watchAllFields)) {
             return null;
           }
 
           const { ref, ...registerProps } = register(field.key);
-        
+
           return (
             <div key={field.key} className={`space-y-2 ${field.className || 'col-span-2'}`}>
               <div className="flex items-center">
@@ -78,19 +78,20 @@ const Form = ({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, sch
                 <select
                   {...registerProps}
                   ref={ref}
+                  multiple={field.multiple}
                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   onChange={(e) => {
-                    registerProps.onChange(e); // Mantener el comportamiento original de react-hook-form
-                    
-                    // Si el campo es producto_perecedero, limpiar fecha_vencimiento cuando sea false
-                    if (field.key === 'producto_perecedero') {
-                      if (e.target.value === 'false') {
-                        setValue('fecha_vencimiento', '');
-                      }
+                    if (field.multiple) {
+                      const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
+                      setValue(field.key, selectedOptions, { shouldValidate: true });
+                    } else {
+                      registerProps.onChange(e);
                     }
+                    field.onChange?.(e.target.value);
                   }}
+                  size={field.multiple ? Math.min(field.options?.length || 4, 6) : undefined}
                 >
-                  <option value="">Seleccione una opción</option>
+                  {!field.multiple && <option value="">Seleccione una opción</option>}
                   {field.options?.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -100,18 +101,11 @@ const Form = ({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, sch
               ) : field.type === "toggle" ? (
                 <div className="mt-1">
                   <Toggle
-                    isOn={watchAllFields[field.key] === 'true'}
+                    isOn={watchAllFields[field.key] === true || watchAllFields[field.key] === 'true'}
                     onToggle={() => {
-                      const newValue = watchAllFields[field.key] !== 'true' ? 'true' : 'false';
+                      const newValue = !(watchAllFields[field.key] === true || watchAllFields[field.key] === 'true');
                       setValue(field.key, newValue, { shouldValidate: true });
-                      
-                      // Si el campo es producto_perecedero, limpiar fecha_vencimiento cuando sea false
-                      if (field.key === 'producto_perecedero' && newValue === 'false') {
-                        setValue('fecha_vencimiento', '', { shouldValidate: true });
-                      }
-
-                      // Llamar al onChange personalizado si existe
-                      field.onChange?.(newValue);
+                      field.onChange?.(String(newValue));
                     }}
                   />
                 </div>
@@ -146,7 +140,7 @@ const Form = ({ fields, onSubmit, buttonText = "Enviar", initialValues = {}, sch
           type="submit"
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
         >
-          {buttonText || 'Enviar'}
+          {buttonText}
         </button>
       </div>
     </form>
