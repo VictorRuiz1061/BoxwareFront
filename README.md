@@ -23,6 +23,8 @@
   <img src="https://img.shields.io/badge/Build-✅%20PASSING-success?style=for-the-badge&logo=github-actions" alt="Build"/>
 </div>
 
+<br>
+
 **[!] Sistema de infiltración para gestión inteligente de bodegas**  
 **[+] Construido con React + TypeScript**  
 **[~] Arquitectura modular para operaciones logísticas críticas**
@@ -30,7 +32,6 @@
 ---
 
 ## ⚡ STACK TECNOLÓGICO
-
 
 <div align="center">
 
@@ -71,6 +72,8 @@
 
 ## 🗂️ ESTRUCTURA DEL PAYLOAD
 
+<div align="center">
+
 ```bash
 src/
 ├── api/              # 🌐 Endpoints y configuración HTTP
@@ -88,6 +91,8 @@ src/
 └── utils/            # 🔧 Utilidades y helpers
 ```
 
+</div>
+
 ---
 
 ## 🚀 DESPLIEGUE RÁPIDO
@@ -95,24 +100,21 @@ src/
 <div align="center">
 
 ```bash
-┌─[👨‍💻 hacker@terminal]─[~/BoxwareFront]
+
+
+┌─[👨‍💻  # Clonar el repositorio
 └──╼ git clone https://github.com/VictorRuiz1061/BoxwareFront.git
-[✓] Clonando repositorio...
-[✓] Descargando archivos...
-[✓] Repositorio clonado exitosamente
 
-┌─[👨‍💻 hacker@terminal]─[~/BoxwareFront]
+
+
+┌─[👨‍💻 # Instalar las dependencias
 └──╼ npm install
-[⚡] Instalando dependencias...
-[⚡] Resolviendo paquetes...
-[✓] Todas las dependencias instaladas
 
-┌─[👨‍💻 hacker@terminal]─[~/BoxwareFront]
+
+
+┌─[👨‍💻 # Correr el proyecto
 └──╼ npm run dev
-[🚀] Iniciando servidor de desarrollo...
-[🔥] Vite v5.0.0 iniciado
-[🌐] Local: http://localhost:5173
-[✅] ¡Servidor listo!
+
 ```
 
 </div>
@@ -123,20 +125,27 @@ src/
 
 ---
 
+## 🤖 RECURSOS ADICIONALES PARA MAS INFORMACIÓN
+
 <div align="center">
 
 ```
-┌─[boxware@terminal]─[~/BoxwareFront]
-└──╼ npm run dev
-[✓] Servidor iniciado
-[✓] Módulos cargados
-[✓] Sistema operativo
+╔══════════════════════════════════════════════════════════════════╗
+║                    🔗 ENLACES DE REFERENCIA                      ║
+╠══════════════════════════════════════════════════════════════════╣
+║  🤖 Claude AI      │ https://claude.ai/chat/0e0d941e-...        ║
+║  🧠 ChatGPT        │ https://chatgpt.com/c/686af028-...         ║
+║  💡 Copilot        │ https://copilot.microsoft.com/chats/...    ║
+║  🔍 Phind          │ https://www.phind.com/                     ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
+
+</div>
 
 <p align="center">
   <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=14&duration=1500&pause=2000&color=00FF41&center=true&vCenter=true&width=400&lines=Sistema+BoxwareFront+Activo;Conexión+Segura+Establecida;Todos+los+Módulos+Online;Listo+para+Operaciones" alt="Final Status" />
 </p>
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=60&section=footer" width="100%"/>
-
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=60&section=footer" width="100%"/>
 </div>
