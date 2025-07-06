@@ -22,7 +22,7 @@ const Permisos = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
     
-  const renderModulo = (modulo_id: number | Modulo | number[] | Modulo[]) => {
+  const renderModulo = (modulo_id: Array<number | Modulo> | number | Modulo) => {
     if (Array.isArray(modulo_id)) {
       return modulo_id
         .map(m =>
@@ -38,16 +38,7 @@ const Permisos = () => {
     return String(modulo_id ?? '');
   };
 
-  const renderRol = (rol_id: number | Rol | number[] | Rol[]) => {
-    if (Array.isArray(rol_id)) {
-      return rol_id
-        .map(r =>
-          typeof r === 'object' && r !== null
-            ? String((r as Rol).nombre_rol || '')
-            : String(r)
-        )
-        .join(', ');
-    }
+  const renderRol = (rol_id: number | Rol) => {
     if (typeof rol_id === 'object' && rol_id !== null) {
       return String((rol_id as Rol).nombre_rol || '');
     }
@@ -101,10 +92,12 @@ const Permisos = () => {
     },
     {
       key: "modulo_id",
-      label: "Módulo",
+      label: "Módulos",
       type: "select",
+      multiple: true,
       required: true,
       className: "col-span-1",
+      description: "Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples módulos",
       options: modulos.map(m => ({ label: m.descripcion_ruta, value: m.id_modulo })),
       extraButton: {
         icon: "+",
@@ -140,11 +133,14 @@ const Permisos = () => {
 
   const handleSubmit = async (values: Record<string, any>) => {
     try {
-      // Convertir IDs a números
-      const modulo_id = parseInt(values.modulo_id);
+      // Convertir los IDs de módulos a números
+      const modulo_ids = Array.isArray(values.modulo_id) 
+        ? values.modulo_id.map((id: string) => parseInt(id, 10))
+        : [parseInt(values.modulo_id, 10)];
+      
       const rol_id = parseInt(values.rol_id);
       
-      // Fecha actual para timestamps - mantener el formato completo ISO
+      // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
       
       // Convertir valores de toggle a booleanos
@@ -153,18 +149,16 @@ const Permisos = () => {
       const puede_actualizar = Boolean(values.puede_actualizar);
       
       if (editingId) {
-        // Buscar el permiso original para mantener los campos requeridos
         const permisoOriginal = permisos.find(p => p.id_permiso === editingId);
         if (!permisoOriginal) {
           throw new Error('Permiso no encontrado');
         }
         
-        // Crear un objeto que cumpla con la estructura esperada por la API
         const updatePayload: Permiso = {
           id_permiso: editingId,
           nombre: values.nombre,
-          modulo_id: [modulo_id],
-          rol_id: [rol_id],
+          modulo_id: modulo_ids,
+          rol_id: rol_id,
           estado: true,
           puede_ver,
           puede_crear,
@@ -175,12 +169,10 @@ const Permisos = () => {
         await actualizarPermiso(editingId, updatePayload);
         showSuccessToast('Permiso actualizado correctamente');
       } else {
-        // Para crear un nuevo permiso, usamos un tipo que omite id_permiso
-        // ya que este será generado por el backend
         const newPermiso: Omit<Permiso, 'id_permiso'> & { id_permiso?: never } = {
           nombre: values.nombre,
-          modulo_id: [modulo_id],
-          rol_id: [rol_id],
+          modulo_id: modulo_ids,
+          rol_id: rol_id,
           estado: true,
           puede_ver,
           puede_crear,
@@ -189,7 +181,6 @@ const Permisos = () => {
         };
         
         console.log('Enviando permiso:', newPermiso);
-        // Usamos type assertion para satisfacer TypeScript
         await crearPermiso(newPermiso as any);
         showSuccessToast('Permiso creado correctamente');  
       }
@@ -198,6 +189,7 @@ const Permisos = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
+      console.error('Error al guardar el permiso:', error);
       showErrorToast('Error al guardar el permiso');
     }
   };
@@ -224,25 +216,26 @@ const Permisos = () => {
   };
 
   const handleEdit = (permiso: Permiso) => {
+    const getModuloId = (m: number | Modulo): string => {
+      if (typeof m === 'object' && m !== null) {
+        return String(m.id_modulo || '');
+      }
+      return String(m || '');
+    };
+
+    const getRolId = (r: number | Rol): string => {
+      if (typeof r === 'object' && r !== null) {
+        return String(r.id_rol || '');
+      }
+      return String(r || '');
+    };
+
     setFormData({
       nombre: permiso.nombre,
-
       modulo_id: Array.isArray(permiso.modulo_id)
-        ? (typeof permiso.modulo_id[0] === 'object' && permiso.modulo_id[0] !== null
-            ? (permiso.modulo_id[0] as Modulo).id_modulo?.toString() ?? ''
-            : permiso.modulo_id[0] != null ? String(permiso.modulo_id[0]) : '')
-        : (typeof permiso.modulo_id === 'object' && permiso.modulo_id !== null
-            ? (permiso.modulo_id as Modulo).id_modulo?.toString() ?? ''
-            : permiso.modulo_id != null ? String(permiso.modulo_id) : ''),
-
-      rol_id: Array.isArray(permiso.rol_id)
-        ? (typeof permiso.rol_id[0] === 'object' && permiso.rol_id[0] !== null
-            ? (permiso.rol_id[0] as Rol).id_rol?.toString() ?? ''
-            : permiso.rol_id[0] != null ? String(permiso.rol_id[0]) : '')
-        : (typeof permiso.rol_id === 'object' && permiso.rol_id !== null
-            ? (permiso.rol_id as Rol).id_rol?.toString() ?? ''
-            : permiso.rol_id != null ? String(permiso.rol_id) : ''),
-            
+        ? permiso.modulo_id.map(getModuloId)
+        : [getModuloId(permiso.modulo_id)],
+      rol_id: getRolId(permiso.rol_id),
       puede_ver: permiso.puede_ver || false,
       puede_crear: permiso.puede_crear || false,
       puede_actualizar: permiso.puede_actualizar || false,
