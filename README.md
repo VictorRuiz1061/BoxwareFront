@@ -124,20 +124,16 @@ src/
 </p>
 
 ---
+## 🤖 RECURSOS ADICIONALES PARA MÁS INFORMACIÓN
 
-## 🤖 RECURSOS ADICIONALES PARA MAS INFORMACIÓN
-
-<div align="center">
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║                    🔗 ENLACES DE REFERENCIA                      ║
-╠══════════════════════════════════════════════════════════════════╣
-║  🤖 Claude AI      │ https://claude.ai/chat/0e0d941e-...        ║
-║  🧠 ChatGPT        │ https://chatgpt.com/c/686af028-...         ║
-║  💡 Copilot        │ https://copilot.microsoft.com/chats/...    ║
-║  🔍 Phind          │ https://www.phind.com/                     ║
-╚══════════════════════════════════════════════════════════════════╝
+| Nombre         | Enlace                                                                 |
+|----------------|------------------------------------------------------------------------|
+| 🤖 [Claude AI](https://claude.ai/)                 | Plataforma de IA de Anthropic       |
+| 🧠 [ChatGPT](https://chat.openai.com/)             | Asistente de OpenAI                |
+| 💡 [Copilot](https://copilot.microsoft.com/chats/) | Asistente de código de Microsoft   |
+| 🔍 [Phind](https://www.phind.com/)                 | Buscador de código e IA            |
+| 🧭 [Gemini](https://gemini.google.com/app?hl=es)   | IA de Google                       |
+| 📚 [Perplexity](https://www.perplexity.ai/)        | Motor de respuestas inteligente    |
 ```
 
 </div>
