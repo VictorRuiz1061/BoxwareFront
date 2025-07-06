@@ -136,12 +136,4 @@ src/
 | 📚 [Perplexity](https://www.perplexity.ai/)        | Motor de respuestas inteligente    |
 ```
 
-</div>
 
-<p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=14&duration=1500&pause=2000&color=00FF41&center=true&vCenter=true&width=400&lines=Sistema+BoxwareFront+Activo;Conexión+Segura+Establecida;Todos+los+Módulos+Online;Listo+para+Operaciones" alt="Final Status" />
-</p>
-
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=60&section=footer" width="100%"/>
-</div>
