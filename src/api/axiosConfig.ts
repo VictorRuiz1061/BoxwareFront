@@ -16,7 +16,15 @@ const clearCookie = (key: string) => {
   document.cookie = `${key}=; path=/; max-age=0; samesite=strict`;
 };
 
+// Agregar interceptor para loguear todas las peticiones
 axiosInstance.interceptors.request.use((config) => {
+  console.log('🚀 Petición saliente:', {
+    url: config.url,
+    method: config.method,
+    data: config.data,
+    headers: config.headers
+  });
+  
   const token = getCookie(TOKEN_KEY);
   if (token) config.headers['Authorization'] = `Bearer ${token}`;
   
@@ -26,11 +34,28 @@ axiosInstance.interceptors.request.use((config) => {
   }
   
   return config;
-}, Promise.reject);
+}, error => {
+  console.error('❌ Error en petición:', error);
+  return Promise.reject(error);
+});
 
 axiosInstance.interceptors.response.use(
-  res => res,
+  res => {
+    console.log('✅ Respuesta recibida:', {
+      url: res.config.url,
+      status: res.status,
+      data: res.data
+    });
+    return res;
+  },
   err => {
+    console.error('❌ Error en respuesta:', {
+      url: err.config?.url,
+      status: err.response?.status,
+      data: err.response?.data,
+      message: err.message
+    });
+    
     if (err.response?.status === 401) {
       clearCookie(TOKEN_KEY);
       window.location.href = '/iniciosesion';
