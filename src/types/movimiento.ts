@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-export interface Movimiento {
-  id_movimiento: number;
-  fecha_creacion: string;
-  fecha_modificacion: string;
-  usuario_movimiento_id: number;
-  tipo_movimiento_id: number;
-=======
 import { Material } from "./material";
 import { Usuario } from "./usuario";
 import { Sitio } from "./sitio";
@@ -25,5 +17,4 @@ export interface Movimiento {
   usuario?: Usuario;
   sitio?: Sitio;
   tipo_movimiento_id?: TipoMovimiento;
->>>>>>> main
 }

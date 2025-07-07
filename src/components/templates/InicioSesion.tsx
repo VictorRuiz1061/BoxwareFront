@@ -9,66 +9,27 @@ import { useForgotPassword, useVerifyCode, useResetPassword } from '@/hooks/auth
 import { showSuccessToast, showErrorToast } from '@/components/atomos';
 import axios from '@/api/axiosConfig';
 
-// Componente integrado para recuperación de contraseña
-const PasswordRecoveryFlow = ({ onClose }: { onClose: () => void }) => {
-  const [step, setStep] = useState<'email' | 'code_password'>('email');
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+// Componente simple para la nueva contraseña
+const SimpleResetPasswordForm = ({ 
+  email, 
+  code, 
+  onSuccess, 
+  onCancel 
+}: { 
+  email: string; 
+  code: string; 
+  onSuccess: () => void; 
+  onCancel: () => void; 
+}) => {
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Paso 1: Solicitar código
-  const handleRequestCode = (e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    if (!email) {
-      setError('Por favor, ingresa tu correo electrónico');
-      return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://localhost:3000/recuperar', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    
-    xhr.onload = function() {
-      setIsLoading(false);
-      if (xhr.status >= 200 && xhr.status < 300) {
-        console.log('✅ Código enviado correctamente');
-        showSuccessToast('Se ha enviado un código de verificación a tu correo');
-        setStep('code_password');
-      } else {
-        let errorMsg = 'Error al enviar el código';
-        try {
-          const response = JSON.parse(xhr.responseText);
-          errorMsg = response.message || errorMsg;
-        } catch (e) {}
-        console.error('❌ Error al solicitar código:', xhr.status, xhr.responseText);
-        setError(errorMsg);
-      }
-    };
-    
-    xhr.onerror = function() {
-      setIsLoading(false);
-      console.error('❌ Error de red al solicitar código');
-      setError('Error de conexión. Por favor, intenta nuevamente.');
-    };
-    
-    xhr.send(JSON.stringify({ email }));
-  };
-  
-  // Paso 2: Actualizar contraseña directamente con el código
+  // Función para actualizar la contraseña sin recargar la página
   const handleUpdatePassword = (e: React.MouseEvent) => {
     e.preventDefault();
-    
-    if (!code) {
-      setError('Por favor, ingresa el código de verificación');
-      return;
-    }
+    e.stopPropagation();
     
     if (!newPassword) {
       setError('Por favor, ingresa la nueva contraseña');
@@ -83,161 +44,95 @@ const PasswordRecoveryFlow = ({ onClose }: { onClose: () => void }) => {
     setIsLoading(true);
     setError(null);
     
-    // Usar fetch en lugar de XMLHttpRequest para mayor claridad
-    fetch('http://localhost:3000/restablecer', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email,
-        codigo: code,
-        nuevaContrasena: newPassword
-      })
-    })
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(data => {
-          throw new Error(data.message || 'Error al actualizar la contraseña');
-        });
-      }
-      return response.json();
-    })
-    .then(data => {
-      console.log('✅ Contraseña actualizada correctamente:', data);
-      showSuccessToast('Contraseña actualizada correctamente');
-      onClose();
-    })
-    .catch(error => {
-      console.error('❌ Error:', error);
-      setError(error.message || 'Error al actualizar la contraseña');
-    })
-    .finally(() => {
+    const formData = {
+      email,
+      codigo: code,
+      nuevaContrasena: newPassword
+    };
+    
+    console.log('Enviando datos:', formData);
+    
+    // Usar XMLHttpRequest en lugar de fetch o axios
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'http://localhost:3000/restablecer', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    xhr.onload = function() {
       setIsLoading(false);
-    });
-  };
-  
-  // Renderizar el paso actual
-  const renderStep = () => {
-    switch (step) {
-      case 'email':
-        return (
-          <>
-            <p className="text-sm text-gray-600 mb-4">
-              Ingresa tu correo electrónico y te enviaremos un código de verificación.
-            </p>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="ejemplo@correo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            
-            <button
-              type="button"
-              disabled={isLoading}
-              className={`w-full text-white text-center py-2 px-4 rounded ${isLoading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
-              onClick={handleRequestCode}
-            >
-              {isLoading ? 'Enviando...' : 'Enviar Código'}
-            </button>
-          </>
-        );
-      
-      case 'code_password':
-        return (
-          <>
-            <p className="text-sm text-gray-600 mb-4">
-              Ingresa el código de verificación que enviamos a {email} y tu nueva contraseña.
-            </p>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Código de verificación
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Ingresa el código"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                maxLength={6}
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nueva contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Mínimo 6 caracteres"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-                <div
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? "Ocultar" : "Mostrar"}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                className="flex-1 text-gray-600 text-center py-2 px-4 rounded border hover:bg-gray-100"
-                onClick={() => setStep('email')}
-              >
-                Atrás
-              </button>
-              
-              <button
-                type="button"
-                disabled={isLoading}
-                className={`flex-1 text-white text-center py-2 px-4 rounded ${isLoading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
-                onClick={handleUpdatePassword}
-              >
-                {isLoading ? 'Actualizando...' : 'Actualizar Contraseña'}
-              </button>
-            </div>
-            
-            <button
-              type="button"
-              className="w-full text-blue-600 text-center py-2 text-sm hover:underline mt-2"
-              onClick={handleRequestCode}
-            >
-              Reenviar código
-            </button>
-          </>
-        );
-    }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        console.log('Respuesta del servidor:', xhr.responseText);
+        showSuccessToast('Contraseña actualizada correctamente');
+        onSuccess();
+      } else {
+        let errorMsg = 'Error al actualizar la contraseña';
+        try {
+          const response = JSON.parse(xhr.responseText);
+          errorMsg = response.message || errorMsg;
+        } catch (e) {}
+        console.error('Error en la respuesta:', xhr.status, errorMsg);
+        setError(errorMsg);
+      }
+    };
+    
+    xhr.onerror = function() {
+      setIsLoading(false);
+      console.error('Error de red al enviar la solicitud');
+      setError('Error de conexión. Por favor, intenta nuevamente.');
+    };
+    
+    xhr.send(JSON.stringify(formData));
   };
   
   return (
     <Modal
       isOpen={true}
-      onClose={onClose}
-      title={step === 'email' ? 'Recuperar Contraseña' : 'Nueva Contraseña'}
+      onClose={() => {
+        if (confirm("¿Estás seguro de que quieres cancelar el cambio de contraseña?")) {
+          onCancel();
+        }
+      }}
+      title="Nueva Contraseña"
     >
       <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Ingresa tu nueva contraseña.
+        </p>
+        
         {error && (
           <div className="p-2 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
             {error}
           </div>
         )}
         
-        {renderStep()}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nueva contraseña
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Mínimo 6 caracteres"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <div
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? "Ocultar" : "Mostrar"}
+            </div>
+          </div>
+        </div>
+        
+        <button
+          type="button"
+          disabled={isLoading}
+          className={`w-full text-white text-center py-2 px-4 rounded ${isLoading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+          onClick={handleUpdatePassword}
+        >
+          {isLoading ? 'Actualizando...' : 'Actualizar Contraseña'}
+        </button>
       </div>
     </Modal>
   );
@@ -256,7 +151,12 @@ const InicioSesion = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showVerifyCode, setShowVerifyCode] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const emailRef = useRef<HTMLInputElement>(null);
@@ -303,6 +203,107 @@ const InicioSesion = () => {
       } else {
         showErrorToast('Error al conectar con el servidor');
       }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setSuccess(null);
+    if (!recoveryEmail) {
+      showErrorToast('Por favor, ingresa tu correo electrónico');
+      return;
+    }
+    try {
+      await forgotPassword(recoveryEmail);
+      showSuccessToast('Se ha enviado un código de verificación a tu correo electrónico');
+      setShowForgotPassword(false);
+      setShowVerifyCode(true);
+    } catch (error: any) {
+      if (error?.response?.data?.message && error.response.data.message.toLowerCase().includes('correo')) {
+        showErrorToast('El correo no está registrado');
+      } else {
+        showErrorToast(error.response?.data?.message || 'Error al enviar el código de verificación');
+      }
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    setError(null);
+    setSuccess(null);
+
+    if (!verificationCode) {
+      showErrorToast('Por favor, ingresa el código de verificación');
+      return;
+    }
+
+    try {
+      await verifyCode({ email: recoveryEmail, codigo: verificationCode });
+      showSuccessToast('Código verificado correctamente');
+      setShowVerifyCode(false);
+      setShowResetPassword(true);
+    } catch (error: any) {
+      showErrorToast(error.response?.data?.message || 'Código de verificación inválido');
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setError(null);
+    setSuccess(null);
+
+    if (!newPassword) {
+      showErrorToast('Por favor, ingresa la nueva contraseña');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showErrorToast('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    // Expresión regular más simple que solo requiere al menos 6 caracteres
+    const passwordRegex = /^.{6,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      showErrorToast('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    try {
+      console.log('Intentando restablecer contraseña con:', {
+        email: recoveryEmail,
+        codigo: verificationCode,
+        nuevaContrasena: newPassword
+      });
+      
+      // Usar axios directamente en lugar del hook de mutación
+      const response = await axios.post('/restablecer', {
+        email: recoveryEmail,
+        codigo: verificationCode,
+        nuevaContrasena: newPassword
+      });
+      
+      console.log('Respuesta del servidor:', response.data);
+      
+      showSuccessToast('Contraseña actualizada correctamente');
+      setNewPassword('');
+      setVerificationCode('');
+      setRecoveryEmail('');
+      setEmail('');
+      setPassword('');
+      setShowResetPassword(false);
+      
+      // Mostrar mensaje de éxito y sugerir iniciar sesión
+      setSuccess('Contraseña actualizada correctamente. Ahora puedes iniciar sesión con tu nueva contraseña.');
+      
+    } catch (error: any) {
+      console.error('Error al restablecer contraseña:', error);
+      console.error('Detalles del error:', {
+        message: error.message,
+        response: error.response?.data
+      });
+      
+      const errorMessage = error.response?.data?.message || 
+                         'Error al actualizar la contraseña. Verifica que la contraseña cumpla con los requisitos.';
+      showErrorToast(errorMessage);
     }
   };
 
@@ -393,20 +394,121 @@ const InicioSesion = () => {
                   navigate('/registrarse');
                 }}>Regístrate</a>
               </p>
-              <p className="text-xs text-gray-500">
+              { <p className="text-xs text-gray-500">
                 <a href="#" className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200" onClick={(e) => {
                   e.preventDefault();
-                  setShowPasswordRecovery(true);
+                  setShowForgotPassword(true);
                 }}>¿Olvidaste tu contraseña?</a>
-              </p>
+              </p> }
             </div>
           </div>
         </div>
       </AnimatedContainer>
 
-      {/* Flujo integrado de recuperación de contraseña */}
-      {showPasswordRecovery && (
-        <PasswordRecoveryFlow onClose={() => setShowPasswordRecovery(false)} />
+      {/* Modal de Recuperación de Contraseña */}
+      <Modal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+        title="Recuperar Contraseña"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Ingresa tu correo electrónico y te enviaremos un correo con las instrucciones.
+          </p>
+          {error && (
+            <div className="p-2 text-center text-red-600 text-sm font-medium bg-red-50 rounded-lg border border-red-200">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="p-2 text-center text-green-600 text-sm font-medium bg-green-50 rounded-lg border border-green-200">
+              {success}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="ejemplo@correo.com"
+              value={recoveryEmail}
+              onChange={(e) => setRecoveryEmail(e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
+            onClick={(e) => {
+              e.preventDefault();
+              handleForgotPassword();
+            }}
+          >
+            Enviar Instrucciones
+          </button>
+        </div>
+      </Modal>
+
+      {/* Modal de Verificación de Código */}
+      <Modal
+        isOpen={showVerifyCode}
+        onClose={() => setShowVerifyCode(false)}
+        title="Verificar Código"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Ingresa el código de verificación que enviamos a tu correo electrónico.
+          </p>
+          {error && (
+            <div className="p-2 text-center text-red-600 text-sm font-medium bg-red-50 rounded-lg border border-red-200">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="p-2 text-center text-green-600 text-sm font-medium bg-green-50 rounded-lg border border-green-200">
+              {success}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Código de verificación
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Ingresa el código de 6 dígitos"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              maxLength={6}
+            />
+          </div>
+          <button
+            type="button"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
+            onClick={(e) => {
+              e.preventDefault();
+              handleVerifyCode();
+            }}
+          >
+            Verificar Código
+          </button>
+        </div>
+      </Modal>
+
+      {/* Usar el componente simple para restablecer contraseña */}
+      {showResetPassword && (
+        <SimpleResetPasswordForm 
+          email={recoveryEmail} 
+          code={verificationCode}
+          onSuccess={() => {
+            setShowResetPassword(false);
+            setSuccess('Contraseña actualizada correctamente. Ahora puedes iniciar sesión con tu nueva contraseña.');
+          }}
+          onCancel={() => {
+            setShowResetPassword(false);
+          }}
+        />
       )}
     </div>
   );
