@@ -4,7 +4,7 @@ import { ChevronUp, ChevronDown, Search, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { useTheme } from "../../context/ThemeContext";
 import Toggle from "../atomos/Toggle";
-import Boton from "../atomos/Boton";
+import Botton from "../atomos/Botton";
 
 // Tipo genérico para cualquier estructura de datos
 export type Column<T> = {
@@ -131,11 +131,12 @@ const GlobalTable = <T extends { key: React.Key }>({
         label: accionesLabel,
         render: (item) => (
           <div className="flex gap-2">
-            <Boton
+            <Botton
               onClick={() => onEdit(item)}
-              className="bg-yellow-500 text-white">
+              color="warning"
+              variant="solid" >
               <Pencil size={18} />
-            </Boton>
+            </Botton>
           </div>
         )
       };

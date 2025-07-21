@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getAreas(): Promise<Area[]> {
   const response = await axiosInstance.get("/areas");
-  return extractArrayData<Area>(response, 'getAreas');
+  return extractArrayData<Area>(response);
 }
 
 export function useGetAreas() {

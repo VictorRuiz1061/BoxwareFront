@@ -11,8 +11,8 @@ interface AnimatedContainerProps {
 const AnimatedContainer: React.FC<AnimatedContainerProps> = ({
   children,
   className = '',
-  delay = 0,
-  duration = 500,
+  delay = 400,
+  duration = 800,
   animation = 'slideUp'
 }) => {
   const [isVisible, setIsVisible] = useState(false);

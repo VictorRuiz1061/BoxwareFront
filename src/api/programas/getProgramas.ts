@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getProgramas(): Promise<Programa[]> {
   const response = await axiosInstance.get("/programas");
-  return extractArrayData<Programa>(response, 'getProgramas');
+  return extractArrayData<Programa>(response);
 }
 
 export function useGetProgramas() {

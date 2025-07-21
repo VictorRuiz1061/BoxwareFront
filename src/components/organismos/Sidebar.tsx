@@ -16,6 +16,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { darkMode } = useTheme();
   const { modulos, loading } = useGetModulos();
+
   // Definir un tipo para los elementos del menú
   type MenuItem = {
     icon: JSX.Element;
@@ -209,7 +210,7 @@ const Sidebar = () => {
             onClick={() => setCollapsed(!collapsed)}
             className={`p-2 rounded-md ${darkMode ? 'hover:bg-slate-700 text-emerald-400' : 'hover:bg-gray-100'}`}
           >
-            <Menu size={20} />
+            <Menu size={20} /> 
           </button>
         </div>
 

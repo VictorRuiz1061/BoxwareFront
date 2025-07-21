@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useGetAreas, usePostArea, usePutArea } from '@/hooks/areas';
 import { useGetSedes } from '@/hooks/sedes';
 import type { Area } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { areaSchema } from '@/schemas';
 import Sedes from './Sedes';
@@ -40,32 +40,31 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
 
   const formFieldsCreate: FormField[] = [
     { key: "nombre_area", label: "Nombre del Área", type: "text", required: true },
-    { 
-      key: "id_sede", 
-      label: "Sede", 
-      type: "select", 
-      required: true, 
+    {
+      key: "id_sede",
+      label: "Sede",
+      type: "select",
+      required: true,
       options: sedes.map(s => ({ label: s.nombre_sede, value: s.id_sede })),
       extraButton: {
         icon: "+",
-        onClick: () => setIsSedeModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+        onClick: () => setIsSedeModalOpen(true)
       }
     },
   ];
 
   const formFieldsEdit: FormField[] = [
     { key: "nombre_area", label: "Nombre del Área", type: "text", required: true },
-    { 
-      key: "id_sede", 
-      label: "Sede", 
-      type: "select", 
-      required: true, 
+    {
+      key: "id_sede",
+      label: "Sede",
+      type: "select",
+      required: true,
       options: sedes.map(s => ({ label: s.nombre_sede, value: s.id_sede })),
       extraButton: {
         icon: "+",
         onClick: () => setIsSedeModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+        className: ""
       }
     },
   ];
@@ -77,7 +76,7 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
   const handleSubmit = async (values: Record<string, string>) => {
     try {
       const currentDate = new Date().toISOString();
-      
+
       if (editingId) {
         const updatePayload = {
           id_area: editingId,
@@ -87,7 +86,7 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate,
         };
-        
+
         await actualizarArea(editingId, updatePayload);
         showSuccessToast('Área actualizada con éxito');
       } else {
@@ -118,14 +117,18 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
       const nuevoEstado = !area.estado;
       const updateData = {
         id_area: area.id_area,
-        id_sede: area.id_sede,
-        nombre_area: area.nombre_area,
         estado: nuevoEstado,
-        fecha_creacion: area.fecha_creacion,
         fecha_modificacion: new Date().toISOString()
       };
 
-      await actualizarArea(area.id_area, updateData);
+      // Creamos un nuevo objeto que cumpla con la interfaz Area
+      const areaActualizada: Area = {
+        ...area,
+        estado: nuevoEstado,
+        fecha_modificacion: updateData.fecha_modificacion
+      };
+
+      await actualizarArea(area.id_area, areaActualizada);
       showSuccessToast(`El área fue ${nuevoEstado ? 'activada' : 'desactivada'} correctamente.`);
     } catch (error) {
       showErrorToast("Error al cambiar el estado del área.");
@@ -165,25 +168,16 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
   }
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
-        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-          <h1 className="text-xl font-bold mb-4">Gestión de Áreas</h1>
-        </AnimatedContainer>
-      
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
-          >
-            Crear Nueva Área
-          </Boton>
-        </AnimatedContainer>
+        <h1 className="text-xl font-bold mb-4">Gestión de Áreas</h1>
+
+        <Botton className="mb-4" onClick={handleCreate} texto="Crear Nueva Área"/>
 
         {loading ? (
           <p>Cargando áreas...</p>
         ) : (
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <div className="w-full">
             {createEntityTable({
               columns: columns as Column<any>[],
               data: areas,
@@ -193,59 +187,44 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
                 onEdit: handleEdit
               }
             })}
-          </AnimatedContainer>
-        )}
-
-        {(isModalOpen || isInModal) && (
-          <div className={isInModal ? "" : "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-              <div className={`p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative ${isInModal ? "" : "bg-white dark:bg-gray-800"}`}>
-                {!isInModal && (
-                  <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                    <span className="text-gray-800 font-bold">×</span>
-                  </button>
-                )}
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Área" : "Crear Nueva Área"}
-                </h2>
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
-                  schema={areaSchema}
-                />
-              </div>
-            </AnimatedContainer>  
           </div>
         )}
 
-        {/* Modal para crear sede */}
-        {isSedeModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsSedeModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              {/* 
-                Corregido: eliminamos las props no válidas para evitar el error de tipos.
-                Si necesitas pasar información a Sedes, asegúrate de que acepte esas props en su definición.
-              */}
-              <Sedes />
-            </div>
-          </div>
-        )}
+        {/* Modal para crear/editar área usando el modal global */}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} title={editingId ? "Editar Área" : "Crear Nueva Área"} >
+            
+          <Form
+            fields={editingId ? formFieldsEdit : formFieldsCreate}
+            onSubmit={handleSubmit}
+            buttonText={editingId ? "Actualizar" : "Crear"}
+            initialValues={{
+              ...formData,
+              ...(editingId
+                ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                : { fecha_creacion: new Date().toISOString().split('T')[0] })
+            }}
+            schema={areaSchema} />
+        </Modal>
+
+        {/* Modal para crear sede usando el modal global */}
+        <Modal
+          isOpen={isSedeModalOpen}
+          onClose={() => setIsSedeModalOpen(false)}
+          title="Crear Nueva Sede" >
+
+          <Sedes isInModal={true} onSedeCreated={() => {
+            setIsSedeModalOpen(false);
+          }} />
+
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 
