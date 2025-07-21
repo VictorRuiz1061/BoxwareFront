@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-import { Usuario, NuevoUsuario } from "@/types/usuario";
+import { Usuario } from "@/types/usuario";
 
-export async function postUsuario(data: NuevoUsuario): Promise<Usuario> {
+export async function postUsuario(data: Usuario | FormData): Promise<Usuario> {
   const response = await axiosInstance.post("/usuarios", data);
   return response.data;
 }
@@ -15,4 +15,4 @@ export function usePostUsuario() {
       queryClient.invalidateQueries({ queryKey: ["usuarios"] });
     },
   });
-} 
+}

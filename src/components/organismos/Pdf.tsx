@@ -1,5 +1,5 @@
 import { Page, Text, View, Document, StyleSheet, PDFDownloadLink } from "@react-pdf/renderer";
-import Boton from "../atomos/Boton"; // Asegúrate de que la ruta sea correcta
+import Botton from "../atomos/Botton"; // Asegúrate de que la ruta sea correcta
 
 // Estilos para el PDF
 const styles = StyleSheet.create({
@@ -90,9 +90,9 @@ const Pdf = ({ title, subtitle, data, fileName }: { title: string; subtitle: str
       fileName={fileName}
     >
       {({ loading }) => (
-        <Boton>
+        <Botton>
           {loading ? "Cargando Documento..." : "Descargar PDF"}
-        </Boton>
+        </Botton>
       )}
     </PDFDownloadLink>
   </div>

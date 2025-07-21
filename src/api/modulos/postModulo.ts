@@ -1,17 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-import { Modulo } from "./getModulos";
+import { Modulo } from "@/types/modulo";
 
-export interface NuevoModulo {
-  rutas: string;
-  descripcion_ruta: string;
-  mensaje_cambio: string;
-  fecha_accion: string;
-  estado: boolean;
-  fecha_creacion: string;
-}
-
-export async function postModulo(data: NuevoModulo): Promise<Modulo> {
+export async function postModulo(data: Modulo): Promise<Modulo> {
   const response = await axiosInstance.post("/modulos", data);
   return response.data;
 }

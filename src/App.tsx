@@ -1,18 +1,19 @@
 import { Routes, Route } from "react-router-dom";
-import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from "./context/AuthContext";
+import MainLayout from "./components/layout/MainLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Auth Pages
 import Inicio from "./components/pages/Inicio";
 import InicioSecion from "./components/pages/inicioSesion";
 import Registrarse from "./components/pages/Registrarse";
-import Dashboard from "./components/pages/Dashboar";
+import Dashboard from "./components/pages/Dashboard";
 
 // Administracion Pages
 import Modulos from "./components/pages/Modulos";
 import Usuarios from "./components/pages/Usuarios";
 import Roles from "./components/pages/Roles";
 import Permisos from "./components/pages/Permisos";
-import DetalleUsuario from "./components/pages/DetalleUsuario";
 
 // Inventario Pages
 import Materiales from "./components/pages/Materiales";
@@ -25,45 +26,60 @@ import TiposMovimiento from "./components/pages/TiposMovimiento";
 import Sedes from "./components/pages/Sedes";
 import Centros from "./components/pages/Centros";
 import Municipios from "./components/pages/Municipios";
-import Areas from "./components/pages/area";
+import Areas from "./components/pages/Areas";
 import Sitios from "./components/pages/Sitos";
 import TiposSitio from "./components/pages/TiposSitio";
 
 // Education Pages
 import Programas from "./components/pages/programas";
 import Fichas from "./components/pages/fichas";
-import NotFound from "./components/pages/Not404";
+import NotFound from "./components/templates/Not404";
+import Configuraciones from "@/components/templates/Configuracion";
 
 function App() {
   return (
-    <Routes>
-      {/* Auth Routes */}
+    <AuthProvider>
+      <Routes>
+      {/* Auth Routes - No Layout */}
       <Route path="/" element={<Inicio />} />
       <Route path="/iniciosesion" element={<InicioSecion />} />
       <Route path="/registrarse" element={<Registrarse />} />
-      {/* Rutas protegidas */}
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/modulos" element={<ProtectedRoute><Modulos /></ProtectedRoute>} />
-      <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
-      <Route path="/detalle-usuario/:id?" element={<ProtectedRoute><DetalleUsuario /></ProtectedRoute>} />
-      <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
-      <Route path="/permisos" element={<ProtectedRoute><Permisos /></ProtectedRoute>} />
-      <Route path="/materiales" element={<ProtectedRoute><Materiales /></ProtectedRoute>} />
-      <Route path="/elementos" element={<ProtectedRoute><Elementos /></ProtectedRoute>} />
-      <Route path="/tipo_materiales" element={<ProtectedRoute><TipoMaterial /></ProtectedRoute>} />
-      <Route path="/movimientos" element={<ProtectedRoute><Movimientos /></ProtectedRoute>} />
-      <Route path="/tipos_movimiento" element={<ProtectedRoute><TiposMovimiento /></ProtectedRoute>} />
-      <Route path="/sedes" element={<ProtectedRoute><Sedes /></ProtectedRoute>} />
-      <Route path="/centros" element={<ProtectedRoute><Centros /></ProtectedRoute>} />
-      <Route path="/municipios" element={<ProtectedRoute><Municipios /></ProtectedRoute>} />
-      <Route path="/area" element={<ProtectedRoute><Areas /></ProtectedRoute>} />
-      <Route path="/sitios" element={<ProtectedRoute><Sitios /></ProtectedRoute>} />
-      <Route path="/tipos_sitio" element={<ProtectedRoute><TiposSitio /></ProtectedRoute>} />
-      <Route path="/programas" element={<ProtectedRoute><Programas /></ProtectedRoute>} />
-      <Route path="/fichas" element={<ProtectedRoute><Fichas /></ProtectedRoute>} />
+
+      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Administración */}
+        <Route path="/modulos" element={<Modulos />} />
+        <Route path="/usuarios" element={<Usuarios />} />
+        <Route path="/roles" element={<Roles />} />
+        <Route path="/permisos" element={<Permisos />} />
+        
+        {/* Inventario */}
+        <Route path="/materiales" element={<Materiales />} />
+        <Route path="/elementos" element={<Elementos />} />
+        <Route path="/tipo_materiales" element={<TipoMaterial />} />
+        <Route path="/movimientos" element={<Movimientos />} />
+        <Route path="/tipos_movimiento" element={<TiposMovimiento />} />
+        
+        {/* Ubicaciones */}
+        <Route path="/sedes" element={<Sedes />} />
+        <Route path="/centros" element={<Centros />} />
+        <Route path="/municipios" element={<Municipios />} />
+        <Route path="/area" element={<Areas />} />
+        <Route path="/sitios" element={<Sitios />} />
+        <Route path="/tipos_sitio" element={<TiposSitio />} />
+        
+        {/* Educación */}
+        <Route path="/programas" element={<Programas />} />
+        <Route path="/fichas" element={<Fichas />} />
+        <Route path="/configuraciones" element={<Configuraciones />} />
+      </Route>
+       
       {/* Ruta 404 */}
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </AuthProvider>
   );
 }
 
