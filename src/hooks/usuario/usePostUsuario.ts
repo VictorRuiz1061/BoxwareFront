@@ -1,5 +1,5 @@
-import { usePostUsuario as useApiPostUsuario } from "@/api/usuario/postUsuario";
-import { Usuario } from "@/types/usuario";
+import { usePostUsuario as useApiPostUsuario } from "@/api/usuario";
+import { Usuario } from "@/types";
 
 export function usePostUsuario() {
   const post = useApiPostUsuario();

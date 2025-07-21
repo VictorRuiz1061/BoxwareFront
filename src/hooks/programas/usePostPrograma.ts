@@ -1,5 +1,5 @@
-import { usePostPrograma as useApiPostPrograma } from "@/api/programas/postPrograma";
-import { Programa } from "@/types/programa";
+import { usePostPrograma as useApiPostPrograma } from "@/api/programas";
+import { Programa } from "@/types";
 
 export function usePostPrograma() {
   const post = useApiPostPrograma();

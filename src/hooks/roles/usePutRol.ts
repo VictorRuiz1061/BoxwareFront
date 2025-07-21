@@ -1,5 +1,5 @@
-import { usePutRol as useApiPutRol } from "@/api/rol/putRol";
-import { Rol } from "@/types/rol";
+import { usePutRol as useApiPutRol } from "@/api/rol";
+import { Rol } from "@/types";
 
 export function usePutRol() {
   const put = useApiPutRol();

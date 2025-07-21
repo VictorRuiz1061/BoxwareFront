@@ -1,5 +1,5 @@
-import { usePutTipoSitio as useApiPutTipoSitio } from "@/api/tipoSitio/putTipoSitio";
-import { TipoSitio } from "@/types/tipoSitio";
+import { usePutTipoSitio as useApiPutTipoSitio } from "@/api/tipoSitio";
+import { TipoSitio } from "@/types";
 
 export function usePutTipoSitio() {
   const put = useApiPutTipoSitio();

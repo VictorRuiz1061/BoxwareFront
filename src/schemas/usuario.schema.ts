@@ -36,7 +36,7 @@ export const usuarioSchema = z.object({
 export const usuarioEditSchema = z.object({
   ...usuarioBaseSchema,
   contrasena: z.string()
-    .min(6, 'La contraseña debe tener al menos 6 caracteres')
+    .min(4, 'La contraseña debe tener al menos 4 caracteres')
     .max(32, 'La contraseña no puede tener más de 32 caracteres')
     .optional(),
 });

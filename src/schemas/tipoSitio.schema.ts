@@ -5,8 +5,10 @@ export const tipoSitioSchema = z.object({
     .min(3, 'El nombre del tipo de sitio debe tener al menos 3 caracteres')
     .max(50, 'El nombre del tipo de sitio no puede tener más de 50 caracteres'),
   fecha_creacion: z.string()
-    .refine(val => !isNaN(Date.parse(val)), { message: 'La fecha de creación debe ser una fecha válida' }),
+    .refine(val => !isNaN(Date.parse(val)), { message: 'La fecha de creación debe ser una fecha válida' })
+    .optional(),
   fecha_modificacion: z.string()
-    .refine(val => !isNaN(Date.parse(val)), { message: 'La fecha de modificación debe ser una fecha válida' }),
+    .refine(val => !isNaN(Date.parse(val)), { message: 'La fecha de modificación debe ser una fecha válida' })
+    .optional(),
   estado: z.boolean().optional(),
 });

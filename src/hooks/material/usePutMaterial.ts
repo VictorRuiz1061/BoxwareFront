@@ -1,5 +1,5 @@
-import { usePutMaterial as useApiPutMaterial } from '@/api/materiales/putMateriales';
-import { Material } from '@/types/material';
+import { usePutMaterial as useApiPutMaterial } from '@/api/materiales';
+import { Material } from '@/types';
 
 export function usePutMaterial() {
   const put = useApiPutMaterial();

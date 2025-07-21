@@ -1,4 +1,4 @@
-import { useGetRoles as useApiGetRoles } from "@/api/rol/getRoles";
+import { useGetRoles as useApiGetRoles } from "@/api/rol";
 
 export function useGetRoles() {
   const { data: roles = [], isLoading: loading } = useApiGetRoles();

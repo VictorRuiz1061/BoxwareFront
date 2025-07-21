@@ -1,6 +1,7 @@
-import { useGetModulos as useApiGetModulos } from "@/api/modulos/getModulos";
+import { useGetModulos as useApiGetModulos } from "@/api/modulos";
 
 export function useGetModulos() {
-  const { data: modulos = [], isLoading: loading } = useApiGetModulos();
+  const { data, isLoading: loading } = useApiGetModulos();
+  const modulos = Array.isArray(data) ? data : [];
   return { modulos, loading };
-} 
+}

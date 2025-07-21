@@ -1,5 +1,7 @@
 import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./components/layout/MainLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Auth Pages
 import Inicio from "./components/pages/Inicio";
@@ -31,30 +33,19 @@ import TiposSitio from "./components/pages/TiposSitio";
 // Education Pages
 import Programas from "./components/pages/programas";
 import Fichas from "./components/pages/fichas";
-import NotFound from "./components/pages/Not404";
-
-// Informes Pages
-import Informes from "./components/pages/Informes";
-import MaterialesPorUsuario from "./components/pages/informes/MaterialesPorUsuario";
-import InventarioPorSedeArea from "./components/pages/informes/InventarioPorSedeArea";
-import MovimientosHistoricos from "./components/pages/informes/MovimientosHistoricos";
-import MaterialesStockMinimo from "./components/pages/informes/MaterialesStockMinimo";
-import MaterialesMasUtilizados from "./components/pages/informes/MaterialesMasUtilizados";
-import UsuariosConMasMateriales from "./components/pages/informes/UsuariosConMasMateriales";
-import EstadoInventario from "./components/pages/informes/EstadoInventario";
-import TransferenciasSedes from "./components/pages/informes/TransferenciasSedes";
-import HistorialPorUsuario from "./components/pages/informes/HistorialPorUsuario";
-import MaterialesBaja from "./components/pages/informes/MaterialesBaja";
+import NotFound from "./components/templates/Not404";
+import Configuraciones from "@/components/templates/Configuracion";
 
 function App() {
   return (
-    <Routes>
+    <AuthProvider>
+      <Routes>
       {/* Auth Routes - No Layout */}
       <Route path="/" element={<Inicio />} />
       <Route path="/iniciosesion" element={<InicioSecion />} />
       <Route path="/registrarse" element={<Registrarse />} />
 
-      <Route element={<MainLayout />}>
+      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         {/* Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
         
@@ -81,23 +72,14 @@ function App() {
         
         {/* Educación */}
         <Route path="/programas" element={<Programas />} />
-        <Route path="/fichas" element={<Fichas />} />        
-        <Route path="/informes" element={<Informes />} />
-        <Route path="/informes/materiales-por-usuario" element={<MaterialesPorUsuario />} />
-        <Route path="/informes/inventario-por-sede-area" element={<InventarioPorSedeArea />} />
-        <Route path="/informes/movimientos-historicos" element={<MovimientosHistoricos />} />
-        <Route path="/informes/materiales-stock-minimo" element={<MaterialesStockMinimo />} />
-        <Route path="/informes/materiales-mas-utilizados" element={<MaterialesMasUtilizados />} />
-        <Route path="/informes/usuarios-con-mas-materiales" element={<UsuariosConMasMateriales />} />
-        <Route path="/informes/estado-inventario" element={<EstadoInventario />} />
-        <Route path="/informes/transferencias-sedes" element={<TransferenciasSedes />} />
-        <Route path="/informes/historial-por-usuario" element={<HistorialPorUsuario />} />
-        <Route path="/informes/materiales-baja" element={<MaterialesBaja />} />
+        <Route path="/fichas" element={<Fichas />} />
+        <Route path="/configuraciones" element={<Configuraciones />} />
       </Route>
        
       {/* Ruta 404 */}
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </AuthProvider>
   );
 }
 

@@ -1,93 +1,52 @@
 import axios from 'axios';
+const TOKEN_KEY = 'token';
 
-export function getTokenFromCookie() {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; token=`);
-  if (parts.length === 2) {
-    const result = parts.pop()?.split(';').shift();
-    // console.log('[getTokenFromCookie] Token leído de las cookies');
-    return result || null;
-  }
-  console.log('[getTokenFromCookie] No se encontró token en cookies');
-  return null;
-}
-
-export function getToken() {
-  // Try to get token from cookie first
-  const cookieToken = getTokenFromCookie();
-  if (cookieToken) {
-    // console.log('[getToken] Token encontrado en cookies');
-    return cookieToken;
-  }
-  
-  // Fallback to localStorage if not in cookie
-  const localToken = localStorage.getItem('token');
-  if (localToken) {
-    // console.log('[getToken] Token encontrado en localStorage');
-    // Store the token in a cookie for future use
-    document.cookie = `token=${localToken}; path=/; max-age=86400; samesite=strict`;
-    return localToken;
-  }
-  
-  // console.log('[getToken] No se encontró token en ninguna fuente');
-  return null;
-}
+// Usar la variable de entorno para la URL base, con fallback a localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000/',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: API_URL,
+  // Removemos el Content-Type por defecto para que axios lo maneje automáticamente
 });
 
-// Add a request interceptor to include the JWT token in all requests
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-      // console.log('[axios] Token agregado a los headers:', config.url);
-    } else {
-      // console.warn('[axios] No hay token disponible para:', config.url);
-    }
-    
-    // Log the request payload for debugging
-    if (config.data) {
-      // console.log('[axios] Request payload:', config.data);
-    }
-    
-    return config;
-  },
-  (error) => {
-    // console.error('[axios] Error en interceptor de request:', error);
-    return Promise.reject(error);
-  }
-);
+const getCookie = (key: string): string | null => {
+  const match = document.cookie.match(new RegExp(`(^| )${key}=([^;]+)`));
+  return match ? match[2] : null;
+};
 
-// Add a response interceptor to handle common errors
+const clearCookie = (key: string) => {
+  document.cookie = `${key}=; path=/; max-age=0; samesite=strict`;
+};
+
+// Agregar interceptor para loguear todas las peticiones
+axiosInstance.interceptors.request.use((config) => {
+
+  
+  const token = getCookie(TOKEN_KEY);
+  if (token) config.headers['Authorization'] = `Bearer ${token}`;
+  
+  // Solo establecer Content-Type como application/json si no es FormData
+  if (!(config.data instanceof FormData)) {
+    config.headers['Content-Type'] = 'application/json';
+  }
+  
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
+
 axiosInstance.interceptors.response.use(
-  (response) => {
-    // console.log('[axios] Respuesta exitosa:', response.config.url, response.status);
-    return response;
+  res => {
+    return res;
   },
-  (error) => {
-    // console.error('[axios] Error en respuesta:', error.response?.status, error.message);
+  err => {
     
-    if (error.response?.data) {
-      // console.error('[axios] Detalles del error:', error.response.data);
-    }
     
-    if (error.response?.status === 401) {
-      // console.warn('[axios] Unauthorized access - token may be invalid or expired');
-      // Eliminar token de cookie (prioridad)
-      document.cookie = 'token=; path=/; max-age=0; samesite=strict';
-      document.cookie = 'token=; max-age=0; samesite=strict';
-      
-      // Redirigir al usuario a la página de inicio de sesión
+    if (err.response?.status === 401) {
+      clearCookie(TOKEN_KEY);
       window.location.href = '/iniciosesion';
     }
-    
-    return Promise.reject(error);
+    return Promise.reject(err);
   }
 );
 

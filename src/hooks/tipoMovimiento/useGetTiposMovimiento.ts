@@ -1,4 +1,4 @@
-import { useGetTiposMovimiento as useApiGetTiposMovimiento } from "@/api/tipoMovimiento/getTiposMovimiento";
+import { useGetTiposMovimiento as useApiGetTiposMovimiento } from "@/api/tipoMovimiento";
 
 
 export function useGetTiposMovimiento() {

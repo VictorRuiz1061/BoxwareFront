@@ -1,5 +1,5 @@
-import { usePutMunicipio as useApiPutMunicipio } from "@/api/municipios/putMunicipio";
-import { Municipio } from "@/types/municipio";
+import { usePutMunicipio as useApiPutMunicipio } from "@/api/municipios";
+import { Municipio } from "@/types";
 
 export function usePutMunicipio() {
   const put = useApiPutMunicipio();

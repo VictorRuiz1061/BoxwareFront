@@ -1,5 +1,5 @@
-import { usePostTipoSitio as useApiPostTipoSitio } from "@/api/tipoSitio/postTipoSitio";
-import { TipoSitio } from "@/types/tipoSitio";
+import { usePostTipoSitio as useApiPostTipoSitio } from "@/api/tipoSitio";
+import { TipoSitio } from "@/types";
 
 export function usePostTipoSitio() {
   const post = useApiPostTipoSitio();

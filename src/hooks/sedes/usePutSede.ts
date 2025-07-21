@@ -1,5 +1,5 @@
-import { usePutSede as useApiPutSede } from "@/api/sedes/putSede";
-import { Sede } from "@/types/sede";
+import { usePutSede as useApiPutSede } from "@/api/sedes";
+import { Sede } from "@/types";
 
 export function usePutSede() {
   const put = useApiPutSede();

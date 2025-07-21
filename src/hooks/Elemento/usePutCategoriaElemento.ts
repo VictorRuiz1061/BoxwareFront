@@ -1,5 +1,5 @@
-import { usePutCategoriaElemento as useApiPutCategoriaElemento } from "@/api/Elemento/putCategoriaElemento";
-import { CategoriaElemento } from "@/types/categoriaElemento";
+import { usePutCategoriaElemento as useApiPutCategoriaElemento } from "@/api/Elemento";
+import { CategoriaElemento } from "@/types/Elemento";
 
 export function usePutCategoriaElemento() {
   const put = useApiPutCategoriaElemento();

@@ -1,5 +1,5 @@
-import { usePutPrograma as useApiPutPrograma } from "@/api/programas/putPrograma";
-import { Programa } from "@/types/programa";
+import { usePutPrograma as useApiPutPrograma } from "@/api/programas";
+import { Programa } from "@/types";
 
 export function usePutPrograma() {
   const put = useApiPutPrograma();

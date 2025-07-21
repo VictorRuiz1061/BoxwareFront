@@ -1,25 +1,38 @@
-import { useState, Fragment } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useState, Fragment, useEffect } from "react";
+import { useLocation, Link } from "react-router-dom";
 import { Home, Users, Shield, Key, Box, Package, Boxes, RefreshCw, RotateCw,
   Building, Landmark, MapPin, Layout, Map, MapPinned, BookOpen, GraduationCap, Menu, LogOut,
-  ChevronRight, BarChart, FileText, PieChart, TrendingUp } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
+  ChevronRight, BarChart, FileText, PieChart, TrendingUp, Settings } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 import { Dialog, Transition } from "@headlessui/react";
+import { useGetModulos } from "@/hooks/modulos";
+import { useAuth } from "@/hooks/auth";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const navigate = useNavigate();
+  // navigate ya no es necesario aquí porque usamos el hook useLogoutAuth
   const location = useLocation();
   const { darkMode } = useTheme();
+  const { modulos, loading } = useGetModulos();
 
+  // Definir un tipo para los elementos del menú
+  type MenuItem = {
+    icon: JSX.Element;
+    label: string;
+    path?: string;
+    items?: MenuItem[];
+    standalone?: boolean;
+  };
+  
+  const [dynamicMenuGroups, setDynamicMenuGroups] = useState<MenuItem[]>([]);
+
+  // Usar el hook de logout para asegurar que se limpien todas las credenciales
+  const { logoutUser } = useAuth();
+  
   const handleLogout = () => {
-    localStorage.removeItem("auth-token");
-    // Eliminar la cookie del token
-    document.cookie = "token=; path=/; max-age=0; samesite=strict";
-    document.cookie = "token=; max-age=0; samesite=strict";
-    navigate("/");
+    logoutUser();
   };
 
   const confirmLogout = () => {
@@ -27,12 +40,12 @@ const Sidebar = () => {
   };
 
   // Función para verificar si un elemento está activo
-  const isActive = (path: string) => {
+  const checkActive = (path: string): boolean => {
     return location.pathname === path;
   };
 
   // Función para verificar si algún elemento de un grupo está activo
-  const isGroupActive = (items: any[] | undefined) => {
+  const isGroupActive = (items: MenuItem[] | undefined): boolean => {
     return items
       ? items.some((item) => location.pathname === item.path)
       : false;
@@ -46,129 +59,143 @@ const Sidebar = () => {
     );
   };
 
-  const menuGroups = [
+  // Función para obtener el ícono según la URL de la imagen
+  const getIconComponent = (moduloImagen: string) => {
+    // Mapeo de nombres de iconos a componentes
+    const iconMap: Record<string, JSX.Element> = {
+      'home': <Home size={20} />,
+      'users': <Users size={20} />,
+      'shield': <Shield size={20} />,
+      'key': <Key size={20} />,
+      'box': <Box size={20} />,
+      'package': <Package size={20} />,
+      'boxes': <Boxes size={20} />,
+      'refresh-cw': <RefreshCw size={20} />,
+      'rotate-cw': <RotateCw size={20} />,
+      'building': <Building size={20} />,
+      'landmark': <Landmark size={20} />,
+      'map-pin': <MapPin size={20} />,
+      'layout': <Layout size={20} />,
+      'map': <Map size={20} />,
+      'map-pinned': <MapPinned size={20} />,
+      'book-open': <BookOpen size={20} />,
+      'graduation-cap': <GraduationCap size={20} />,
+      'bar-chart': <BarChart size={20} />,
+      'file-text': <FileText size={20} />,
+      'pie-chart': <PieChart size={20} />,
+      'trending-up': <TrendingUp size={20} />,
+      'settings': <Settings size={20} />
+    };
+    
+    // Si la imagen coincide con un nombre de icono, devolver el componente
+    if (moduloImagen && iconMap[moduloImagen.toLowerCase()]) {
+      return iconMap[moduloImagen.toLowerCase()];
+    }
+    
+    // Icono por defecto
+    return <Settings size={20} />;
+  };
+  
+  // Función para organizar los módulos en estructura jerárquica
+  const organizarModulos = (): MenuItem[] => {
+    // Verificar que modulos sea un array
+    if (!modulos || !Array.isArray(modulos) || modulos.length === 0) {
+      return [];
+    }
+    
+    // Primero, separamos los módulos principales y los submódulos
+    const modulosPrincipales = modulos.filter(m => !m.es_submenu && m.estado);
+    const submodulos = modulos.filter(m => m.es_submenu && m.estado);
+    
+    // Creamos la estructura para el menú
+    const menuItems: MenuItem[] = [
+      {
+        icon: <Home size={20} />,
+        label: "Inicio",
+        path: "/dashboard",
+        standalone: true,
+      }
+    ];
+    
+    // Agregamos los módulos principales con sus submódulos
+    modulosPrincipales.forEach(modulo => {
+      const moduloItems = submodulos
+        .filter(sub => sub.modulo_padre_id === modulo.id_modulo)
+        .map(sub => ({
+          icon: getIconComponent(sub.imagen),
+          label: sub.descripcion_ruta,
+          path: sub.rutas,
+        }));
+      
+      const menuItem: MenuItem = {
+        icon: getIconComponent(modulo.imagen),
+        label: modulo.descripcion_ruta,
+        items: moduloItems.length > 0 ? moduloItems : undefined,
+        path: moduloItems.length === 0 ? modulo.rutas : undefined,
+        standalone: moduloItems.length === 0
+      };
+      
+      menuItems.push(menuItem);
+    });
+    
+    return menuItems;
+  };
+  
+  // Actualizar el menú cuando cambien los módulos
+  useEffect(() => {
+    if (!loading) {
+      const menuItems = organizarModulos();
+      setDynamicMenuGroups(menuItems);
+    }
+  }, [modulos, loading]);
+  
+  // Menú estático de respaldo (se usa mientras se cargan los módulos)
+  const staticMenuGroups: MenuItem[] = [
     {
       icon: <Home size={20} />,
       label: "Inicio",
       path: "/dashboard",
       standalone: true,
     },
-    {
-      icon: <Users size={20} />,
-      label: "Administración",
-      items: [
-        { icon: <Users size={20} />, label: "Modulos", path: "/modulos" },
-        { icon: <Users size={20} />, label: "Usuarios", path: "/usuarios" },
-        { icon: <Shield size={20} />, label: "Roles", path: "/roles" },
-        { icon: <Key size={20} />, label: "Permisos", path: "/permisos" },
-      ],
-    },
-    {
-      icon: <Box size={20} />,
-      label: "Inventario",
-      items: [
-        { icon: <Box size={20} />, label: "Materiales", path: "/materiales" },
-        { icon: <Package size={20} />, label: "Elementos", path: "/elementos" },
-        {
-          icon: <Boxes size={20} />,
-          label: "Tipo Materiales",
-          path: "/tipo_materiales",
-        },
-        {
-          icon: <RefreshCw size={20} />,
-          label: "Movimientos",
-          path: "/movimientos",
-        },
-        {
-          icon: <RotateCw size={20} />,
-          label: "Tipos Movimiento",
-          path: "/tipos_movimiento",
-        },
-      ],
-    },
-    {
-      icon: <Building size={20} />,
-      label: "Ubicaciones",
-      items: [
-        { icon: <Building size={20} />, label: "Sedes", path: "/sedes" },
-        { icon: <Landmark size={20} />, label: "Centros", path: "/centros" },
-        {
-          icon: <MapPin size={20} />,
-          label: "Municipios",
-          path: "/municipios",
-        },
-        { icon: <Layout size={20} />, label: "Áreas", path: "/area" },
-        { icon: <Map size={20} />, label: "Sitios", path: "/sitios" },
-        {
-          icon: <MapPinned size={20} />,
-          label: "Tipos Sitio",
-          path: "/tipos_sitio",
-        },
-      ],
-    },
-    {
-      icon: <BookOpen size={20} />,
-      label: "Educación",
-      items: [
-        {
-          icon: <BookOpen size={20} />,
-          label: "Programas",
-          path: "/programas",
-        },
-        { icon: <GraduationCap size={20} />, label: "Fichas", path: "/fichas" },
-      ],
-    },
-    {
-      icon: <BarChart size={20} />,
-      label: "Informes",
-      items: [
-        {
-          icon: <BarChart size={20} />,
-          label: "Todos los Informes",
-          path: "/informes",
-        },
-        {
-          icon: <TrendingUp size={20} />,
-          label: "Movimientos Históricos",
-          path: "/informes/movimientos-historicos",
-        },
-        {
-          icon: <BarChart size={20} />,
-          label: "Materiales Más Utilizados",
-          path: "/informes/materiales-mas-utilizados",
-        },
-        {
-          icon: <PieChart size={20} />,
-          label: "Estado Inventario",
-          path: "/informes/estado-inventario",
-        },
-        {
-          icon: <BarChart size={20} />,
-          label: "Materiales Stock Mínimo",
-          path: "/informes/materiales-stock-minimo",
-        },
-        {
-          icon: <FileText size={20} />,
-          label: "Inventario por Sede/Área",
-          path: "/informes/inventario-por-sede-area",
-        },
-        {
-          icon: <FileText size={20} />,
-          label: "Transferencias entre Sedes",
-          path: "/informes/transferencias-sedes",
-        },
-        {
-          icon: <FileText size={20} />,
-          label: "Historial por Usuario",
-          path: "/informes/historial-por-usuario",
-        },
-        {
-          icon: <FileText size={20} />,
-          label: "Materiales de Baja",
-          path: "/informes/materiales-baja",
-        },
-      ],
-    },
+    //       path: "/informes/movimientos-historicos",
+    //     },
+    //     {
+    //       icon: <BarChart size={20} />,
+    //       label: "Materiales Más Utilizados",
+    //       path: "/informes/materiales-mas-utilizados",
+    //     },
+    //     {
+    //       icon: <PieChart size={20} />,
+    //       label: "Estado Inventario",
+    //       path: "/informes/estado-inventario",
+    //     },
+    //     {
+    //       icon: <BarChart size={20} />,
+    //       label: "Materiales Stock Mínimo",
+    //       path: "/informes/materiales-stock-minimo",
+    //     },
+    //     {
+    //       icon: <FileText size={20} />,
+    //       label: "Inventario por Sede/Área",
+    //       path: "/informes/inventario-por-sede-area",
+    //     },
+    //     {
+    //       icon: <FileText size={20} />,
+    //       label: "Transferencias entre Sedes",
+    //       path: "/informes/transferencias-sedes",
+    //     },
+    //     {
+    //       icon: <FileText size={20} />,
+    //       label: "Historial por Usuario",
+    //       path: "/informes/historial-por-usuario",
+    //     },
+    //     {
+    //       icon: <FileText size={20} />,
+    //       label: "Materiales de Baja",
+    //       path: "/informes/materiales-baja",
+    //     },
+    //   ],
+    // },
   ];
 
   return (
@@ -183,73 +210,85 @@ const Sidebar = () => {
             onClick={() => setCollapsed(!collapsed)}
             className={`p-2 rounded-md ${darkMode ? 'hover:bg-slate-700 text-emerald-400' : 'hover:bg-gray-100'}`}
           >
-            <Menu size={20} />
+            <Menu size={20} /> 
           </button>
         </div>
 
         {/* Menú de navegación */}
         <div className="flex-1 overflow-y-auto py-2">
-          {menuGroups.map((group, index) => (
-            <div key={index} className="mb-1">
-              {group.standalone ? (
-                <a
-                  href={group.path}
-                  className={`flex items-center px-4 py-3 ${isActive(group.path) 
-                    ? `${darkMode ? 'bg-emerald-700 text-white' : 'bg-blue-500 text-black'}` 
-                    : `${darkMode ? 'hover:bg-slate-700 text-emerald-300 hover:text-emerald-200' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
-                  } hover:pl-5 transition-all duration-300 rounded-md cursor-pointer font-medium ${darkMode ? 'bg-slate-800/60' : 'bg-white'}`}
-                >
-                  <div className="mr-3">{group.icon}</div>
-                  {!collapsed && <span>{group.label}</span>}
-                </a>
-              ) : (
-                <div className="mb-1">
-                  {/* Cabecera del grupo */}
-                  <div
-                    onClick={() => !collapsed && toggleGroup(group.label)}
-                    className={`flex items-center px-4 py-3 ${isGroupActive(group.items) 
-                      ? `${darkMode ? 'bg-emerald-700 text-white' : 'bg-blue-500 text-black'}` 
-                      : `${darkMode ? 'hover:bg-slate-700 text-emerald-300 hover:text-emerald-200' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
-                    } hover:pl-5 transition-all duration-300 rounded-md cursor-pointer font-medium ${darkMode ? 'bg-slate-800/60' : 'bg-white'}`}
+          {(dynamicMenuGroups.length > 0 ? dynamicMenuGroups : staticMenuGroups).map((group, index) => {
+            const isActiveItem = group.standalone
+              ? checkActive(group.path || "")
+              : isGroupActive(group.items as MenuItem[]);
+            const isExpanded = expandedGroups.includes(group.label);
+
+            return (
+              <div key={index}>
+                {group.standalone ? (
+                  <Link
+                    to={group.path || ""}
+                    className={`flex items-center px-3 py-2 ${isActiveItem
+                      ? darkMode
+                        ? "bg-slate-700 text-emerald-400"
+                        : "bg-gray-200 text-blue-600"
+                      : darkMode
+                        ? "text-white hover:text-emerald-400 hover:bg-slate-700"
+                        : "text-black hover:text-blue-600 hover:bg-gray-200"
+                      } transition-colors duration-300 cursor-pointer rounded-md font-medium`}
                   >
                     <div className="mr-3">{group.icon}</div>
-                    {!collapsed && (
-                      <>
-                        <span className="flex-grow">{group.label}</span>
-                        <ChevronRight
-                          size={20}
-                          className={`transition-transform duration-300 ${
-                            expandedGroups.includes(group.label)
-                              ? "rotate-90"
-                              : ""
-                          }`}
-                        />
-                      </>
-                    )}
-                  </div>
-
-                  {/* Submenú con animación */}
-                  <div
-                    className={`pl-4 ${darkMode ? 'bg-slate-800/40' : 'bg-white'} transition-all duration-300 ease-in-out overflow-hidden ${expandedGroups.includes(group.label) ? "max-h-96" : "max-h-0"}`}
-                  >
-                    {group.items?.map((item, itemIndex) => (
-                      <div key={itemIndex} className="w-full">
-                        <Link to={item.path}
-                          className={`flex items-center px-4 py-2 ${isActive(item.path) 
-                            ? `${darkMode ? 'bg-emerald-700 text-white' : 'bg-blue-500 text-black'}` 
-                            : `${darkMode ? 'hover:bg-slate-700 text-emerald-300 hover:text-emerald-200' : 'hover:bg-gray-400 text-black hover:text-blue-600'}`
-                          } transition-colors duration-300 rounded-md cursor-pointer font-medium`}
-                        >
-                          <div className="mr-3">{item.icon}</div>
-                          <span>{item.label}</span>
-                        </Link>
+                    {!collapsed && <span>{group.label}</span>}
+                  </Link>
+                ) : (
+                  <>
+                    <div
+                      className={`flex items-center justify-between px-3 py-2 ${isActiveItem || isExpanded
+                        ? darkMode
+                          ? "bg-slate-700 text-emerald-400"
+                          : "bg-gray-200 text-blue-600"
+                        : darkMode
+                          ? "text-white hover:text-emerald-400 hover:bg-slate-700"
+                          : "text-black hover:text-blue-600 hover:bg-gray-200"
+                        } transition-colors duration-300 cursor-pointer rounded-md font-medium`}
+                      onClick={() => toggleGroup(group.label)}
+                    >
+                      <div className="flex items-center">
+                        <div className="mr-3">{group.icon}</div>
+                        {!collapsed && <span>{group.label}</span>}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+                      {!collapsed && (
+                        <ChevronRight
+                          size={16}
+                          className={`transform transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                        />
+                      )}
+                    </div>
+                    {isExpanded && !collapsed && (
+                      <div className="pl-4 mt-1 space-y-1">
+                        {(group.items as MenuItem[])?.map((item: MenuItem, itemIndex: number) => (
+                          <Link
+                            key={itemIndex}
+                            to={item.path || ""}
+                            className={`flex items-center px-3 py-2 ${checkActive(item.path || "")
+                              ? darkMode
+                                ? "bg-slate-700 text-emerald-400"
+                                : "bg-gray-200 text-blue-600"
+                              : darkMode
+                                ? "text-white hover:text-emerald-400 hover:bg-slate-700"
+                                : "text-black hover:text-blue-600 hover:bg-gray-200"
+                              } transition-colors duration-300 cursor-pointer rounded-md`}
+                          >
+                            <div className="mr-3">{item.icon}</div>
+                            <span>{item.label}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Botón de cerrar sesión */}

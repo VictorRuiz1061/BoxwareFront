@@ -1,5 +1,5 @@
-import { usePostModulo as useApiPostModulo } from "@/api/modulos/postModulo";
-import { Modulo } from "@/types/modulo";
+import { usePostModulo as useApiPostModulo } from "@/api/modulos";
+import { Modulo } from "@/types";
 
 export function usePostModulo() {
   const post = useApiPostModulo();

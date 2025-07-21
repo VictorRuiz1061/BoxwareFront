@@ -4,14 +4,12 @@ import { z } from 'zod';
 const baseSchema = {
     nombre_material: z.string().min(1, 'El nombre del material es requerido'),
     descripcion_material: z.string().min(1, 'La descripción del material es requerida'),
-    stock: z.string().min(1, 'El stock debe ser mayor o igual a 0'),
     unidad_medida: z.string().min(1, 'La unidad de medida es requerida'),
     imagen: z.string().optional(),
     producto_perecedero: z.string().optional(),
     fecha_vencimiento: z.string().optional(),
     categoria_id: z.string().min(1, 'La categoría es requerida'),
-    tipo_material_id: z.string().min(1, 'El tipo de material es requerido'),
-    sitio_id: z.string().min(1, 'El sitio es requerido')
+    tipo_material_id: z.string().min(1, 'El tipo de material es requerido')
 };
 
 // Schema para creación (incluye código SENA)
@@ -29,9 +27,7 @@ export const materialEditSchema = z.object({
 export const materialSchema = z.object({
     ...baseSchema,
     codigo_sena: z.string().optional(),
-    estado: z.boolean().optional(),
-    fecha_creacion: z.string().optional(),
-    fecha_modificacion: z.string().optional()
+    estado: z.boolean().optional()
 })
 
 export type MaterialSchema = z.infer<typeof materialSchema>

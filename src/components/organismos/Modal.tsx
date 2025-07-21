@@ -2,15 +2,17 @@ import React, { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useTheme } from '../../context/ThemeContext';
 import { X } from 'lucide-react';
+import { Botton } from '../atomos';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  maxWidth?: string; // Ejemplo: 'max-w-md', 'max-w-2xl'
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, maxWidth }) => {
   const { darkMode } = useTheme();
   return (
     <Transition.Root show={isOpen} as={Fragment}>
@@ -29,17 +31,17 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             leaveTo="opacity-0 scale-95"
           >
             <Dialog.Panel 
-              className={`w-full max-w-md transform overflow-hidden rounded-lg p-6 text-left align-middle shadow-xl transition-all ${darkMode ? 'bg-gradient-to-b from-indigo-950 to-gray-900 text-white border border-indigo-800' : 'bg-white text-gray-900'}`}
+              className={`w-full ${maxWidth || 'max-w-2xl'} transform overflow-hidden rounded-lg p-6 text-left align-middle shadow-xl transition-all ${darkMode ? 'bg-gradient-to-b from-indigo-950 to-gray-900 text-white border border-indigo-800' : 'bg-white text-gray-900'}`}
             >
               {/* Botón de cerrar */}
               <div className="absolute top-3 right-3">
-                <button
-                  type="button"
-                  className={`rounded-full p-1 focus:outline-none ${darkMode ? 'text-indigo-400 hover:text-purple-300' : 'text-gray-400 hover:text-gray-900'}`}
+                  <Botton
+                    variant="light"
+                    className={`rounded-full p-1 focus:outline-none ${darkMode ? 'text-indigo-400 hover:text-purple-300' : 'text-gray-400 hover:text-gray-900'}`}
                   onClick={onClose}
                 >
                   <X size={20} />
-                </button>
+                </Botton>
               </div>
               
               {/* Título */}

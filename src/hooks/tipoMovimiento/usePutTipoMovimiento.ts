@@ -1,5 +1,5 @@
-import { usePutTipoMovimiento as useApiPutTipoMovimiento } from "@/api/tipoMovimiento/putTipoMovimiento";
-import { TipoMovimiento } from "@/types/tipoMovimiento";
+import { usePutTipoMovimiento as useApiPutTipoMovimiento } from "@/api/tipoMovimiento";
+import { TipoMovimiento } from "@/types";
 
 export function usePutTipoMovimiento() {
   const put = useApiPutTipoMovimiento();

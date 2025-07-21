@@ -1,4 +1,4 @@
-import { useGetCategoriasElementos as useApiGetCategoriasElementos } from "@/api/Elemento/getCategoriasElementos";
+import { useGetCategoriasElementos as useApiGetCategoriasElementos } from "@/api/Elemento";
 
 export function useGetCategoriasElementos() {
   const { data: categorias = [], isLoading: loading } = useApiGetCategoriasElementos();

@@ -12,7 +12,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   return (
     <motion.button
       onClick={toggleDarkMode}
-      className={`relative p-2 rounded-full ${darkMode ? 'bg-blue-900/30' : 'bg-yellow-500/20'} ${className}`}
+      className={`relative p-2 rounded-full ${darkMode ? 'bg-blue-900/10' : 'bg-yellow-500/0'} ${className}`}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       transition={{ type: 'spring', stiffness: 400, damping: 17 }}

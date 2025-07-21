@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-import { Sede } from "@/types/sede";
+import { Sede } from "@/types";
 
 export async function postSede(data: Sede): Promise<Sede> {
     const response = await axiosInstance.post("/sedes", data);

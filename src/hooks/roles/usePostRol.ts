@@ -1,5 +1,5 @@
-import { usePostRol as useApiPostRol } from "@/api/rol/postRol";
-import { Rol } from "@/types/rol";
+import { usePostRol as useApiPostRol } from "@/api/rol";
+import { Rol } from "@/types";
 
 export function usePostRol() {
   const post = useApiPostRol();

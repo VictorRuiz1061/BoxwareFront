@@ -1,4 +1,4 @@
-import { usePostArea as useApiPostArea } from "@/api/areas/postArea";
+import { usePostArea as useApiPostArea } from "@/api/areas";
 import { Area } from "@/types/area";
 
 export function usePostArea() {

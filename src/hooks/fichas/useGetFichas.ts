@@ -1,4 +1,4 @@
-import { useGetFichas as useApiGetFichas } from "@/api/fichas/getFichas";
+import { useGetFichas as useApiGetFichas } from "@/api/fichas";
 
 export function useGetFichas() {
   const { data: fichas = [], isLoading: loading } = useApiGetFichas();

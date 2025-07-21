@@ -1,5 +1,5 @@
-import { usePostSede as useApiPostSede } from "@/api/sedes/postSede";
-import { Sede } from "@/types/sede";
+import { usePostSede as useApiPostSede } from "@/api/sedes";
+import { Sede } from "@/types";
 
 export function usePostSede() {
   const post = useApiPostSede();

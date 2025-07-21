@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from '@/api/axiosConfig';
 import { Movimiento } from '@/types/movimiento';
+import { extractArrayData } from '@/utils/responseHandler';
 
 export async function getMovimientos(): Promise<Movimiento[]> {
   const response = await axiosInstance.get("/movimientos");
-  return response.data;
+  return extractArrayData<Movimiento>(response);
 };
 
 export function useGetMovimientos() {

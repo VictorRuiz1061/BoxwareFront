@@ -1,5 +1,5 @@
-import { usePostTipoMovimiento as useApiPostTipoMovimiento } from "@/api/tipoMovimiento/postTipoMovimiento";
-import { TipoMovimiento } from "@/types/tipoMovimiento";
+import { usePostTipoMovimiento as useApiPostTipoMovimiento } from "@/api/tipoMovimiento";
+import { TipoMovimiento } from "@/types";
 
 export function usePostTipoMovimiento() {
   const post = useApiPostTipoMovimiento();

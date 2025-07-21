@@ -1,5 +1,5 @@
-import { usePostCategoriaElemento as useApiPostCategoriaElemento } from "@/api/Elemento/postCategoriaElemento";
-import { CategoriaElemento } from "@/types/categoriaElemento";
+import { usePostCategoriaElemento as useApiPostCategoriaElemento } from "@/api/Elemento";
+import { CategoriaElemento } from "@/types/Elemento";
 
 export function usePostCategoriaElemento() {
   const post = useApiPostCategoriaElemento();

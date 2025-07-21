@@ -1,4 +1,4 @@
-import { usePutCentro as useApiPutCentro } from "@/api/centros/putCentro";
+import { usePutCentro as useApiPutCentro } from "@/api/centros";
 import { Centro } from "@/types/centro";
 
 export function usePutCentro() {

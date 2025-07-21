@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
-import { CategoriaElemento } from "@/types/categoriaElemento";
+import { CategoriaElemento } from "@/types/Elemento";
 
 export async function putCategoriaElemento(data: Partial<CategoriaElemento> & { id: number }): Promise<CategoriaElemento> {
   const response = await axiosInstance.put(`/categoria-elementos/${data.id}`, data);

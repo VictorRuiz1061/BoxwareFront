@@ -1,5 +1,5 @@
-import { usePostPermiso as useApiPostPermiso } from "@/api/permisos/postPermiso";
-import { Permiso } from "@/types/permiso";
+import { usePostPermiso as useApiPostPermiso } from "@/api/permisos";
+import { Permiso } from "@/types";
 
 export function usePostPermiso() {
   const post = useApiPostPermiso();

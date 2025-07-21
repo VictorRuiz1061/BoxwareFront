@@ -1,5 +1,5 @@
-import { usePostMunicipio as useApiPostMunicipio } from "@/api/municipios/postMunicipio";
-import { Municipio } from "@/types/municipio";
+import { usePostMunicipio as useApiPostMunicipio } from "@/api/municipios";
+import { Municipio } from "@/types";
 
 export function usePostMunicipio() {
   const post = useApiPostMunicipio();

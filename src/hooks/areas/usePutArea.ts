@@ -1,4 +1,4 @@
-import { usePutArea as useApiPutArea } from "@/api/areas/putArea";
+import { usePutArea as useApiPutArea } from "@/api/areas";
 import { Area } from "@/types/area";
 
 export function usePutArea() {
