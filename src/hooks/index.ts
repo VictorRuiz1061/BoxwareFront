@@ -3,7 +3,6 @@
 // Export all hook modules
 export * from './areas';
 export * from './auth';
-export * from './caracteristicas';
 export * from './centros';
 export * from './Elemento';
 export * from './fichas';
@@ -20,3 +19,7 @@ export * from './tipoMaterial';
 export * from './tipoMovimiento';
 export * from './tipoSitio';
 export * from './usuario';
+
+// Export utility hooks
+export * from './useEntityManager';
+export * from './useImageUpload';

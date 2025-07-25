@@ -6,9 +6,11 @@ import { hasValidToken } from '@/api/auth/token';
 interface AuthContextType {
   authState: AuthState;
   setUser: (user: UserAuth | null) => void;
+  
   setIsAuthenticated: (value: boolean) => void;
   logout: () => void;
 }
+
 
 // Crear el contexto con un valor inicial
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

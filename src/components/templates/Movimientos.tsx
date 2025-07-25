@@ -5,8 +5,8 @@ import { useGetMateriales } from '@/hooks/material';
 import { useGetTiposMovimiento } from '@/hooks/tipoMovimiento';
 import { useGetSitios } from '@/hooks/sitio';
 import type { Movimiento } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { movimientoSchema } from '@/schemas';
 import Materiales from "./Materiales";
@@ -29,6 +29,7 @@ const Movimientos = () => {
   const [isUsuarioModalOpen, setIsUsuarioModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [textoBoton] = useState();
 
   // Log the first movimiento object to see its structure
   if (movimientos && movimientos.length > 0) {
@@ -70,18 +71,43 @@ const Movimientos = () => {
       }
     },
     {
-      key: "sitio",
-      label: "Sitio",
+      key: "sitio_origen_id",
+      label: "Sitio Origen",
       filterable: true,
       render: (movimiento) => {
-        if (movimiento.sitio && movimiento.sitio.nombre_sitio) {
-          return movimiento.sitio.nombre_sitio;
+        if (movimiento.sitio_origen_id) {
+          const sitio = sitios.find(s => s.id_sitio === movimiento.sitio_origen_id);
+          return sitio ? sitio.nombre_sitio : 'No disponible';
         }
         return 'No disponible';
       }
     },
+    {
+      key: "sitio_destino_id",
+      label: "Sitio Destino",
+      filterable: true,
+      render: (movimiento) => {
+        if (movimiento.sitio_destino_id) {
+          const sitio = sitios.find(s => s.id_sitio === movimiento.sitio_destino_id);
+          return sitio ? sitio.nombre_sitio : 'No disponible';
+        }
+        return 'No disponible';
+      }
+    },
+    {
+      key: "responsable_id",
+      label: "Responsable",
+      filterable: true,
+      render: (movimiento) => {
+        if (movimiento.responsable_id) {
+          const usuario = usuarios.find(u => u.id_usuario === movimiento.responsable_id);
+          return usuario ? `${usuario.nombre} ${usuario.apellido}` : 'No disponible';
+        }
+        return 'No asignado';
+      }
+    },
+    { key: "observaciones", label: "Observaciones", filterable: true },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
-    { key: "fecha_modificacion", label: "Fecha de Modificación", filterable: true },
   ];
 
   const formFieldsCreate: FormField[] = [
@@ -93,7 +119,7 @@ const Movimientos = () => {
       className: "col-span-1"
     },
     {
-      key: "usuario",
+      key: "usuario_id",
       label: "Usuario",
       type: "select",
       required: true,
@@ -102,12 +128,11 @@ const Movimientos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsUsuarioModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
     {
-      key: "sitio",
-      label: "Sitio",
+      key: "sitio_origen_id",
+      label: "Sitio Origen",
       type: "select",
       required: true,
       className: "col-span-1",
@@ -115,7 +140,18 @@ const Movimientos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsSitioModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
+    },
+    {
+      key: "sitio_destino_id",
+      label: "Sitio Destino",
+      type: "select",
+      required: true,
+      className: "col-span-1",
+      options: sitios.map(s => ({ value: s.id_sitio, label: s.nombre_sitio })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsSitioModalOpen(true),
       }
     },
     {
@@ -128,11 +164,10 @@ const Movimientos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsTipoMovimientoModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
     {
-      key: "material",
+      key: "material_id",
       label: "Material",
       type: "select",
       required: true,
@@ -141,8 +176,25 @@ const Movimientos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsMaterialModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
+    },
+    {
+      key: "responsable_id",
+      label: "Responsable",
+      type: "select",
+      required: false,
+      className: "col-span-1",
+      options: [
+        { value: "", label: "Seleccione un responsable (opcional)" },
+        ...usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` }))
+      ],
+    },
+    {
+      key: "observaciones",
+      label: "Observaciones",
+      type: "text",
+      required: false,
+      className: "col-span-2",
     },
   ];
 
@@ -155,7 +207,7 @@ const Movimientos = () => {
       className: "col-span-1"
     },
     {
-      key: "usuario",
+      key: "usuario_id",
       label: "Usuario",
       type: "select",
       required: true,
@@ -164,12 +216,11 @@ const Movimientos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsUsuarioModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
     {
-      key: "sitio",
-      label: "Sitio",
+      key: "sitio_origen_id",
+      label: "Sitio Origen",
       type: "select",
       required: true,
       className: "col-span-1",
@@ -177,7 +228,18 @@ const Movimientos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsSitioModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
+    },
+    {
+      key: "sitio_destino_id",
+      label: "Sitio Destino",
+      type: "select",
+      required: true,
+      className: "col-span-1",
+      options: sitios.map(s => ({ value: s.id_sitio, label: s.nombre_sitio })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsSitioModalOpen(true),
       }
     },
     {
@@ -190,11 +252,10 @@ const Movimientos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsTipoMovimientoModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
     {
-      key: "material",
+      key: "material_id",
       label: "Material",
       type: "select",
       required: true,
@@ -203,23 +264,43 @@ const Movimientos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsMaterialModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
+    },
+    {
+      key: "responsable_id",
+      label: "Responsable",
+      type: "select",
+      required: false,
+      className: "col-span-1",
+      options: [
+        { value: "", label: "Seleccione un responsable (opcional)" },
+        ...usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` }))
+      ],
+    },
+    {
+      key: "observaciones",
+      label: "Observaciones",
+      type: "text",
+      required: false,
+      className: "col-span-2",
     },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
       // Convertir ids a números
-      const usuario_id = parseInt(values.usuario);
-      const sitio_id = parseInt(values.sitio);
+      const usuario_id = parseInt(values.usuario_id);
+      const sitio_origen_id = parseInt(values.sitio_origen_id);
+      const sitio_destino_id = parseInt(values.sitio_destino_id);
       const tipo_movimiento = parseInt(values.tipo_movimiento);
-      const material_id = parseInt(values.material);
-      const cantidad = values.cantidad;
-      
+      const material_id = parseInt(values.material_id);
+      const cantidad = parseInt(values.cantidad);
+      const responsable_id = values.responsable_id ? parseInt(values.responsable_id) : undefined;
+      const observaciones = values.observaciones || '';
+
       // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
-      
+
       if (editingId) {
         // Actualizar movimiento existente
         const original = movimientos.find(m => m.id_movimiento === editingId);
@@ -230,30 +311,36 @@ const Movimientos = () => {
         const updatePayload = {
           id_movimiento: editingId,
           usuario_id,
-          sitio_id,
+          sitio_origen_id,
+          sitio_destino_id,
           tipo_movimiento,
           material_id,
-          cantidad: parseInt(cantidad),
-          estado: true,
+          cantidad,
+          responsable_id,
+          observaciones,
+          estado: 1,
           fecha_creacion: original.fecha_creacion || currentDate,
           fecha_modificacion: currentDate,
         } as Movimiento;
-        
+
         await actualizarMovimiento(editingId, updatePayload);
         showSuccessToast('Movimiento actualizado con éxito');
       } else {
         // Crear nuevo movimiento
         const createPayload = {
           usuario_id,
-          sitio_id,
+          usuario_movimiento_id: usuario_id,
+          sitio_origen_id,
+          sitio_destino_id,
           tipo_movimiento,
           material_id,
-          cantidad: parseInt(cantidad),
-          estado: true,
+          cantidad,
+          responsable_id,
+          observaciones,
+          estado: 1,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
         } as Movimiento;
-
         await crearMovimiento(createPayload);
         showSuccessToast('Movimiento creado con éxito');
       }
@@ -261,7 +348,6 @@ const Movimientos = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el movimiento:', error);
       showErrorToast('Error al guardar el movimiento');
     }
   };
@@ -271,20 +357,22 @@ const Movimientos = () => {
       const updateData = {
         id_movimiento: movimiento.id_movimiento,
         usuario_id: movimiento.usuario_id,
-        sitio_id: movimiento.sitio_id,
+        sitio_origen_id: movimiento.sitio_origen_id,
+        sitio_destino_id: movimiento.sitio_destino_id,
         tipo_movimiento: movimiento.tipo_movimiento,
         material_id: movimiento.material_id,
         cantidad: movimiento.cantidad,
-        estado: !movimiento.estado,
+        responsable_id: movimiento.responsable_id,
+        observaciones: movimiento.observaciones,
+        estado: movimiento.estado === true || movimiento.estado === 1 ? 0 : 1,
         fecha_modificacion: new Date().toISOString()
       } as Movimiento;
 
       if (movimiento.id_movimiento) {
         await actualizarMovimiento(movimiento.id_movimiento, updateData);
-        showSuccessToast(`El movimiento fue ${!movimiento.estado ? 'activado' : 'desactivado'} correctamente.`);
+        showSuccessToast(`El movimiento fue ${movimiento.estado === true || movimiento.estado === 1 ? 'desactivado' : 'activado'} correctamente.`);
       }
     } catch (error) {
-      console.error('Error:', error);
       showErrorToast("Error al cambiar el estado del movimiento.");
     }
   };
@@ -297,42 +385,38 @@ const Movimientos = () => {
 
   const handleEdit = (movimiento: Movimiento) => {
     if (!movimiento.id_movimiento) return;
-    
+
     const formValues = {
-      usuario: movimiento.usuario_id.toString(),
-      sitio: movimiento.sitio_id.toString(),
+      usuario_id: movimiento.usuario_id.toString(),
+      sitio_origen_id: movimiento.sitio_origen_id.toString(),
+      sitio_destino_id: movimiento.sitio_destino_id.toString(),
       tipo_movimiento: movimiento.tipo_movimiento.toString(),
-      material: movimiento.material_id.toString(),
-      cantidad: movimiento.cantidad.toString()
+      material_id: movimiento.material_id.toString(),
+      cantidad: movimiento.cantidad.toString(),
+      responsable_id: movimiento.responsable_id?.toString() || '',
+      observaciones: movimiento.observaciones || ''
     };
-    
+
     setFormData(formValues);
     setEditingId(movimiento.id_movimiento);
     setIsModalOpen(true);
   };
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
-        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-          <h1 className="text-xl font-bold mb-4">Gestión de Movimientos</h1>
-        </AnimatedContainer>
-      
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mb-4 rounded-md"
-          >
-            Crear Nuevo Movimiento
-          </Boton>
-        </AnimatedContainer>
+        <h1 className="text-xl font-bold mb-4">Gestión de Movimientos</h1>
+
+        <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Movimiento">
+          {textoBoton}
+        </Botton>
 
         {loading ? (
           <div className="flex justify-center items-center py-8">
             <p className="text-gray-500">Cargando movimientos...</p>
           </div>
         ) : (
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <div className="w-full">
             {createEntityTable({
               columns: columns as Column<any>[],
               data: movimientos,
@@ -342,116 +426,83 @@ const Movimientos = () => {
                 onEdit: handleEdit
               }
             })}
-          </AnimatedContainer>
-        )}
-
-        {/* Modal principal para crear/editar movimiento */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-4xl">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Movimiento" : "Crear Nuevo Movimiento"}
-                </h2>
-                
-                <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
-                  <Form
-                    fields={editingId ? formFieldsEdit : formFieldsCreate}
-                    onSubmit={handleSubmit}
-                    buttonText={editingId ? "Actualizar" : "Crear"}
-                    initialValues={{
-                      ...formData,
-                      ...(editingId 
-                        ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                        : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                    }}
-                    schema={movimientoSchema}
-                  />
-                </div>
-              </div>
-            </AnimatedContainer>  
-          </div> 
-        )}
-
-        {/* Modal para crear material */}
-        {isMaterialModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-4xl relative">
-              <button 
-                onClick={() => setIsMaterialModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <Materiales isInModal={true} onMaterialCreated={() => {
-                setIsMaterialModalOpen(false);
-              }} />
-            </div>
           </div>
         )}
 
-        {/* Modal para crear tipo de movimiento */}
-        {isTipoMovimientoModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsTipoMovimientoModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <TipoMaterial isInModal={true} onTipoMaterialCreated={() => {
-                setIsTipoMovimientoModalOpen(false);
-              }} />
-            </div>
+        {/* Modal principal para crear/editar movimiento usando el modal global */}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }}
+          title={editingId ? "Editar Movimiento" : "Crear Nuevo Movimiento"}
+        >
+          <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+            <Form
+              fields={editingId ? formFieldsEdit : formFieldsCreate}
+              onSubmit={handleSubmit}
+              buttonText={editingId ? "Actualizar" : "Crear"}
+              initialValues={{
+                ...formData,
+                ...(editingId
+                  ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                  : { fecha_creacion: new Date().toISOString().split('T')[0] })
+              }}
+              schema={movimientoSchema}
+            />
           </div>
-        )}
+        </Modal>
 
-        {/* Modal para crear sitio */}
-        {isSitioModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsSitioModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <Sitio 
-                isInModal={true} 
-                onSitioCreated={() => {
-                  setIsSitioModalOpen(false);
-                }}
-              />
-            </div>
-          </div>
-        )}
+        {/* Modal para crear material usando el modal global */}
+        <Modal
+          isOpen={isMaterialModalOpen}
+          onClose={() => setIsMaterialModalOpen(false)}
+          title="Crear Nuevo Material"
+        >
+          <Materiales isInModal={true} onMaterialCreated={() => {
+            setIsMaterialModalOpen(false);
+          }} />
+        </Modal>
 
-        {/* Modal para crear usuario */}
-        {isUsuarioModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-4xl relative">
-              <button 
-                onClick={() => setIsUsuarioModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <UsuarioForm onUsuarioCreated={() => {
-                setIsUsuarioModalOpen(false);
-              }} />
-            </div>
-          </div>
-        )}
+        {/* Modal para crear tipo de movimiento usando el modal global */}
+        <Modal
+          isOpen={isTipoMovimientoModalOpen}
+          onClose={() => setIsTipoMovimientoModalOpen(false)}
+          title="Crear Nuevo Tipo de Movimiento"
+        >
+          <TipoMaterial isInModal={true} onTipoMaterialCreated={() => {
+            setIsTipoMovimientoModalOpen(false);
+          }} />
+        </Modal>
+
+        {/* Modal para crear sitio usando el modal global */}
+        <Modal
+          isOpen={isSitioModalOpen}
+          onClose={() => setIsSitioModalOpen(false)}
+          title="Crear Nuevo Sitio"
+        >
+          <Sitio
+            isInModal={true}
+            onSitioCreated={() => {
+              setIsSitioModalOpen(false);
+            }}
+          />
+        </Modal>
+
+        {/* Modal para crear usuario usando el modal global */}
+        <Modal
+          isOpen={isUsuarioModalOpen}
+          onClose={() => setIsUsuarioModalOpen(false)}
+          title="Crear Nuevo Usuario"
+        >
+          <UsuarioForm onUsuarioCreated={() => {
+            setIsUsuarioModalOpen(false);
+          }} />
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

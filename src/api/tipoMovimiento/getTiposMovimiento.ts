@@ -5,7 +5,7 @@ import { extractArrayData } from '@/utils/responseHandler';
 
 export async function getTiposMovimiento(): Promise<TipoMovimiento[]> {
   const response = await axiosInstance.get("/tipos-movimientos");
-  return extractArrayData<TipoMovimiento>(response, 'getTiposMovimiento');
+  return extractArrayData<TipoMovimiento>(response);
 }
 
 export function useGetTiposMovimiento() {

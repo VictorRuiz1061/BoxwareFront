@@ -1,5 +1,5 @@
 import { usePostCentro as useApiPostCentro } from "@/api/centros";
-import { Centro } from "@/types/centro";
+import { Centro } from "@/types";
 
 export function usePostCentro() {
   const post = useApiPostCentro();

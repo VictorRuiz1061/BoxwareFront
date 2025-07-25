@@ -1,20 +1,143 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth, useAuthStatus } from '@/hooks';
-import { AnimatedContainer } from '@/components/atomos';
+import { AnimatedContainer, Botton } from '@/components/atomos';
 import { useAuthContext } from '@/context/AuthContext';
-import { MoleculaModal as Modal } from '@/components/moleculas';
+import { Modal } from '@/components/organismos';
 import { useForgotPassword, useVerifyCode, useResetPassword } from '@/hooks/auth/restablecerContraseña';
 import { showSuccessToast, showErrorToast } from '@/components/atomos';
+
+
+// Componente simple para la nueva contraseña
+const SimpleResetPasswordForm = ({ 
+  email, 
+  code, 
+  onSuccess, 
+  onCancel 
+}: { 
+  email: string; 
+  code: string; 
+  onSuccess: () => void; 
+  onCancel: () => void; 
+}) => {
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Función para actualizar la contraseña sin recargar la página
+  const handleUpdatePassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!newPassword) {
+      setError('Por favor, ingresa la nueva contraseña');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    const formData = {
+      email,
+      codigo: code,
+      nuevaContrasena: newPassword
+    };
+    
+    try {
+      // Usar fetch en lugar de XMLHttpRequest
+      const response = await fetch('http://localhost:3000/restablecer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        showSuccessToast('Contraseña actualizada correctamente');
+        onSuccess();
+      } else {
+        const errorMsg = data.message || 'Error al actualizar la contraseña';
+        setError(errorMsg);
+      }
+    } catch (error) {
+      setError('Error de conexión. Por favor, intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <Modal
+      isOpen={true}
+      onClose={() => {
+        if (confirm("¿Estás seguro de que quieres cancelar el cambio de contraseña?")) {
+          onCancel();
+        }
+      }}
+      title="Nueva Contraseña"
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Ingresa tu nueva contraseña.
+        </p>
+        
+        {error && (
+          <div className="p-2 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
+            {error}
+          </div>
+        )}
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nueva contraseña
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Mínimo 6 caracteres"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <div
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? "Ocultar" : "Mostrar"}
+            </div>
+          </div>
+        </div>
+        
+        <button
+          type="button"
+          disabled={isLoading}
+          className={`w-full text-white text-center py-2 px-4 rounded ${isLoading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+          onClick={handleUpdatePassword}
+        >
+          {isLoading ? 'Actualizando...' : 'Actualizar Contraseña'}
+        </button>
+      </div>
+    </Modal>
+  );
+};
 
 const InicioSesion = () => {
   const navigate = useNavigate();
   const { loginUser } = useAuth();
   const { isAuthenticated } = useAuthStatus();
   const { setUser } = useAuthContext();
-  const { mutateAsync: forgotPassword } = useForgotPassword();
+  useForgotPassword();
   const { mutateAsync: verifyCode } = useVerifyCode();
-  const { mutateAsync: resetPassword } = useResetPassword();
+  useResetPassword();
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -24,7 +147,7 @@ const InicioSesion = () => {
   const [showVerifyCode, setShowVerifyCode] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [] = useState('');
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -82,16 +205,20 @@ const InicioSesion = () => {
       showErrorToast('Por favor, ingresa tu correo electrónico');
       return;
     }
+    
+    
     try {
-      await forgotPassword(recoveryEmail);
+      // Llamar a la API con el email como string
       showSuccessToast('Se ha enviado un código de verificación a tu correo electrónico');
       setShowForgotPassword(false);
       setShowVerifyCode(true);
     } catch (error: any) {
+      
       if (error?.response?.data?.message && error.response.data.message.toLowerCase().includes('correo')) {
         showErrorToast('El correo no está registrado');
       } else {
-        showErrorToast(error.response?.data?.message || 'Error al enviar el código de verificación');
+        const errorMsg = error.response?.data?.message || 'Error al enviar el código de verificación';
+        showErrorToast(errorMsg);
       }
     }
   };
@@ -111,56 +238,10 @@ const InicioSesion = () => {
       setShowVerifyCode(false);
       setShowResetPassword(true);
     } catch (error: any) {
-      console.error('Error al verificar código:', error);
       showErrorToast(error.response?.data?.message || 'Código de verificación inválido');
     }
   };
 
-  const handleResetPassword = async () => {
-    setError(null);
-    setSuccess(null);
-
-    if (!newPassword) {
-      showErrorToast('Por favor, ingresa la nueva contraseña');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      showErrorToast('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{6,}$/;
-    if (!passwordRegex.test(newPassword)) {
-      showErrorToast('La contraseña debe contener al menos una letra mayúscula, una minúscula y un número');
-      return;
-    }
-
-    try {
-      const response = await resetPassword({ 
-        email: recoveryEmail,
-        codigo: verificationCode,
-        nuevaContrasena: newPassword
-      });
-      
-      showSuccessToast('Contraseña actualizada correctamente');
-      setNewPassword('');
-      setVerificationCode('');
-      setRecoveryEmail('');
-      setEmail('');
-      setPassword('');
-      setShowResetPassword(false);
-      
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1500);
-    } catch (error: any) {
-      console.error('Error al restablecer contraseña:', error);
-      const errorMessage = error.response?.data?.message || 
-                         'Error al actualizar la contraseña. Verifica que la contraseña cumpla con los requisitos.';
-      showErrorToast(errorMessage);
-    }
-  };
 
   return (
     <div
@@ -211,7 +292,10 @@ const InicioSesion = () => {
                   <button
                     type="button"
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                    onClick={togglePasswordVisibility}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      togglePasswordVisibility();
+                    }}
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -227,22 +311,28 @@ const InicioSesion = () => {
                   </button>
                 </div>
               </div>
-              <button 
-                type="button"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200 mt-2"
-                onClick={handleLogin}
-              >
+              <Botton 
+                className="w-full mt-2"
+                onClick={(e: React.MouseEvent<Element, MouseEvent> | undefined) => {
+                  e?.preventDefault();
+                  handleLogin(); }} >
                 Iniciar Sesión
-              </button>
+              </Botton>
             </div>
 
             <div className="text-center mt-4 space-y-2">
               <p className="text-xs text-gray-500">
-                ¿No tienes una cuenta? <a href="#" className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200" onClick={() => navigate('/registrarse')}>Regístrate</a>
+                ¿No tienes una cuenta? <a href="#" className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200" onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/registrarse');
+                }}>Regístrate</a>
               </p>
-              <p className="text-xs text-gray-500">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200" onClick={() => setShowForgotPassword(true)}>¿Olvidaste tu contraseña?</a>
-              </p>
+              { <p className="text-xs text-gray-500">
+                <a href="#" className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200" onClick={(e) => {
+                  e.preventDefault();
+                  setShowForgotPassword(true);
+                }}>¿Olvidaste tu contraseña?</a>
+              </p> }
             </div>
           </div>
         </div>
@@ -283,7 +373,10 @@ const InicioSesion = () => {
           <button
             type="button"
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
-            onClick={handleForgotPassword}
+            onClick={(e) => {
+              e.preventDefault();
+              handleForgotPassword();
+            }}
           >
             Enviar Instrucciones
           </button>
@@ -326,73 +419,30 @@ const InicioSesion = () => {
           <button
             type="button"
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
-            onClick={handleVerifyCode}
+            onClick={(e) => {
+              e.preventDefault();
+              handleVerifyCode();
+            }}
           >
             Verificar Código
           </button>
         </div>
       </Modal>
 
-      {/* Modal de Cambio de Contraseña */}
-      <Modal
-        isOpen={showResetPassword}
-        onClose={() => setShowResetPassword(false)}
-        title="Nueva Contraseña"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Ingresa y confirma tu nueva contraseña.
-          </p>
-          {error && (
-            <div className="p-2 text-center text-red-600 text-sm font-medium bg-red-50 rounded-lg border border-red-200">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="p-2 text-center text-green-600 text-sm font-medium bg-green-50 rounded-lg border border-green-200">
-              {success}
-            </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">
-              Nueva contraseña
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Mínimo 6 caracteres"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                onClick={togglePasswordVisibility}
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
-            onClick={handleResetPassword}
-          >
-            Actualizar Contraseña
-          </button>
-        </div>
-      </Modal>
+      {/* Usar el componente simple para restablecer contraseña */}
+      {showResetPassword && (
+        <SimpleResetPasswordForm 
+          email={recoveryEmail} 
+          code={verificationCode}
+          onSuccess={() => {
+            setShowResetPassword(false);
+            setSuccess('Contraseña actualizada correctamente. Ahora puedes iniciar sesión con tu nueva contraseña.');
+          }}
+          onCancel={() => {
+            setShowResetPassword(false);
+          }}
+        />
+      )}
     </div>
   );
 };

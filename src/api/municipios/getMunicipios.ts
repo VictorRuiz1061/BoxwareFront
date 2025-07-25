@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getMunicipios(): Promise<Municipio[]> {
   const response = await axiosInstance.get("/municipios");
-  return extractArrayData<Municipio>(response, 'getMunicipios');
+  return extractArrayData<Municipio>(response);
 }
 
 export function useGetMunicipios() {

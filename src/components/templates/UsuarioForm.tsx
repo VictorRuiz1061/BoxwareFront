@@ -73,7 +73,13 @@ const UsuarioForm = ({ onUsuarioCreated }: UsuarioFormProps) => {
         rol_id: parseInt(values.rol_id)
       };
 
-      await crearUsuario(createPayload);
+      // Ajustar el payload para que rol_id sea un array de números, como espera el backend
+      const payloadAjustado = {
+        ...createPayload,
+        rol_id: [createPayload.rol_id]
+      };
+
+      await crearUsuario(payloadAjustado);
       showSuccessToast('Usuario creado con éxito');
       
       if (onUsuarioCreated) {

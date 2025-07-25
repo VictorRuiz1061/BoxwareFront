@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getCentros(): Promise<Centro[]> {
   const response = await axiosInstance.get("/centros");
-  return extractArrayData<Centro>(response, 'getCentros');
+  return extractArrayData<Centro>(response);
 }
 
 export function useGetCentros() {

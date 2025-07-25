@@ -3,7 +3,16 @@ import { forgotPassword, verifyCode, resetPassword } from '@/api/auth/restablece
 
 export const useForgotPassword = () => {
     const forgotPasswordMutation = useMutation({
-      mutationFn: forgotPassword,
+      mutationFn: (email: string) => {
+        console.log('✅ Enviando solicitud de recuperación con email:', email);
+        return forgotPassword(email);
+      },
+      onSuccess: (data) => {
+        console.log('✅ Éxito en forgotPassword:', data);
+      },
+      onError: (error) => {
+        console.error('❌ Error en forgotPassword:', error);
+      }
     });
   
     return forgotPasswordMutation;
@@ -11,8 +20,16 @@ export const useForgotPassword = () => {
   
   export const useVerifyCode = () => {
     const verifyCodeMutation = useMutation({
-      mutationFn: ({ email, codigo }: { email: string; codigo: string }) => 
-        verifyCode(email, codigo),
+      mutationFn: ({ email, codigo }: { email: string; codigo: string }) => {
+        console.log('🔍 Verificando código:', { email, codigo });
+        return verifyCode(email, codigo);
+      },
+      onSuccess: (data) => {
+        console.log('✅ Código verificado con éxito:', data);
+      },
+      onError: (error) => {
+        console.error('❌ Error al verificar código:', error);
+      }
     });
   
     return verifyCodeMutation;
@@ -28,9 +45,21 @@ export const useForgotPassword = () => {
         email: string;
         codigo: string;
         nuevaContrasena: string;
-      }) => resetPassword(email, codigo, nuevaContrasena),
+      }) => {
+        console.log('🔐 Intentando restablecer contraseña:', { email, codigo, nuevaContrasena });
+        return resetPassword(email, codigo, nuevaContrasena);
+      },
+      onSuccess: (data) => {
+        console.log('✅ Contraseña restablecida con éxito:', data);
+      },
+      onError: (error: any) => {
+        console.error('❌ Error al restablecer contraseña:', error);
+        console.error('Detalles del error:', {
+          message: error.message,
+          response: error.response?.data
+        });
+      }
     });
   
     return resetPasswordMutation;
   };
-  

@@ -2,26 +2,23 @@ import { useState, useEffect } from "react";
 import { useGetUsuariosVer, usePutUsuario } from "@/hooks/usuario";
 import { useGetAuth } from "@/hooks/auth/useGetAuth";
 import { useGetRoles } from "@/hooks/roles";
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
 import { ImageSelector } from "@/components/moleculas";
 import { Form, FormField } from "@/components/organismos";
 import { usuarioEditSchema } from "@/schemas";
 
 const Configuraciones = () => {
   const { user } = useGetAuth();
-const idUsuario = user?.id;
-const { usuario: usuarioActual, loading } = idUsuario ? useGetUsuariosVer(idUsuario) : { usuario: null, loading: true };
+  // Corregido: 'id' puede no existir en 'user', así que verificamos su existencia
+  const idUsuario = (user && "id" in user) ? (user as any).id : undefined;
+  const { usuario: usuarioActual, loading } = idUsuario ? useGetUsuariosVer(idUsuario) : { usuario: null, loading: true };
 
-// Logs de depuración
-console.log('[CONFIGURACION] user:', user);
-console.log('[CONFIGURACION] idUsuario:', idUsuario);
-console.log('[CONFIGURACION] usuarioActual:', usuarioActual);
-console.log('[CONFIGURACION] loading:', loading);
   const { actualizarUsuario } = usePutUsuario();
   const { roles } = useGetRoles();
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'perfil' | 'seguridad' | 'preferencias'>('perfil');
   const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [] = useState();
 
   useEffect(() => {
     if (usuarioActual) {
@@ -102,7 +99,7 @@ console.log('[CONFIGURACION] loading:', loading);
     }
   };
 
-  const TabButton = ({ tab, label, isActive, onClick }: {
+  const TabButton = ({ label, isActive, onClick }: {
     tab: string;
     label: string;
     isActive: boolean;
@@ -164,7 +161,11 @@ console.log('[CONFIGURACION] loading:', loading);
               </h1>
               <div className="flex items-center space-x-4 text-blue-100">
                 <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
-                  {renderRol(usuarioActual.rol_id)}
+                  {renderRol(
+                    Array.isArray(usuarioActual.rol_id)
+                      ? usuarioActual.rol_id[0]
+                      : usuarioActual.rol_id
+                  )}
                 </span>
                 <span className="text-sm">
                   Miembro desde {new Date(usuarioActual.fecha_registro).toLocaleDateString()}
@@ -251,12 +252,11 @@ console.log('[CONFIGURACION] loading:', loading);
                             Tu contraseña fue actualizada por última vez hace 30 días
                           </p>
                         </div>
-                        <Boton
+                        <Botton
                           onClick={() => setIsEditingPassword(true)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
                         >
                           Cambiar Contraseña
-                        </Boton>
+                        </Botton>
                       </div>
                     </div>
 
@@ -277,12 +277,13 @@ console.log('[CONFIGURACION] loading:', loading);
                 ) : (
                   <div>
                     <div className="mb-4">
-                      <Boton
+                      <Botton
                         onClick={() => setIsEditingPassword(false)}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm"
+                        color="default"
+                        variant="solid"
                       >
                         ← Cancelar
-                      </Boton>
+                      </Botton>
                     </div>
                     <Form
                       fields={formFieldsSeguridad}
@@ -379,23 +380,21 @@ console.log('[CONFIGURACION] loading:', loading);
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Rol:</span>
-                  <span className="font-medium">{renderRol(usuarioActual.rol_id)}</span>
+                  <span className="font-medium">
+                    {Array.isArray(usuarioActual.rol_id)
+                      ? usuarioActual.rol_id.map((rol, idx) => (
+                          <span key={rol}>
+                            {renderRol(rol)}
+                            {idx < usuarioActual.rol_id.length - 1 ? ', ' : ''}
+                          </span>
+                        ))
+                      : renderRol(usuarioActual.rol_id)}
+                  </span>
                 </div>
               </div>
             </div>
           </AnimatedContainer>
 
-          <AnimatedContainer animation="slideUp" delay={400} duration={500}>
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100">
-              <h3 className="font-bold text-gray-800 mb-3">¿Necesitas Ayuda?</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Si tienes problemas con tu cuenta o necesitas asistencia, contáctanos.
-              </p>
-              <Boton className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm">
-                Contactar Soporte
-              </Boton>
-            </div>
-          </AnimatedContainer>
         </div>
       </div>
     </div>

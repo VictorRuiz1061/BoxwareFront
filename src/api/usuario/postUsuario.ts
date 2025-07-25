@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/api/axiosConfig";
 import { Usuario } from "@/types/usuario";
 
-export async function postUsuario(data: Usuario): Promise<Usuario> {
+export async function postUsuario(data: Usuario | FormData): Promise<Usuario> {
   const response = await axiosInstance.post("/usuarios", data);
   return response.data;
 }

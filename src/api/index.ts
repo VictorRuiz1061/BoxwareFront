@@ -8,7 +8,6 @@ export * from './auth';
 export * from './centros';
 export * from './Elemento';
 export * from './fichas';
-export * from './informe';
 export * from './materiales';
 export * from './modulos';
 export * from './movimiento';
@@ -22,6 +21,7 @@ export * from './tipoMaterial';
 export * from './tipoMovimiento';
 export * from './tipoSitio';
 export * from './usuario';
+export * from './upload/uploadImage';
 
 // Export any standalone API files
 // export * from './informes.api';

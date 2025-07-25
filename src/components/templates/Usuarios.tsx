@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useGetUsuarios, usePostUsuario, usePostCargarUsuarios, usePutUsuario } from "@/hooks/usuario";
 import { useGetRoles } from "@/hooks/roles";
 import { Usuario } from "@/types";
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast, TablaImagen } from "@/components/atomos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast, TablaImagen } from "@/components/atomos";
 import { ImageSelector } from "@/components/moleculas";
-import { Column, createEntityTable, Form, FormField } from "@/components/organismos";
+import { Column, createEntityTable, Form, FormField, Modal } from "@/components/organismos";
 import { usuarioSchema, usuarioEditSchema } from "@/schemas";
 import Roles from "./Roles";
 
@@ -18,6 +18,7 @@ const Usuarios = () => {
   const [isRolModalOpen, setIsRolModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
   // Estado para carga masiva
   const [archivoExcel, setArchivoExcel] = useState<File | null>(null);
@@ -34,7 +35,7 @@ const Usuarios = () => {
     const validExtensions = ['.xlsx', '.xls'];
     const fileName = archivoExcel.name.toLowerCase();
     const isValidFile = validExtensions.some(ext => fileName.endsWith(ext));
-    
+
     if (!isValidFile) {
       showErrorToast("Por favor selecciona un archivo Excel válido (.xlsx o .xls)");
       return;
@@ -46,46 +47,40 @@ const Usuarios = () => {
       return;
     }
 
-    console.log('Enviando archivo:', {
-      name: archivoExcel.name,
-      size: archivoExcel.size,
-      type: archivoExcel.type
-    });
-
     try {
       const resultado = await cargaMasivaMutation.mutateAsync({
         archivo: archivoExcel,
         rol_id: 2, // Fijar el rol_id a 2 siempre
       });
-      
-      
+
+
       // Acceder a los datos correctamente según la estructura de respuesta
       const dataResult = resultado.data?.data || resultado.data || resultado;
       const resumen = dataResult.resumen;
-      
+
       setResultadoCarga(dataResult);
       setMostrarResultados(true);
       setArchivoExcel(null);
-      
+
       // Limpiar el input de archivo
       const fileInput = document.getElementById('archivo-excel') as HTMLInputElement;
       if (fileInput) {
         fileInput.value = '';
       }
-      
+
       showSuccessToast(`Carga exitosa: ${resumen.creados} usuarios creados, ${resumen.fallidos} fallidos`);
     } catch (err: any) {
       setResultadoCarga(null);
       setMostrarResultados(false);
-      
+
       let mensaje = "Error al cargar el archivo. Verifica el formato y que los datos sean correctos.";
-      
+
       if (err?.response?.data?.message) {
         mensaje = err.response.data.message;
       } else if (err?.message) {
         mensaje = err.message;
       }
-      
+
       showErrorToast(mensaje);
     }
   };
@@ -93,7 +88,7 @@ const Usuarios = () => {
   const handleArchivoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setArchivoExcel(file);
-    
+
     // Limpiar resultados previos cuando se selecciona un nuevo archivo
     if (file) {
       setResultadoCarga(null);
@@ -126,12 +121,12 @@ const Usuarios = () => {
       render: usuario => {
         // Validar url y mostrar fallback si es necesario
         let imageUrl = usuario.imagen || '';
-        
+
         // Si la imagen no tiene http/https y no es una ruta relativa con /, asumimos que es una URL incompleta
         if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
           imageUrl = `https://${imageUrl}`;
         }
-        
+
         return (
           <TablaImagen
             src={imageUrl}
@@ -147,129 +142,64 @@ const Usuarios = () => {
     { key: "cedula", label: "Cédula", filterable: true },
     { key: "email", label: "Email", filterable: true },
     { key: "telefono", label: "Teléfono", filterable: true },
-    {
-      key: "rol_id",
-      label: "Rol",
-      filterable: true,
-      render: usuario => renderRol(usuario.rol_id)
-    },
+    { key: "rol_id", label: "Rol", filterable: true, render: usuario => renderRol(usuario.rol_id) },
   ];
 
   // Campos de formulario centralizados con layout de dos columnas
   const formFieldsCreate: FormField[] = [
     { 
-      key: "nombre", 
-      label: "Nombre", 
-      type: "text", 
-      required: true,
-      className: "col-span-1" // Clase para grid
+      key: "nombre", label: "Nombre", type: "text", required: true, className: "col-span-1" 
     },
     { 
-      key: "apellido", 
-      label: "Apellido", 
-      type: "text", 
-      required: true,
-      className: "col-span-1"
+      key: "apellido", label: "Apellido", type: "text", required: true, className: "col-span-1" 
     },
     { 
-      key: "edad", 
-      label: "Edad", 
-      type: "number", 
-      required: true,
-      className: "col-span-1"
+      key: "edad",label: "Edad", type: "number", required: true, className: "col-span-1" 
     },
     { 
-      key: "cedula", 
-      label: "Cédula", 
-      type: "text", 
-      required: true,
-      className: "col-span-1"
+      key: "cedula", label: "Cédula", type: "text", required: true, className: "col-span-1" 
     },
     { 
-      key: "email", 
-      label: "Email", 
-      type: "email", 
-      required: true,
-      className: "col-span-2" // Email ocupa todo el ancho
+      key: "email", label: "Email", type: "email", required: true, className: "col-span-2" 
     },
     { 
-      key: "contrasena", 
-      label: "Contraseña", 
-      type: "password", 
-      required: true,
-      className: "col-span-2"
-    },
-    { 
-      key: "telefono", 
-      label: "Teléfono", 
-      type: "text", 
-      required: true,
-      className: "col-span-1"
+      key: "contrasena", label: "Contraseña", type: "password", required: true, className: "col-span-2"
     },
     {
-      key: "rol_id",
-      label: "Rol",
-      type: "select",
-      required: true,
-      className: "col-span-1",
-      options: roles.map(r => ({ label: r.nombre_rol, value: r.id_rol })),
+      key: "telefono", label: "Teléfono", type: "text", required: true, className: "col-span-1"
+    },
+    {
+      key: "rol_id", label: "Rol", type: "select", required: true, className: "col-span-1", options: roles.map(r => ({ label: r.nombre_rol, value: r.id_rol })),
       extraButton: {
         icon: "+",
         onClick: () => setIsRolModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     }
   ];
 
   const formFieldsEdit: FormField[] = [
-    {  key: "nombre", label: "Nombre", type: "text", required: true, className: "col-span-1" },
-    { key: "apellido", label: "Apellido", type: "text", required: true, className: "col-span-1"},
-    { 
-      key: "edad", 
-      label: "Edad", 
-      type: "number", 
-      required: true,
-      className: "col-span-1"
-    },
-    { 
-      key: "cedula", 
-      label: "Cédula", 
-      type: "text", 
-      required: true,
-      className: "col-span-1"
-    },
-    { 
-      key: "email", 
-      label: "Email", 
-      type: "email", 
-      required: true,
-      className: "col-span-2"
-    },
-    { 
-      key: "contrasena", 
-      label: "Contraseña", 
-      type: "password", 
-      required: false,
-      className: "col-span-2"
-    },
-    { 
-      key: "telefono", 
-      label: "Teléfono", 
-      type: "text", 
-      required: true,
-      className: "col-span-1"
+    { key: "nombre", label: "Nombre", type: "text", required: true, className: "col-span-1" },
+    { key: "apellido", label: "Apellido", type: "text", required: true, className: "col-span-1" },
+    {
+      key: "edad", label: "Edad", type: "number", required: true, className: "col-span-1"
     },
     {
-      key: "rol_id",
-      label: "Rol",
-      type: "select",
-      required: true,
-      className: "col-span-1",
-      options: roles.map(r => ({ label: r.nombre_rol, value: r.id_rol })),
+      key: "cedula", label: "Cédula", type: "text", required: true, className: "col-span-1"
+    },
+    {
+      key: "email", label: "Email", type: "email", required: true, className: "col-span-2"
+    },
+    {
+      key: "contrasena", label: "Contraseña", type: "password", required: false, className: "col-span-2"
+    },
+    {
+      key: "telefono", label: "Teléfono", type: "text",  required: true, className: "col-span-1"
+    },
+    {
+      key: "rol_id", label: "Rol", type: "select", required: true, className: "col-span-1",  options: roles.map(r => ({ label: r.nombre_rol, value: r.id_rol })),
       extraButton: {
         icon: "+",
         onClick: () => setIsRolModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     }
   ];
@@ -280,50 +210,53 @@ const Usuarios = () => {
       if (isNaN(rol_id)) {
         throw new Error("El rol seleccionado no es válido");
       }
+
+      // Crear FormData para enviar datos y archivo
+      const formDataToSend = new FormData();
       
-      const imagenPath = formData.imagen || '';
+      // Agregar datos del usuario
+      formDataToSend.append('nombre', values.nombre);
+      formDataToSend.append('apellido', values.apellido);
+      formDataToSend.append('edad', values.edad);
+      formDataToSend.append('cedula', values.cedula);
+      formDataToSend.append('email', values.email);
+      formDataToSend.append('telefono', values.telefono);
+      formDataToSend.append('rol_id', rol_id.toString());
 
-      const userData = {
-        nombre: values.nombre,
-        apellido: values.apellido,
-        edad: parseInt(values.edad),
-        cedula: values.cedula,
-        email: values.email,
-        telefono: values.telefono,
-        rol_id: rol_id,
-        imagen: imagenPath || null
-      };
+      // Agregar contraseña si es necesario
+      if (values.contrasena && values.contrasena.trim() !== '') {
+        formDataToSend.append('contrasena', values.contrasena);
+      }
 
+      // Agregar imagen si se seleccionó una nueva
+      if (selectedImageFile) {
+        formDataToSend.append('imagen', selectedImageFile);
+      }
+
+      // Agregar datos adicionales según si es creación o edición
       if (editingId) {
-        const updatePayload: Record<string, any> = {
-          ...userData
-        };
+        formDataToSend.append('fecha_modificacion', new Date().toISOString().split('T')[0]);
         
-        if (values.contrasena && values.contrasena.trim() !== '') {
-          updatePayload.contrasena = values.contrasena;
-        }
-        
-        await actualizarUsuario(editingId, updatePayload);
+        // Para edición, usar el endpoint PUT con FormData
+        await actualizarUsuario(editingId, formDataToSend);
         showSuccessToast("Usuario actualizado correctamente");
       } else {
         if (!values.contrasena || values.contrasena.trim() === '') {
           throw new Error("La contraseña es obligatoria para crear un nuevo usuario");
         }
 
-        const createPayload = {
-          ...userData,
-          contrasena: values.contrasena,
-          estado: true,
-          fecha_registro: new Date().toISOString().split('T')[0]
-        };
+        formDataToSend.append('estado', 'true');
+        formDataToSend.append('fecha_registro', new Date().toISOString().split('T')[0]);
 
-        await crearUsuario(createPayload as any); 
+        // Para creación, usar el endpoint POST con FormData
+        await crearUsuario(formDataToSend as any);
         showSuccessToast("Usuario creado correctamente");
       }
 
       setIsModalOpen(false);
       setEditingId(null);
       setFormData({});
+      setSelectedImageFile(null);
     } catch (error) {
       showErrorToast('Error al guardar el usuario');
     }
@@ -369,143 +302,127 @@ const Usuarios = () => {
   };
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
-        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-          <h1 className="text-xl font-bold mb-4">Gestión de Usuarios</h1>
-        </AnimatedContainer>
+
+        <h1 className="text-xl font-bold mb-4">Gestión de Usuarios</h1>
 
         {/* Sección de Carga Masiva */}
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Carga Masiva de Usuarios</h2>
-            <div className="flex items-center gap-3 mb-3">
-              <input
-                id="archivo-excel"
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleArchivoChange}
-                className="border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-              <Boton
-                onClick={handleCargaExcel}
-                disabled={!archivoExcel || cargaMasivaMutation.isPending}
-                className={`px-4 py-2 rounded-md font-medium ${
-                  !archivoExcel || cargaMasivaMutation.isPending
-                    ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Carga Masiva de Usuarios</h2>
+          <div className="flex items-center gap-3 mb-3">
+            <input
+              id="archivo-excel"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleArchivoChange}
+              className="border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            />
+            <Botton
+              onClick={handleCargaExcel}
+              disabled={!archivoExcel || cargaMasivaMutation.isPending}
+              className={`px-4 py-2 rounded-md font-medium ${!archivoExcel || cargaMasivaMutation.isPending
+                  ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
-              >
-                {cargaMasivaMutation.isPending ? 'Cargando...' : 'Cargar Excel'}
-              </Boton>
-            </div>
-            
-            {archivoExcel && (
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Archivo seleccionado: <span className="font-medium">{archivoExcel.name}</span>
-              </p>
-            )}
-
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              <p>• El archivo debe contener las columnas: nombre, apellido, cedula</p>
-              <p>• Columnas opcionales: edad, email, telefono</p>
-              <p>• Formatos permitidos: .xlsx, .xls</p>
-            </div>
+            >
+              {cargaMasivaMutation.isPending ? 'Cargando...' : 'Cargar Excel'}
+            </Botton>
           </div>
-        </AnimatedContainer>
+
+          {archivoExcel && (
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Archivo seleccionado: <span className="font-medium">{archivoExcel.name}</span>
+            </p>
+          )}
+
+          <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p>• El archivo debe contener las columnas: nombre, apellido, cedula</p>
+            <p>• Columnas opcionales: edad, email, telefono</p>
+            <p>• Formatos permitidos: .xlsx, .xls</p>
+          </div>
+        </div>
 
         {/* Resultados de la carga masiva */}
         {mostrarResultados && resultadoCarga && (
-          <AnimatedContainer animation="slideUp" delay={200} duration={400}>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Resultados de la Carga</h3>
-                <button
-                  onClick={cerrarResultados}
-                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xl font-bold"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {resultadoCarga.resumen?.total || 0}
-                  </div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">Total Procesados</div>
-                </div>
-                <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {resultadoCarga.resumen?.creados || 0}
-                  </div>
-                  <div className="text-sm text-green-600 dark:text-green-400">Creados</div>
-                </div>
-                <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {resultadoCarga.resumen?.fallidos || 0}
-                  </div>
-                  <div className="text-sm text-red-600 dark:text-red-400">Fallidos</div>
-                </div>
-              </div>
-
-              {resultadoCarga.usuarios && resultadoCarga.usuarios.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm border border-gray-200 dark:border-gray-700">
-                    <thead>
-                      <tr className="bg-gray-100 dark:bg-gray-700">
-                        <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Cédula</th>
-                        <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Nombre</th>
-                        <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Apellido</th>
-                        <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Email</th>
-                        <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Estado</th>
-                        <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Mensaje</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {resultadoCarga.usuarios.map((usuario: any, index: number) => (
-                        <tr 
-                          key={index} 
-                          className={usuario.status === 'error' 
-                            ? 'bg-red-50 dark:bg-red-900/20' 
-                            : 'bg-green-50 dark:bg-green-900/20'
-                          }
-                        >
-                          <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200">{usuario.cedula}</td>
-                          <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200">{usuario.nombre || '-'}</td>
-                          <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200">{usuario.apellido || '-'}</td>
-                          <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200">{usuario.email || '-'}</td>
-                          <td className="border border-gray-200 dark:border-gray-600 px-3 py-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              usuario.status === 'creado' 
-                                ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200' 
-                                : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200'
-                            }`}>
-                              {usuario.status === 'creado' ? 'Creado' : 'Error'}
-                            </span>
-                          </td>
-                          <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-xs text-gray-800 dark:text-gray-200">
-                            {usuario.mensaje || (usuario.status === 'creado' ? 'Usuario creado exitosamente' : '-')}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Resultados de la Carga</h3>
+              <button onClick={cerrarResultados}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xl font-bold"
+              >
+                ×
+              </button>
             </div>
-          </AnimatedContainer>
+
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg text-center">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {resultadoCarga.resumen?.total || 0}
+                </div>
+                <div className="text-sm text-blue-600 dark:text-blue-400">Total Procesados</div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {resultadoCarga.resumen?.creados || 0}
+                </div>
+                <div className="text-sm text-green-600 dark:text-green-400">Creados</div>
+              </div>
+              <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg text-center">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {resultadoCarga.resumen?.fallidos || 0}
+                </div>
+                <div className="text-sm text-red-600 dark:text-red-400">Fallidos</div>
+              </div>
+            </div>
+
+            {resultadoCarga.usuarios && resultadoCarga.usuarios.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border border-gray-200 dark:border-gray-700">
+                  <thead>
+                    <tr className="bg-gray-100 dark:bg-gray-700">
+                      <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Cédula</th>
+                      <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Nombre</th>
+                      <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Apellido</th>
+                      <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Email</th>
+                      <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Estado</th>
+                      <th className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-gray-700 dark:text-gray-200">Mensaje</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resultadoCarga.usuarios.map((usuario: any, index: number) => (
+                      <tr
+                        key={index}
+                        className={usuario.status === 'error'
+                          ? 'bg-red-50 dark:bg-red-900/20'
+                          : 'bg-green-50 dark:bg-green-900/20'
+                        }
+                      >
+                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200">{usuario.cedula}</td>
+                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200">{usuario.nombre || '-'}</td>
+                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200">{usuario.apellido || '-'}</td>
+                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-gray-800 dark:text-gray-200">{usuario.email || '-'}</td>
+                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${usuario.status === 'creado'
+                              ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200'
+                              : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200'
+                            }`}>
+                            {usuario.status === 'creado' ? 'Creado' : 'Error'}
+                          </span>
+                        </td>
+                        <td className="border border-gray-200 dark:border-gray-600 px-3 py-2 text-xs text-gray-800 dark:text-gray-200">
+                          {usuario.mensaje || (usuario.status === 'creado' ? 'Usuario creado exitosamente' : '-')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Botón para crear usuario individual */}
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mb-4 rounded-md"
-          >
-            Crear Nuevo Usuario
-          </Boton>
-        </AnimatedContainer>
+        <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Usuario" />
 
         {/* Tabla de usuarios */}
         {loading ? (
@@ -513,7 +430,7 @@ const Usuarios = () => {
             <p className="text-gray-500">Cargando usuarios...</p>
           </div>
         ) : (
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <div className="w-full">
             {createEntityTable({
               columns: columns as Column<any>[],
               data: usuarios,
@@ -523,76 +440,65 @@ const Usuarios = () => {
                 onEdit: handleEdit
               }
             })}
-          </AnimatedContainer>
-        )}
-
-        {/* Modal para crear/editar usuario */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-4xl">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative  bg-white dark:bg-gray-800">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Usuario" : "Crear Nuevo Usuario"}
-                </h2>
-                
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Componente para seleccionar imágenes */}
-                  <div className="col-span-1 flex flex-col items-center justify-start bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
-                    <ImageSelector
-                      label="Imagen del Usuario"
-                      value={formData.imagen || ''}
-                      onChange={(imagePath: string) => {
-                        setFormData(prev => ({ ...prev, imagen: imagePath }));
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="col-span-1 bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
-                    <Form
-                      fields={editingId ? formFieldsEdit : formFieldsCreate}
-                      onSubmit={handleSubmit}
-                      buttonText={editingId ? "Actualizar" : "Crear"}
-                      initialValues={{
-                        ...formData,
-                        ...(editingId 
-                          ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                          : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                      }}
-                      schema={editingId ? usuarioEditSchema : usuarioSchema}
-                    />
-                  </div>
-                </div>
-              </div>
-            </AnimatedContainer>  
-          </div> 
-        )}
-
-        {/* Modal para crear rol */}
-        {isRolModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsRolModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <Roles isInModal={true} onRolCreated={() => {
-                setIsRolModalOpen(false);
-                // Aquí deberías actualizar la lista de roles
-              }} />
-            </div>
           </div>
         )}
+
+        {/* Modal para crear/editar usuario usando el modal global */}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }}
+          title={editingId ? "Editar Usuario" : "Crear Nuevo Usuario"}
+        >
+          <div className="flex flex-col gap-6">
+            {/* Componente para seleccionar imágenes */}
+            <div className="flex flex-col items-center justify-start bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+              <ImageSelector
+                label="Imagen del Usuario"
+                value={formData.imagen || ''}
+                onChange={(value: string | File) => {
+                  if (typeof value === 'string') {
+                    setFormData(prev => ({ ...prev, imagen: value }));
+                    setSelectedImageFile(null);
+                  } else {
+                    setSelectedImageFile(value);
+                  }
+                }}
+              />
+            </div>
+            <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+              <Form
+                fields={editingId ? formFieldsEdit : formFieldsCreate}
+                onSubmit={handleSubmit}
+                buttonText={editingId ? "Actualizar" : "Crear"}
+                initialValues={{
+                  ...formData,
+                  ...(editingId
+                    ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                    : { fecha_creacion: new Date().toISOString().split('T')[0] })
+                }}
+                schema={editingId ? usuarioEditSchema : usuarioSchema}
+              />
+            </div>
+          </div>
+        </Modal>
+
+        {/* Modal para crear rol usando el modal global */}
+        <Modal
+          isOpen={isRolModalOpen}
+          onClose={() => setIsRolModalOpen(false)}
+          title="Crear Nuevo Rol"
+        >
+          <Roles isInModal={true} onRolCreated={() => {
+            setIsRolModalOpen(false);
+            // Aquí deberías actualizar la lista de roles
+          }} />
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getMateriales(): Promise<Material[]> {
   const response = await axiosInstance.get("/materiales");
-  return extractArrayData<Material>(response, 'getMateriales');
+  return extractArrayData<Material>(response);
 }
 
 export function useGetMateriales() {

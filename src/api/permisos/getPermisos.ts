@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getPermisos(): Promise<Permiso[]> {
   const response = await axiosInstance.get("/permisos");
-  return extractArrayData<Permiso>(response, 'getPermisos');
+  return extractArrayData<Permiso>(response);
 }
 
 export function useGetPermisos() {

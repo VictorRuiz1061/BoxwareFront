@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getFichas(): Promise<Ficha[]> {
     const response = await axiosInstance.get("/fichas");
-    return extractArrayData<Ficha>(response, 'getFichas');
+    return extractArrayData<Ficha>(response);
 }
 
 export function useGetFichas() {

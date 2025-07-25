@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useGetMunicipios } from '@/hooks/municipios';
 import { useGetCentros, usePostCentro, usePutCentro } from '@/hooks/centros';
 import type { Centro } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { centroSchema } from '@/schemas';
 import Municipios from './Municipios';
@@ -49,7 +49,6 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
       extraButton: {
         icon: "+",
         onClick: () => setIsMunicipioModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
   ];
@@ -118,10 +117,7 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
       const nuevoEstado = !centro.estado;
       const updateData = {
         id_centro: centro.id_centro,
-        id_municipio: centro.id_municipio,
-        nombre_centro: centro.nombre_centro,
         estado: nuevoEstado,
-        fecha_creacion: centro.fecha_creacion,
         fecha_modificacion: new Date().toISOString()
       };
 
@@ -165,25 +161,16 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
   }
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
-        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Centros</h1>
-        </AnimatedContainer>
       
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
-          >
-            Crear Nuevo Centro
-          </Boton>
-        </AnimatedContainer>
+          <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Centro"/>
 
         {loading ? (
           <p>Cargando centros...</p>
         ) : (
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <div className="w-full">
             {createEntityTable({
               columns: columns as Column<any>[],
               data: centros,
@@ -193,57 +180,45 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
                 onEdit: handleEdit
               }
             })}
-          </AnimatedContainer>
-        )}
-
-        {(isModalOpen || isInModal) && (
-          <div className={isInModal ? "" : "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"}>
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-              <div className={`p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative ${isInModal ? "" : "bg-white dark:bg-gray-800"}`}>
-                {!isInModal && (
-                  <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                    <span className="text-gray-800 font-bold">×</span>
-                  </button>
-                )}
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Centro" : "Crear Nuevo Centro"}
-                </h2>
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
-                  schema={centroSchema}
-                />
-              </div>
-            </AnimatedContainer>  
           </div>
         )}
 
-        {/* Modal para crear municipio */}
-        {isMunicipioModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsMunicipioModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <Municipios isInModal={true} onMunicipioCreated={() => {
-                setIsMunicipioModalOpen(false);
-              }} />
-            </div>
-          </div>
-        )}
+        {/* Modal para crear/editar centro usando el modal global */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} 
+          title={editingId ? "Editar Centro" : "Crear Nuevo Centro"}
+        >
+          <Form
+            fields={editingId ? formFieldsEdit : formFieldsCreate}
+            onSubmit={handleSubmit}
+            buttonText={editingId ? "Actualizar" : "Crear"}
+            initialValues={{
+              ...formData,
+              ...(editingId 
+                ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                : { fecha_creacion: new Date().toISOString().split('T')[0] })
+            }}
+            schema={centroSchema}
+          />
+        </Modal>
+
+        {/* Modal para crear municipio usando el modal global */}
+        <Modal 
+          isOpen={isMunicipioModalOpen} 
+          onClose={() => setIsMunicipioModalOpen(false)} 
+          title="Crear Nuevo Municipio"
+        >
+          <Municipios isInModal={true} onMunicipioCreated={() => {
+            setIsMunicipioModalOpen(false);
+          }} />
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

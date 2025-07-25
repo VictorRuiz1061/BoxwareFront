@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getSitios(): Promise<Sitio[]> {
   const response = await axiosInstance.get("/sitios");
-  return extractArrayData<Sitio>(response, 'getSitios');
+  return extractArrayData<Sitio>(response);
 }
 
 export function useGetSitios() {

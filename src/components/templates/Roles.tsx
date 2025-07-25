@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useGetRoles, usePostRol, usePutRol } from '@/hooks/roles';
 import { Rol } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { rolSchema } from '@/schemas';
 
@@ -18,6 +18,7 @@ const Roles = ({ isInModal = false, onRolCreated }: RolesProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [textoBoton] = useState();
 
   const columns: Column<Rol>[] = [
     { key: "nombre_rol", label: "Nombre", filterable: true },
@@ -60,7 +61,9 @@ const Roles = ({ isInModal = false, onRolCreated }: RolesProps) => {
           nombre_rol: values.nombre_rol,
           descripcion: values.descripcion,
           fecha_creacion: fechaActual,
-          estado: true
+          estado: true,
+          id: undefined,
+          nombre: ''
         };
 
         await crearRol(createPayload as any);
@@ -111,23 +114,16 @@ const Roles = ({ isInModal = false, onRolCreated }: RolesProps) => {
   };
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
         {!isInModal && (
-          <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
             <h1 className="text-xl font-bold mb-4">Gestión de Roles</h1>
-          </AnimatedContainer>
         )}
       
         {!isInModal && (
-          <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-            <Boton
-              onClick={handleCreate}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mb-4 rounded-md"
-            >
-              Crear Nuevo Rol
-            </Boton>
-          </AnimatedContainer>
+            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Rol">
+              {textoBoton}
+            </Botton>
         )}
 
         {!isInModal && loading ? (
@@ -135,7 +131,7 @@ const Roles = ({ isInModal = false, onRolCreated }: RolesProps) => {
             <p className="text-gray-500">Cargando roles...</p>
           </div>
         ) : !isInModal ? (
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <div className="w-full">
             {createEntityTable({
               columns: columns as Column<any>[],
               data: roles,
@@ -145,7 +141,7 @@ const Roles = ({ isInModal = false, onRolCreated }: RolesProps) => {
                 onEdit: handleEdit
               }
             })}
-          </AnimatedContainer>
+          </div>
         ) : (
           <div className="p-4">
             <h2 className="text-lg font-bold mb-4">Crear Nuevo Rol</h2>
@@ -158,37 +154,28 @@ const Roles = ({ isInModal = false, onRolCreated }: RolesProps) => {
           </div>
         )}
 
-        {/* Modal para crear/editar rol (solo se muestra cuando no estamos en modo modal) */}
-        {!isInModal && isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-4xl">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Rol" : "Crear Nuevo Rol"}
-                </h2>
-                
-                <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
-                  <Form
-                    fields={formFields}
-                    onSubmit={handleSubmit}
-                    buttonText={editingId ? "Actualizar" : "Crear"}
-                    initialValues={formData}
-                    schema={rolSchema}
-                  />
-                </div>
-              </div>
-            </AnimatedContainer>  
-          </div> 
-        )}
+        {/* Modal para crear/editar rol usando el modal global */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} 
+          title={editingId ? "Editar Rol" : "Crear Nuevo Rol"}
+        >
+          <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+            <Form
+              fields={formFields}
+              onSubmit={handleSubmit}
+              buttonText={editingId ? "Actualizar" : "Crear"}
+              initialValues={formData}
+              schema={rolSchema}
+            />
+          </div>
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

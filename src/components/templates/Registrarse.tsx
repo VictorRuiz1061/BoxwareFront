@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
 import { useAuth } from '@/hooks/auth';
-import { AnimatedContainer } from '@/components/atomos';
+import { AnimatedContainer, Botton } from '@/components/atomos';
 
 const Registrarse = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const Registrarse = () => {
     edad: '',
     cedula: '',
     password: '',
-    id_rol: 1
+    id_rol: 2
   });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +55,7 @@ const Registrarse = () => {
       telefono: formData.telefono,
       estado: true,
       fecha_registro: now,
-      rol_id: 1
+      rol_id: 2
     } as any);
 
     setIsLoading(false);
@@ -89,7 +89,7 @@ const Registrarse = () => {
       {/* Overlay mejorado con gradiente */}
       <div className="absolute inset-0 backdrop-blur-[2px]"></div>
 
-      <AnimatedContainer animation="slideUp" duration={800}>
+      <AnimatedContainer>
         <div className="max-w-lg w-full bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden relative z-10 border border-white/20">
           
           {/* Header con logo mejorado */}
@@ -165,11 +165,10 @@ const Registrarse = () => {
               </div>
               
               {/* Botón de registro mejorado */}
-              <button
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-6 rounded-lg font-semibold transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
+              <Botton
+                className="w-full py-3 px-6 font-semibold flex items-center justify-center"
                 onClick={handleRegister}
-                disabled={isLoading}
-              >
+                disabled={isLoading} >
                 {isLoading ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -186,7 +185,7 @@ const Registrarse = () => {
                     Crear Cuenta
                   </>
                 )}
-              </button>
+              </Botton>
             </div>
 
             {/* Footer mejorado */}

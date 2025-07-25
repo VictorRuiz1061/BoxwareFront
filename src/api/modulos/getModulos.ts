@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getModulos(): Promise<Modulo[]> {
   const response = await axiosInstance.get("/modulos");
-  return extractArrayData<Modulo>(response, 'getModulos');
+  return extractArrayData<Modulo>(response);
 }
 
 export function useGetModulos() {

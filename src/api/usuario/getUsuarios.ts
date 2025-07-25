@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getUsuarios(): Promise<Usuario[]> {
   const response = await axiosInstance.get("/usuarios");
-  return extractArrayData<Usuario>(response, 'getUsuarios');
+  return extractArrayData<Usuario>(response);
 }
 
 export function useGetUsuarios() {

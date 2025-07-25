@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useGetTiposSitio, usePostTipoSitio, usePutTipoSitio } from '@/hooks/tipoSitio';
 import type { TipoSitio } from '@/types';
-import {  AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { tipoSitioSchema } from '@/schemas';
 
@@ -18,6 +18,7 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [textoBoton] = useState();
 
   const columns: Column<TipoSitio>[] = [
     { key: "nombre_tipo_sitio", label: "Nombre del Tipo de Sitio", filterable: true },
@@ -37,7 +38,7 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
       const currentDate = new Date().toISOString();
-      
+
       if (editingId) {
         const updatePayload = {
           id_tipo_sitio: editingId,
@@ -46,7 +47,7 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
           fecha_creacion: values.fecha_creacion || currentDate,
           fecha_modificacion: currentDate,
         } as TipoSitio;
-        
+
         await actualizarTipoSitio(editingId, updatePayload);
         showSuccessToast('Tipo de sitio actualizado con éxito');
       } else {
@@ -59,7 +60,7 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
 
         await crearTipoSitio(createPayload);
         showSuccessToast('Tipo de sitio creado con éxito');
-        
+
         if (onTipoSitioCreated) {
           onTipoSitioCreated();
         } else {
@@ -73,7 +74,6 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el tipo de sitio:', error);
       showErrorToast('Error al guardar el tipo de sitio');
     }
   };
@@ -130,7 +130,6 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
                 onTipoSitioCreated();
               }
             } catch (error) {
-              console.error('Error al crear tipo de sitio:', error);
               showErrorToast('Error al crear el tipo de sitio');
             }
           }}
@@ -142,67 +141,54 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
   }
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
-        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-          <h1 className="text-xl font-bold mb-4">Gestión de Tipos de Sitio</h1>
-        </AnimatedContainer>
-      
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
-          >
-            Crear Nuevo Tipo de Sitio
-          </Boton>
-        </AnimatedContainer>
+        <h1 className="text-xl font-bold mb-4">Gestión de Tipos de Sitio</h1>
+
+        <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Tipo de Sitio">
+          {textoBoton}
+        </Botton>
 
         {loading ? (
           <p>Cargando tipos de sitio...</p>
         ) : (
-        <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
-          {createEntityTable({
-            columns: columns as Column<any>[],
-            data: tiposSitio,
-            idField: 'id_tipo_sitio',
-            handlers: {
-              onToggleEstado: handleToggleEstado,
-              onEdit: handleEdit
-            }
-          })}
-        </AnimatedContainer>)}
+          <div className="w-full">
+            {createEntityTable({
+              columns: columns as Column<any>[],
+              data: tiposSitio,
+              idField: 'id_tipo_sitio',
+              handlers: {
+                onToggleEstado: handleToggleEstado,
+                onEdit: handleEdit
+              }
+            })}
+          </div>)}
 
-        {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-                <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
-                  {/* Botón X para cerrar en la esquina superior derecha */}
-                  <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                  
-                    <span className="text-gray-800 font-bold">×</span>
-                  </button>
-                  
-                  <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Tipo de Sitio" : "Crear Nuevo Tipo de Sitio"}
-                </h2>
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
-                  schema={tipoSitioSchema}
-                />
-              </div>
-            </AnimatedContainer>  
-            </div> 
-          )}
-        </div>
-    </>
+        {/* Modal para crear/editar tipo de sitio usando el modal global */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} 
+          title={editingId ? "Editar Tipo de Sitio" : "Crear Nuevo Tipo de Sitio"}
+        >
+          <Form
+            fields={editingId ? formFieldsEdit : formFieldsCreate}
+            onSubmit={handleSubmit}
+            buttonText={editingId ? "Actualizar" : "Crear"}
+            initialValues={{
+              ...formData,
+              ...(editingId
+                ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                : { fecha_creacion: new Date().toISOString().split('T')[0] })
+            }}
+            schema={tipoSitioSchema}
+          />
+        </Modal>
+      </div>
+    </AnimatedContainer>
   );
 };
 

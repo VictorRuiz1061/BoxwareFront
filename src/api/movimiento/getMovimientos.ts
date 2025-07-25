@@ -5,7 +5,7 @@ import { extractArrayData } from '@/utils/responseHandler';
 
 export async function getMovimientos(): Promise<Movimiento[]> {
   const response = await axiosInstance.get("/movimientos");
-  return extractArrayData<Movimiento>(response, 'getMovimientos');
+  return extractArrayData<Movimiento>(response);
 };
 
 export function useGetMovimientos() {

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useGetSitios, usePostSitio, usePutSitio } from '@/hooks/sitio';
 import { useGetTiposSitio } from '@/hooks/tipoSitio';
 import type { Sitio as SitioType } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { sitioSchema } from '@/schemas';
 import TiposSitio from './TiposSitio';
@@ -22,6 +22,7 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
   const [isTipoSitioModalOpen, setIsTipoSitioModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [textoBoton] = useState();
 
   const columns: Column<SitioType>[] = [
     { key: "nombre_sitio", label: "Nombre del Sitio", filterable: true },
@@ -36,16 +37,15 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
     { key: "nombre_sitio", label: "Nombre del Sitio", type: "text", required: true },
     { key: "ubicacion", label: "Ubicación", type: "text", required: true },
     { key: "ficha_tecnica", label: "Ficha Técnica", type: "text", required: true },
-    { 
-      key: "tipo_sitio_id", 
-      label: "Tipo de Sitio", 
-      type: "select", 
+    {
+      key: "tipo_sitio_id",
+      label: "Tipo de Sitio",
+      type: "select",
       required: true,
       options: tiposSitio.map(tipo => ({ label: tipo.nombre_tipo_sitio, value: tipo.id_tipo_sitio })),
       extraButton: {
         icon: "+",
         onClick: () => setIsTipoSitioModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     }
   ];
@@ -54,16 +54,15 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
     { key: "nombre_sitio", label: "Nombre del Sitio", type: "text", required: true },
     { key: "ubicacion", label: "Ubicación", type: "text", required: true },
     { key: "ficha_tecnica", label: "Ficha Técnica", type: "text", required: true },
-    { 
-      key: "tipo_sitio_id", 
-      label: "Tipo de Sitio", 
-      type: "select", 
+    {
+      key: "tipo_sitio_id",
+      label: "Tipo de Sitio",
+      type: "select",
       required: true,
       options: tiposSitio.map(tipo => ({ label: tipo.nombre_tipo_sitio, value: tipo.id_tipo_sitio })),
       extraButton: {
         icon: "+",
         onClick: () => setIsTipoSitioModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     }
   ];
@@ -72,7 +71,7 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
     try {
       const currentDate = new Date().toISOString();
       const tipo_sitio_id = parseInt(values.tipo_sitio_id);
-      
+
       if (editingId) {
         const updatePayload = {
           id_sitio: editingId,
@@ -83,7 +82,7 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
           estado: true,
           fecha_modificacion: currentDate,
         } as SitioType;
-        
+
         await actualizarSitio(editingId, updatePayload);
         showSuccessToast('Sitio actualizado con éxito');
       } else {
@@ -105,7 +104,6 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error:', error);
       showErrorToast('Error al guardar el sitio');
     }
   };
@@ -126,7 +124,6 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
       await actualizarSitio(sitio.id_sitio, updateData);
       showSuccessToast(`El sitio fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
     } catch (error) {
-      console.error('Error:', error);
       showErrorToast("Error al cambiar el estado del sitio.");
     }
   };
@@ -149,82 +146,66 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
   };
 
   return (
-    <div className="w-full">
-      {!isInModal && (
-        <>
-          <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+    <AnimatedContainer>
+      <div className="w-full">
+        {!isInModal && (
+          <>
             <h1 className="text-xl font-bold mb-4">Gestión de Sitios</h1>
-          </AnimatedContainer>
-        
-          <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-            <Boton
-              onClick={handleCreate}
-              className="bg-blue-500 text-white px-4 py-2 mb-4"
-            >
-              Crear Nuevo Sitio
-            </Boton>
-          </AnimatedContainer>
-        </>
-      )}
 
-      {loading ? (
-        <p>Cargando sitios...</p>
-      ) : (
-        <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
-          {createEntityTable({
-            columns: columns as Column<any>[],
-            data: sitios,
-            idField: 'id_sitio',
-            handlers: {
-              onToggleEstado: handleToggleEstado,
-              onEdit: handleEdit
-            }
-          })}
-        </AnimatedContainer>
-      )}
+            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Sitio">
+              {textoBoton}
+            </Botton>
+          </>
+        )}
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-            <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
-              <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              
-              <h2 className="text-lg font-bold mb-4 text-center">
-                {editingId ? "Editar Sitio" : "Crear Nuevo Sitio"}
-              </h2>
-              <Form
-                fields={editingId ? formFieldsEdit : formFieldsCreate}
-                onSubmit={handleSubmit}
-                buttonText={editingId ? "Actualizar" : "Crear"}
-                initialValues={formData}
-                schema={sitioSchema}
-              />
-            </div>
-          </AnimatedContainer>  
-        </div> 
-      )}
-
-      {/* Modal para crear tipo de sitio */}
-      {isTipoSitioModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-            <button 
-              onClick={() => setIsTipoSitioModalOpen(false)}
-              className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-            >
-              <span className="text-gray-800 font-bold">×</span>
-            </button>
-            <h2 className="text-lg font-bold mb-4 text-center">Crear Nuevo Tipo de Sitio</h2>
-            <TiposSitio isInModal={true} onTipoSitioCreated={() => {
-              window.location.reload(); // Recargar la página para actualizar los tipos de sitio
-              setIsTipoSitioModalOpen(false);
-            }} />
+        {loading ? (
+          <p>Cargando sitios...</p>
+        ) : (
+          <div className="w-full">
+            {createEntityTable({
+              columns: columns as Column<any>[],
+              data: sitios,
+              idField: 'id_sitio',
+              handlers: {
+                onToggleEstado: handleToggleEstado,
+                onEdit: handleEdit
+              }
+            })}
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Modal para crear/editar sitio usando el modal global */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} 
+          title={editingId ? "Editar Sitio" : "Crear Nuevo Sitio"}
+        >
+          <Form
+            fields={editingId ? formFieldsEdit : formFieldsCreate}
+            onSubmit={handleSubmit}
+            buttonText={editingId ? "Actualizar" : "Crear"}
+            initialValues={formData}
+            schema={sitioSchema}
+          />
+        </Modal>
+
+        {/* Modal para crear tipo de sitio usando el modal global */}
+        <Modal 
+          isOpen={isTipoSitioModalOpen} 
+          onClose={() => setIsTipoSitioModalOpen(false)} 
+          title="Crear Nuevo Tipo de Sitio"
+        >
+          <TiposSitio isInModal={true} onTipoSitioCreated={() => {
+            window.location.reload(); // Recargar la página para actualizar los tipos de sitio
+            setIsTipoSitioModalOpen(false);
+          }} />
+        </Modal>
+      </div>
+    </AnimatedContainer>
   );
 };
 

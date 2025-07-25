@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useGetProgramas, usePostPrograma, usePutPrograma } from '@/hooks/programas';
 import { useGetAreas } from '@/hooks/areas';
 import type { Programa } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { programaSchema } from '@/schemas';
 import Areas from './Areas';
 
-const Programas = () => {
+const Programas = ({ isInModal = false, onProgramaCreated = () => {} }) => {
   const { programas, loading } = useGetProgramas();
   const { crearPrograma } = usePostPrograma();
   const { actualizarPrograma } = usePutPrograma();
@@ -17,6 +17,7 @@ const Programas = () => {
   const [isAreaModalOpen, setIsAreaModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [textoBoton] = useState();
 
   type ProgramaWithArea = Programa & { 
     key: number; 
@@ -50,7 +51,7 @@ const Programas = () => {
   const formFieldsCreate: FormField[] = [
     { key: "nombre_programa", label: "Nombre del Programa", type: "text", required: true },
     { 
-      key: "id_area", 
+      key: "area_id", 
       label: "Área", 
       type: "select", 
       required: true, 
@@ -58,7 +59,6 @@ const Programas = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsAreaModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
   ];
@@ -66,7 +66,7 @@ const Programas = () => {
   const formFieldsEdit: FormField[] = [
     { key: "nombre_programa", label: "Nombre del Programa", type: "text", required: true },
     { 
-      key: "id_area", 
+      key: "area_id", 
       label: "Área", 
       type: "select", 
       required: true, 
@@ -74,14 +74,13 @@ const Programas = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsAreaModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      const area_id = parseInt(values.id_area);
+      const area_id = parseInt(values.area_id);
       const currentDate = new Date().toISOString();
       
       if (editingId) {
@@ -113,6 +112,9 @@ const Programas = () => {
 
         await crearPrograma(createPayload);
         showSuccessToast('Programa creado con éxito');
+        if (isInModal) {
+          onProgramaCreated();
+        }
       }
       setIsModalOpen(false);
       setFormData({});
@@ -147,32 +149,25 @@ const Programas = () => {
   const handleEdit = (programa: Programa) => {
     setFormData({
       nombre_programa: programa.nombre_programa,
-      id_area: programa.area_id ? programa.area_id.toString() : ''
+      area_id: programa.area_id ? programa.area_id.toString() : ''
     });
     setEditingId(programa.id_programa);
     setIsModalOpen(true);
   };
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
-        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-          <h1 className="text-xl font-bold mb-4">Gestión de Programas</h1>
-        </AnimatedContainer>
+        <h1 className="text-xl font-bold mb-4">Gestión de Programas</h1>
       
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
-          >
-            Crear Nuevo Programa
-          </Boton>
-        </AnimatedContainer>
+            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Programa">
+              {textoBoton}
+            </Botton>
 
         {loading ? (
           <p>Cargando programas...</p>
         ) : (
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <div className="w-full">
             {createEntityTable({
               columns: columns as Column<any>[],
               data: programas,
@@ -182,62 +177,45 @@ const Programas = () => {
                 onEdit: handleEdit
               }
             })}
-          </AnimatedContainer>
-        )}
-
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
-                <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Programa" : "Crear Nuevo Programa"}
-                </h2>
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
-                  schema={programaSchema}
-                />
-              </div>
-            </AnimatedContainer>  
           </div>
         )}
 
-        {/* Modal para crear área */}
-        {isAreaModalOpen && (
-          <div className="fixed inset-0 bg-[#1E1E1E] bg-opacity-95 flex items-center justify-center z-[60]">
-            <div className="bg-[#1E1E1E] p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsAreaModalOpen(false)}
-                className="absolute top-2 right-2 text-white text-2xl hover:text-gray-300"
-              >
-                ×
-              </button>
-              <h2 className="text-lg font-bold mb-4 text-white text-center">
-                Crear Nueva Área
-              </h2>
-              <Areas 
-                isInModal={true} 
-                onAreaCreated={() => {
-                  setIsAreaModalOpen(false);
-                  window.location.reload();
-                }}
-              />
-            </div>
-          </div>
-        )}
+        {/* Modal para crear/editar programa usando el modal global */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} 
+          title={editingId ? "Editar Programa" : "Crear Nuevo Programa"}
+        >
+          <Form
+            fields={editingId ? formFieldsEdit : formFieldsCreate}
+            onSubmit={handleSubmit}
+            buttonText={editingId ? "Actualizar" : "Crear"}
+            initialValues={{
+              ...formData,
+              ...(editingId 
+                ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                : { fecha_creacion: new Date().toISOString().split('T')[0] })
+            }}
+            schema={programaSchema}
+          />
+        </Modal>
+
+        {/* Modal para crear área usando el modal global */}
+        <Modal 
+          isOpen={isAreaModalOpen} 
+          onClose={() => setIsAreaModalOpen(false)} 
+          title="Crear Nueva Área"
+        >
+          <Areas isInModal={true} onAreaCreated={() => {
+            setIsAreaModalOpen(false);
+          }} />
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

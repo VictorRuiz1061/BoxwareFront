@@ -5,7 +5,7 @@ import { extractObjectData } from "@/utils/responseHandler";
 
 export async function getUsuariosVer(id: number): Promise<Usuario | null> {
   const response = await axiosInstance.get(`/usuarios/${id}`);
-  return extractObjectData<Usuario>(response, 'getUsuariosVer');
+  return extractObjectData<Usuario>(response);
 }
 
 export function useGetUsuariosVer(id: number) {

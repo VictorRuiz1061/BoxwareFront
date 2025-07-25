@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getCategoriasElementos(): Promise<CategoriaElemento[]> {
   const response = await axiosInstance.get("/categoria-elementos");
-  return extractArrayData<CategoriaElemento>(response, 'getCategoriasElementos');
+  return extractArrayData<CategoriaElemento>(response);
 }
 
 export function useGetCategoriasElementos() {

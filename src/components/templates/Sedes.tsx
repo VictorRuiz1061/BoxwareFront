@@ -2,12 +2,17 @@ import { useState } from "react";
 import { useGetCentros } from '@/hooks/centros';
 import { useGetSedes, usePostSede, usePutSede } from '@/hooks/sedes';
 import type { Sede } from '@/types';
-import {  AnimatedContainer,  Boton,  showSuccessToast, showErrorToast } from "@/components/atomos";
-import {  createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { sedeSchema } from '@/schemas';
 
-const Sedes = () => {
+interface SedesProps {
+  isInModal?: boolean;
+  onSedeCreated?: () => void;
+}
+
+const Sedes = ({ isInModal = false, onSedeCreated }: SedesProps) => {
   const { sedes, loading } = useGetSedes();
   const { crearSede } = usePostSede();
   const { actualizarSede } = usePutSede();
@@ -15,13 +20,14 @@ const Sedes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [textoBoton] = useState();
 
   const renderCentro = (sede: Sede) => {
     const centro = centros.find(c => c.id_centro === sede.centro_id);
     return centro ? centro.nombre_centro : sede.centro_id;
   };
 
-  const columns: Column<Sede & { key: number }>[]= [
+  const columns: Column<Sede & { key: number }>[] = [
     { key: "nombre_sede", label: "Nombre de la Sede", filterable: true },
     { key: "direccion_sede", label: "Dirección de la sede", filterable: true },
     {
@@ -37,37 +43,43 @@ const Sedes = () => {
   const formFieldsCreate: FormField[] = [
     { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
     { key: "direccion_sede", label: "Dirección de la Sede", type: "text", required: true },
-    { 
-      key: "centro_id", 
-      label: "Centro", 
-      type: "select", 
-      required: true, 
-      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro })) 
+    {
+      key: "centro_id",
+      label: "Centro",
+      type: "select",
+      required: true,
+      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro }))
     },
   ];
+
   const formFieldsEdit: FormField[] = [
     { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
     { key: "direccion_sede", label: "Dirección de la Sede", type: "text", required: true },
-    { 
-      key: "centro_id", 
-      label: "Centro", 
-      type: "select", 
-      required: true, 
-      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro })) 
+    {
+      key: "centro_id",
+      label: "Centro",
+      type: "select",
+      required: true,
+      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro }))
     },
+  ];
+
+  const formFieldsModal: FormField[] = [
+    { key: "nombre_sede", label: "Nombre de la Sede", type: "text", required: true },
+    { key: "direccion_sede", label: "Dirección de la Sede", type: "text", required: true },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
       // Convertir centro_id a número
-      const centro_id = parseInt(values.centro_id);
+      const centro_id = parseInt(values.centro_id || "1");
       if (isNaN(centro_id)) {
         throw new Error("El centro seleccionado no es válido");
       }
-      
+
       // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
-      
+
       if (editingId) {
         // Actualizar sede existente
         const updatePayload: Sede = {
@@ -79,14 +91,14 @@ const Sedes = () => {
           fecha_creacion: formData.fecha_creacion || currentDate, // Mantener fecha de creación original
           fecha_modificacion: currentDate,
         };
-        
+
         await actualizarSede(editingId, updatePayload);
         showSuccessToast('Sede actualizada con éxito');
       } else {
         const createPayload = {
           nombre_sede: values.nombre_sede,
           direccion_sede: values.direccion_sede,
-          centro_id: centro_id,
+          centro_id: isInModal ? 1 : centro_id, // ID por defecto en modo modal
           estado: true,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
@@ -94,6 +106,9 @@ const Sedes = () => {
 
         await crearSede(createPayload as any);
         showSuccessToast('Sede creada con éxito');
+        if (onSedeCreated) {
+          onSedeCreated();
+        }
       }
       setIsModalOpen(false);
       setFormData({});
@@ -139,70 +154,73 @@ const Sedes = () => {
     setIsModalOpen(true);
   };
 
-  return (
-    <>
+  // Si está en modo modal, mostrar directamente el formulario
+  if (isInModal) {
+    return (
       <div className="w-full">
-      <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
+        <Form
+          fields={formFieldsModal}
+          onSubmit={handleSubmit}
+          buttonText="Crear"
+          initialValues={{
+            fecha_creacion: new Date().toISOString().split('T')[0]
+          }}
+          schema={sedeSchema}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <AnimatedContainer>
+      <div className="w-full">
         <h1 className="text-xl font-bold mb-4">Gestión de Sedes</h1>
-        </AnimatedContainer>
-      
-      <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-        <Boton
-          onClick={handleCreate}
-          className="bg-blue-500 text-white px-4 py-2 mb-4"
-        >
-          Crear Nueva Sede
-        </Boton>
-      </AnimatedContainer>
+
+        <Botton className="mb-4" onClick={handleCreate} texto="Crear Nueva Sede">
+          {textoBoton}
+        </Botton>
 
         {loading || loadingCentros ? (
           <p>Cargando datos...</p>
         ) : (
-        <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
-          {createEntityTable({
-            columns: columns as Column<any>[],
-            data: sedes,
-            idField: 'id_sede',
-            handlers: {
-              onToggleEstado: handleToggleEstado,
-              onEdit: handleEdit
-            }
-          })}
-          </AnimatedContainer>
+          <div className="w-full">
+            {createEntityTable({
+              columns: columns as Column<any>[],
+              data: sedes,
+              idField: 'id_sede',
+              handlers: {
+                onToggleEstado: handleToggleEstado,
+                onEdit: handleEdit
+              }
+            })}
+          </div>
         )}
 
-        {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
-                    <span className="text-gray-800 font-bold">×</span>
-                  </button>
-                  
-                  <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Sede" : "Crear Nueva Sede"}
-                </h2>
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
-                  schema={sedeSchema}
-                />
-              </div>
-            </AnimatedContainer>  
-            </div> 
-          )}
-        </div>
-    </>
+        {/* Modal para crear/editar sede usando el modal global */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} 
+          title={editingId ? "Editar Sede" : "Crear Nueva Sede"}
+        >
+          <Form
+            fields={editingId ? formFieldsEdit : formFieldsCreate}
+            onSubmit={handleSubmit}
+            buttonText={editingId ? "Actualizar" : "Crear"}
+            initialValues={{
+              ...formData,
+              ...(editingId
+                ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                : { fecha_creacion: new Date().toISOString().split('T')[0] })
+            }}
+            schema={sedeSchema}
+          />
+        </Modal>
+      </div>
+    </AnimatedContainer>
   );
 };
 

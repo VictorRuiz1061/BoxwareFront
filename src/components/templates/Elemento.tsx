@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useGetCategoriasElementos, usePostCategoriaElemento, usePutCategoriaElemento } from '@/hooks/Elemento';
 import type { CategoriaElemento } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
 import type { Column, FormField } from "@/components/organismos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import { categoriaElementoSchema } from '@/schemas/elementos.schemas';
 
 interface ElementoProps {
@@ -18,8 +18,9 @@ const Elemento = ({ isInModal, onCategoriaCreated }: ElementoProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [textoBoton] = useState();
 
-  const columns: Column<CategoriaElemento & { key: number }>[]= [
+  const columns: Column<CategoriaElemento & { key: number }>[] = [
     { key: "codigo_unpsc", label: "Código UNPSC", filterable: true },
     { key: "nombre_categoria", label: "Nombre Categoria", filterable: true },
 
@@ -37,15 +38,15 @@ const Elemento = ({ isInModal, onCategoriaCreated }: ElementoProps) => {
   const handleSubmit = async (values: Record<string, string>) => {
     try {
       const currentDate = new Date().toISOString();
-      
+
       if (editingId) {
         // Buscar la categoría actual para obtener la fecha de creación original
         const categoriaActual = categorias.find(cat => cat.id_categoria_elemento === editingId);
-        
+
         if (!categoriaActual) {
           throw new Error('Categoría no encontrada');
         }
-        
+
         const updatePayload = {
           id_categoria_elemento: editingId,
           nombre_categoria: values.nombre_categoria,
@@ -54,7 +55,7 @@ const Elemento = ({ isInModal, onCategoriaCreated }: ElementoProps) => {
           fecha_creacion: categoriaActual.fecha_creacion,
           fecha_modificacion: currentDate,
         };
-        
+
         await actualizarCategoriaElemento(editingId, updatePayload);
         showSuccessToast('Categoria actualizada con éxito');
       } else {
@@ -68,13 +69,13 @@ const Elemento = ({ isInModal, onCategoriaCreated }: ElementoProps) => {
 
         await crearCategoriaElemento(createPayload as any);
         showSuccessToast('Categoria creada con éxito');
-        
+
         // Si estamos en modo modal y hay callback, lo llamamos
         if (isInModal && onCategoriaCreated) {
           onCategoriaCreated();
         }
       }
-      
+
       if (!isInModal) {
         setIsModalOpen(false);
         setFormData({});
@@ -89,12 +90,9 @@ const Elemento = ({ isInModal, onCategoriaCreated }: ElementoProps) => {
     try {
       const nuevoEstado = !categoria.estado;
       const updateData: Partial<CategoriaElemento> = {
-        id_categoria_elemento: categoria.id_categoria_elemento,
-        codigo_unpsc: categoria.codigo_unpsc,
-        nombre_categoria: categoria.nombre_categoria,
+        ...categoria,
         estado: nuevoEstado,
-        fecha_creacion: categoria.fecha_creacion,
-        fecha_modificacion: new Date().toISOString().split('T')[0]
+        fecha_modificacion: new Date().toISOString()
       };
 
       await actualizarCategoriaElemento(categoria.id_categoria_elemento, updateData as CategoriaElemento);
@@ -120,27 +118,20 @@ const Elemento = ({ isInModal, onCategoriaCreated }: ElementoProps) => {
   };
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
         {!isInModal && (
           <>
-            <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-              <h1 className="text-xl font-bold mb-4">Gestión de Elementos</h1>
-            </AnimatedContainer>
-            
-            <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-              <Boton
-                onClick={handleCreate}
-                className="bg-blue-500 text-white px-4 py-2 mb-4"
-              >
-                Crear Nueva Categoria
-              </Boton>
-            </AnimatedContainer>
+            <h1 className="text-xl font-bold mb-4">Gestión de Elementos</h1>
+
+            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nueva Categoría">
+              {textoBoton}
+            </Botton>
 
             {loading ? (
               <p>Cargando categorias...</p>
             ) : (
-              <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+              <div className="w-full">
                 {createEntityTable({
                   columns: columns as Column<any>[],
                   data: categorias,
@@ -150,55 +141,36 @@ const Elemento = ({ isInModal, onCategoriaCreated }: ElementoProps) => {
                     onEdit: handleEdit
                   }
                 })}
-              </AnimatedContainer>
+              </div>
             )}
           </>
         )}
 
-        {/* En modo modal, mostramos directamente el formulario */}
-        {isInModal ? (
-          <div className="p-4">
-            <h2 className="text-lg font-bold mb-4">Crear Nueva Categoría</h2>
-            <Form
-              fields={formFieldsCreate}
-              onSubmit={handleSubmit}
-              buttonText="Crear"
-              initialValues={{
-                ...formData,
-                fecha_creacion: new Date().toISOString().split('T')[0]
-              }}
-              schema={categoriaElementoSchema}
-            />
-          </div>
-        ) : isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
-                <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Categoría" : "Crear Nueva Categoría"}
-                </h2>
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={{
-                    ...formData,
-                    ...(editingId 
-                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                  }}
-                  schema={categoriaElementoSchema}
-                />
-              </div>
-            </AnimatedContainer>  
-          </div> 
-        )}
+        {/* Modal para crear/editar categoría usando el modal global */}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }}
+          title={editingId ? "Editar Categoría" : "Crear Nueva Categoría"}
+        >
+          <Form
+            fields={editingId ? formFieldsEdit : formFieldsCreate}
+            onSubmit={handleSubmit}
+            buttonText={editingId ? "Actualizar" : "Crear"}
+            initialValues={{
+              ...formData,
+              ...(editingId
+                ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                : { fecha_creacion: new Date().toISOString().split('T')[0] })
+            }}
+            schema={categoriaElementoSchema}
+          />
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

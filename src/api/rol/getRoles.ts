@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getRoles(): Promise<Rol[]> {
   const response = await axiosInstance.get("/roles");
-  return extractArrayData<Rol>(response, 'getRoles');
+  return extractArrayData<Rol>(response);
 }
 
 export function useGetRoles() {

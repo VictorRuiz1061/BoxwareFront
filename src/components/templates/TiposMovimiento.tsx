@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useGetTiposMovimiento, usePostTipoMovimiento, usePutTipoMovimiento } from '@/hooks/tipoMovimiento';
 import type { TipoMovimiento } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { tipoMovimientoSchema } from '@/schemas';
 
@@ -13,6 +13,7 @@ const TiposMovimiento = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [textoBoton] = useState();
 
   const columns: Column<TipoMovimiento>[] = [
     { key: "tipo_movimiento", label: "Tipo de Movimiento", filterable: true },
@@ -65,7 +66,6 @@ const TiposMovimiento = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el tipo de movimiento:', error);
       showErrorToast('Error al guardar el tipo de movimiento');
     }
   };
@@ -84,7 +84,6 @@ const TiposMovimiento = () => {
       await actualizarTipoMovimiento(tipoMovimiento.id_tipo_movimiento, updateData);
       showSuccessToast(`El tipo de movimiento fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
     } catch (error) {
-      console.error('Error al cambiar el estado del tipo de movimiento:', error);
       showErrorToast("Error al cambiar el estado del tipo de movimiento.");
     }
   };
@@ -104,25 +103,18 @@ const TiposMovimiento = () => {
   };
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
-        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
           <h1 className="text-xl font-bold mb-4">Gestión de Tipos de Movimiento</h1>
-        </AnimatedContainer>
       
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 text-white px-4 py-2 mb-4"
-          >
-            Crear Nuevo Tipo de Movimiento
-          </Boton>
-        </AnimatedContainer>
+            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Tipo de Movimiento">
+              {textoBoton}
+            </Botton>
 
         {loading ? (
           <p>Cargando tipos de movimiento...</p>
         ) : (
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <div className="w-full">
             {createEntityTable({
               columns: columns as Column<any>[],
               data: tiposMovimiento,
@@ -132,36 +124,29 @@ const TiposMovimiento = () => {
                 onEdit: handleEdit
               }
             })}
-          </AnimatedContainer>
+          </div>
         )}
 
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-lg">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Tipo de Movimiento" : "Crear Nuevo Tipo de Movimiento"}
-                </h2>
-                <Form
-                  fields={editingId ? formFieldsEdit : formFieldsCreate}
-                  onSubmit={handleSubmit}
-                  buttonText={editingId ? "Actualizar" : "Crear"}
-                  initialValues={formData}
-                  schema={tipoMovimientoSchema}
-                />
-              </div>
-            </AnimatedContainer>  
-          </div> 
-        )}
+        {/* Modal para crear/editar tipo de movimiento usando el modal global */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} 
+          title={editingId ? "Editar Tipo de Movimiento" : "Crear Nuevo Tipo de Movimiento"}
+        >
+          <Form
+            fields={editingId ? formFieldsEdit : formFieldsCreate}
+            onSubmit={handleSubmit}
+            buttonText={editingId ? "Actualizar" : "Crear"}
+            initialValues={formData}
+            schema={tipoMovimientoSchema}
+          />
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

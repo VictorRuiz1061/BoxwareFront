@@ -3,9 +3,9 @@ import { useGetMateriales, usePostMaterial, usePutMaterial } from "@/hooks/mater
 import { useGetCategoriasElementos } from '@/hooks/Elemento';
 import { useGetTipoMateriales } from "@/hooks/tipoMaterial";
 import { Material } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast, TablaImagen } from "@/components/atomos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast, TablaImagen } from "@/components/atomos";
 import { ImageSelector } from "@/components/moleculas";
-import { createEntityTable, Form } from "@/components/organismos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { materialSchema } from '@/schemas';
 import Elemento from "./Elemento";
@@ -27,6 +27,7 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
   const [isTipoMaterialModalOpen, setIsTipoMaterialModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [textoBoton] = useState();
 
   const columns: Column<Material & { key: number }>[] = [
     { key: "codigo_sena", label: "Código SENA", filterable: true },
@@ -140,7 +141,6 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
       extraButton: {
         icon: "+",
         onClick: () => setIsCategoriaModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
     {
@@ -153,7 +153,6 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
       extraButton: {
         icon: "+",
         onClick: () => setIsTipoMaterialModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     }
   ];
@@ -339,29 +338,22 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
   };
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
         {!isInModal && (
           <>
-            <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
               <h1 className="text-xl font-bold mb-4">Gestión de Materiales</h1>
-            </AnimatedContainer>
           
-            <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-              <Boton
-                onClick={handleCreate}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mb-4 rounded-md"
-              >
-                Crear Nuevo Material
-              </Boton>
-            </AnimatedContainer>
+            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Material">
+              {textoBoton}
+            </Botton>
 
             {loading ? (
               <div className="flex justify-center items-center py-8">
                 <p className="text-gray-500">Cargando materiales...</p>
               </div>
             ) : (
-              <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+              <div className="w-full">
                 {createEntityTable({
                   columns: columns as Column<any>[],
                   data: materiales,
@@ -371,7 +363,7 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
                     onEdit: handleEdit
                   }
                 })}
-              </AnimatedContainer>
+              </div>
             )}
           </>
         )}
@@ -405,87 +397,67 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
               </div>
             </div>
           </div>
-        ) : isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-4xl">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Material" : "Crear Nuevo Material"}
-                </h2>
-                
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="col-span-1 flex flex-col items-center justify-start bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
-                    <ImageSelector
-                      label="Imagen del Material"
-                      value={formData.imagen || ''}
-                      onChange={(imagePath) => {
-                        setFormData(prev => ({ ...prev, imagen: imagePath }));
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="col-span-1 bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
-                    <Form
-                      fields={editingId ? formFieldsEdit : formFieldsCreate}
-                      onSubmit={handleSubmit}
-                      buttonText={editingId ? "Actualizar" : "Crear"}
-                      initialValues={{
-                        ...formData,
-                        ...(editingId 
-                          ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                          : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                      }}
-                      schema={materialSchema}
-                    />
-                  </div>
-                </div>
+        ) : (
+          <Modal 
+            isOpen={isModalOpen} 
+            onClose={() => {
+              setIsModalOpen(false);
+              setFormData({});
+              setEditingId(null);
+            }} 
+            title={editingId ? "Editar Material" : "Crear Nuevo Material"}
+          >
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col items-center justify-start bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+                <ImageSelector
+                  label="Imagen del Material"
+                  value={formData.imagen || ''}
+                  onChange={(imagePath) => {
+                    setFormData(prev => ({ ...prev, imagen: imagePath }));
+                  }}
+                />
               </div>
-            </AnimatedContainer>  
-          </div> 
+              <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+                <Form
+                  fields={editingId ? formFieldsEdit : formFieldsCreate}
+                  onSubmit={handleSubmit}
+                  buttonText={editingId ? "Actualizar" : "Crear"}
+                  initialValues={{
+                    ...formData,
+                    ...(editingId 
+                      ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
+                      : { fecha_creacion: new Date().toISOString().split('T')[0] })
+                  }}
+                  schema={materialSchema}
+                />
+              </div>
+            </div>
+          </Modal>
         )}
 
-        {/* Modal para crear categoría */}
-        {isCategoriaModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsCategoriaModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <Elemento isInModal={true} onCategoriaCreated={() => {
-                setIsCategoriaModalOpen(false);
-              }} />
-            </div>
-          </div>
-        )}
+        {/* Modal para crear categoría usando el modal global */}
+        <Modal 
+          isOpen={isCategoriaModalOpen} 
+          onClose={() => setIsCategoriaModalOpen(false)} 
+          title="Crear Nueva Categoría"
+        >
+          <Elemento isInModal={true} onCategoriaCreated={() => {
+            setIsCategoriaModalOpen(false);
+          }} />
+        </Modal>
 
-        {/* Modal para crear tipo de material */}
-        {isTipoMaterialModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsTipoMaterialModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <TipoMaterial isInModal={true} onTipoMaterialCreated={() => {
-                setIsTipoMaterialModalOpen(false);
-              }} />
-            </div>
-          </div>
-        )}
+        {/* Modal para crear tipo de material usando el modal global */}
+        <Modal 
+          isOpen={isTipoMaterialModalOpen} 
+          onClose={() => setIsTipoMaterialModalOpen(false)} 
+          title="Crear Nuevo Tipo de Material"
+        >
+          <TipoMaterial isInModal={true} onTipoMaterialCreated={() => {
+            setIsTipoMaterialModalOpen(false);
+          }} />
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

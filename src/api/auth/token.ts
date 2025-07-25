@@ -1,10 +1,12 @@
 import axiosInstance from '../axiosConfig';
 import { LoginCredentials, RegisterData, AuthResponse } from '@/types/auth';
-// No necesitamos importar extractObjectData ya que ahora procesamos la respuesta directamente
-
 const TOKEN_KEY = 'token';
 
-export const setTokenCookie = (token: string, maxAge = 86400) => {
+
+// Usar la variable de entorno para el tiempo de expiración del token, con fallback a 10 minutos (600 segundos)
+const TOKEN_EXPIRY = parseInt(import.meta.env.VITE_TOKEN_EXPIRY || '600', 10);
+
+export const setTokenCookie = (token: string, maxAge = TOKEN_EXPIRY) => {
   document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${maxAge}; samesite=strict`;
 };
 

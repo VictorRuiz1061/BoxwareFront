@@ -5,7 +5,7 @@ import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getTiposSitio(): Promise<TipoSitio[]> {
   const response = await axiosInstance.get("/tipo-sitios");
-  return extractArrayData<TipoSitio>(response, 'getTiposSitio');
+  return extractArrayData<TipoSitio>(response);
 }
 
 export function useGetTiposSitio() {

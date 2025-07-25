@@ -18,7 +18,6 @@ import Permisos from "./components/pages/Permisos";
 // Inventario Pages
 import Materiales from "./components/pages/Materiales";
 import Elementos from "./components/pages/Elementos";
-import Stock from "./components/pages/Stock";
 import TipoMaterial from "./components/pages/TipoMaterial";
 import Movimientos from "./components/pages/Movimientos";
 import TiposMovimiento from "./components/pages/TiposMovimiento";
@@ -59,7 +58,6 @@ function App() {
         {/* Inventario */}
         <Route path="/materiales" element={<Materiales />} />
         <Route path="/elementos" element={<Elementos />} />
-        <Route path="/stock" element={<Stock />} />
         <Route path="/tipo_materiales" element={<TipoMaterial />} />
         <Route path="/movimientos" element={<Movimientos />} />
         <Route path="/tipos_movimiento" element={<TiposMovimiento />} />

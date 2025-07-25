@@ -3,9 +3,13 @@ import axiosInstance from '@/api/axiosConfig';
 import { Movimiento } from '@/types/movimiento';
 
 export async function postMovimiento(data: Movimiento): Promise<Movimiento> {
-  const response = await axiosInstance.post<Movimiento>('/movimientos', data);
-  return response.data;
-};
+  try {
+    const response = await axiosInstance.post<Movimiento>('/movimientos', data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
 
 export function usePostMovimiento() {
   const queryClient = useQueryClient();
