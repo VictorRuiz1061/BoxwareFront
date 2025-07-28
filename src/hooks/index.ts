@@ -1,11 +1,13 @@
 // Main hooks barrel file
 
 // Export all hook modules
+export * from './alertas';
 export * from './areas';
 export * from './auth';
 export * from './centros';
 export * from './Elemento';
 export * from './fichas';
+export * from './inventario';
 export * from './material';
 export * from './modulos';
 export * from './movimiento';

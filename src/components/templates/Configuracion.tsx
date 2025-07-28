@@ -9,7 +9,6 @@ import { usuarioEditSchema } from "@/schemas";
 
 const Configuraciones = () => {
   const { user } = useGetAuth();
-  // Corregido: 'id' puede no existir en 'user', así que verificamos su existencia
   const idUsuario = (user && "id" in user) ? (user as any).id : undefined;
   const { usuario: usuarioActual, loading } = idUsuario ? useGetUsuariosVer(idUsuario) : { usuario: null, loading: true };
 
@@ -217,8 +216,8 @@ const Configuraciones = () => {
                   <ImageSelector
                     label="Foto de Perfil"
                     value={formData.imagen || ''}
-                    onChange={(imagePath: string) => {
-                      setFormData(prev => ({ ...prev, imagen: imagePath }));
+                    onChange={(imagePath) => {
+                      setFormData(prev => ({ ...prev, imagen: imagePath as string }));
                     }}
                   />
                 </div>

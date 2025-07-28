@@ -1,4 +1,5 @@
 // Export all types
+export * from './alerta';
 export * from './area';
 export * from './auth';
 export * from './caracteristicas';

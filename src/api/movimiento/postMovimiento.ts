@@ -6,7 +6,7 @@ export async function postMovimiento(data: Movimiento): Promise<Movimiento> {
   try {
     const response = await axiosInstance.post<Movimiento>('/movimientos', data);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     throw error;
   }
 }

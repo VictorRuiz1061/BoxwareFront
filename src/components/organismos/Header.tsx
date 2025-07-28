@@ -1,7 +1,8 @@
-import { Bell, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import AnimatedContainer from "@/components/atomos/AnimatedContainer";
 import Image from "@/components/atomos/Imagen";
 import ThemeToggle from "@/components/atomos/ThemeToggle";
+import AlertasDropdown from "@/components/organismos/AlertasDropdown";
 import { useTheme } from "@/context/ThemeContext";
 import { useGetRoles } from "@/hooks/roles";
 import { useEffect, useState } from "react";
@@ -14,6 +15,7 @@ const Header = () => {
   const { authState } = useAuthContext();
 
   const [rolNombre, setRolNombre] = useState<string>("");
+  const [alertasOpen, setAlertasOpen] = useState(false);
 
   // Obtener el usuario del contexto de autenticación
   const usuarioActual = authState.user;
@@ -75,12 +77,10 @@ const Header = () => {
               <ThemeToggle />
 
             {/* Notificaciones */}
-              <button className={`relative p-2 text-white ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-blue-500'} rounded-lg transition-all duration-300 group`}>
-                <Bell size={20} className="group-hover:scale-110 transition-transform duration-300" />
-                <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110">
-                  3
-                </span>
-              </button>
+              <AlertasDropdown 
+                isOpen={alertasOpen} 
+                onToggle={() => setAlertasOpen(!alertasOpen)} 
+              />
 
             {/* Configuración */}
               <Link to="/configuraciones" className={`p-2 text-white ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-blue-500'} rounded-lg transition-all duration-300 group`}>

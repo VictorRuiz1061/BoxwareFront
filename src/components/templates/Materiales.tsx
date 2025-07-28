@@ -26,7 +26,7 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
   const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
   const [isTipoMaterialModalOpen, setIsTipoMaterialModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, string | File>>({});
   const [textoBoton] = useState();
 
   const columns: Column<Material & { key: number }>[] = [
@@ -36,10 +36,9 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
       label: "Imagen", 
       filterable: false,
       render: (material) => {
-        let imageUrl = material.imagen || '';
-        if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
-          imageUrl = `https://${imageUrl}`;
-        }
+        // El backend ahora envía URLs completas, así que usamos la imagen directamente
+        const imageUrl = material.imagen || '/assets/default.jpg';
+        
         return (
           <TablaImagen 
             src={imageUrl} 
@@ -232,26 +231,32 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
       const tipo_material_id = parseInt(values.tipo_material_id);
       const producto_perecedero = values.producto_perecedero === 'true';
       
-      // Obtener la imagen directamente del formData
-      const imagenPath = formData.imagen || '';
+      // Obtener la imagen del formData, manejando tanto string como File
+      const imagenValue = formData.imagen;
 
       // Fecha actual para timestamps
       const currentDate = new Date().toISOString().split('T')[0];
       
       if (editingId) {
         // Actualizar material existente
-        const updatePayload: Partial<Material> = {
+        const updatePayload: Partial<Material> & { imagen?: File | string } = {
           id_material: editingId,
           nombre_material: values.nombre_material,
           descripcion_material: values.descripcion_material,
           unidad_medida: values.unidad_medida,
-          imagen: imagenPath,
           producto_perecedero: producto_perecedero,
           fecha_vencimiento: values.fecha_vencimiento || currentDate,
           categoria_id: categoria_id,
           tipo_material_id: tipo_material_id,
           estado: true,
         };
+
+        // Agregar imagen si existe
+        if (imagenValue instanceof File) {
+          (updatePayload as any).imagen = imagenValue;
+        } else if (typeof imagenValue === 'string' && imagenValue) {
+          updatePayload.imagen = imagenValue;
+        }
         
         try {
           await actualizarMaterial(editingId, updatePayload);
@@ -262,18 +267,23 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
         }
       } else {
         // Crear nuevo material
-        const createPayload: Material = {
+        const createPayload: any = {
           codigo_sena: values.codigo_sena,
           nombre_material: values.nombre_material,
           descripcion_material: values.descripcion_material,
           unidad_medida: values.unidad_medida,
-          imagen: imagenPath,
           producto_perecedero: producto_perecedero,
           fecha_vencimiento: values.fecha_vencimiento || currentDate,
           categoria_id: categoria_id,
           tipo_material_id: tipo_material_id,
           estado: true,
-          id_material: 0
+        };
+
+        // Agregar imagen si existe
+        if (imagenValue instanceof File) {
+          createPayload.imagen = imagenValue;
+        } else if (typeof imagenValue === 'string' && imagenValue) {
+          createPayload.imagen = imagenValue;
         }
 
         try {
@@ -376,7 +386,7 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
               <div className="col-span-1 flex flex-col items-center justify-start bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
                 <ImageSelector
                   label="Imagen del Material"
-                  value={formData.imagen || ''}
+                  value={typeof formData.imagen === 'string' ? formData.imagen : ''}
                   onChange={(imagePath) => {
                     setFormData(prev => ({ ...prev, imagen: imagePath }));
                   }}
@@ -411,7 +421,7 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
               <div className="flex flex-col items-center justify-start bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
                 <ImageSelector
                   label="Imagen del Material"
-                  value={formData.imagen || ''}
+                  value={typeof formData.imagen === 'string' ? formData.imagen : ''}
                   onChange={(imagePath) => {
                     setFormData(prev => ({ ...prev, imagen: imagePath }));
                   }}

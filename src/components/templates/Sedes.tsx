@@ -6,6 +6,7 @@ import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/c
 import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { sedeSchema } from '@/schemas';
+import Centros from './Centros';
 
 interface SedesProps {
   isInModal?: boolean;
@@ -18,6 +19,7 @@ const Sedes = ({ isInModal = false, onSedeCreated }: SedesProps) => {
   const { actualizarSede } = usePutSede();
   const { centros, loading: loadingCentros } = useGetCentros();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCentroModalOpen, setIsCentroModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [textoBoton] = useState();
@@ -48,7 +50,11 @@ const Sedes = ({ isInModal = false, onSedeCreated }: SedesProps) => {
       label: "Centro",
       type: "select",
       required: true,
-      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro }))
+      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsCentroModalOpen(true),
+      }
     },
   ];
 
@@ -60,7 +66,12 @@ const Sedes = ({ isInModal = false, onSedeCreated }: SedesProps) => {
       label: "Centro",
       type: "select",
       required: true,
-      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro }))
+      options: centros.map(m => ({ label: m.nombre_centro, value: m.id_centro })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsCentroModalOpen(true),
+        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
+      }
     },
   ];
 
@@ -218,6 +229,17 @@ const Sedes = ({ isInModal = false, onSedeCreated }: SedesProps) => {
             }}
             schema={sedeSchema}
           />
+        </Modal>
+
+        {/* Modal para crear centro usando el modal global */}
+        <Modal 
+          isOpen={isCentroModalOpen} 
+          onClose={() => setIsCentroModalOpen(false)} 
+          title="Crear Nuevo Centro"
+        >
+          <Centros isInModal={true} onCentroCreated={() => {
+            setIsCentroModalOpen(false);
+          }} />
         </Modal>
       </div>
     </AnimatedContainer>

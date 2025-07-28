@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useGetProgramas, usePostPrograma, usePutPrograma } from '@/hooks/programas';
 import { useGetAreas } from '@/hooks/areas';
-import type { Programa } from '@/types';
+import type { Programa, CreateProgramaRequest, UpdateProgramaRequest } from '@/types';
 import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
 import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
@@ -81,7 +81,6 @@ const Programas = ({ isInModal = false, onProgramaCreated = () => {} }) => {
   const handleSubmit = async (values: Record<string, string>) => {
     try {
       const area_id = parseInt(values.area_id);
-      const currentDate = new Date().toISOString();
       
       if (editingId) {
         const programaToEdit = programas.find(p => p.id_programa === editingId);
@@ -89,25 +88,20 @@ const Programas = ({ isInModal = false, onProgramaCreated = () => {} }) => {
           throw new Error('No se encontró el programa original');
         }
         
-        const updatePayload = {
-          id_programa: editingId,
+        const updatePayload: Omit<UpdateProgramaRequest, 'id'> = {
           area_id,
           nombre_programa: values.nombre_programa,
           estado: true,
           fecha_creacion: programaToEdit.fecha_creacion,
-          fecha_modificacion: currentDate,
         };
         
         await actualizarPrograma(editingId, updatePayload);
         showSuccessToast('Programa actualizado con éxito');
       } else {
-        const createPayload = {
-          id_programa: 0, // El backend ignorará este valor
+        const createPayload: CreateProgramaRequest = {
           nombre_programa: values.nombre_programa,
           area_id,
-          estado: true,
-          fecha_creacion: currentDate,
-          fecha_modificacion: currentDate
+          estado: true
         };
 
         await crearPrograma(createPayload);

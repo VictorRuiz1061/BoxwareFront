@@ -109,8 +109,6 @@ export const TablaImagen = ({
   // Estado para controlar cuando el mouse está sobre la imagen
   const [isHovered, setIsHovered] = useState(false);
   
-  // Verificar si la URL es válida
-
   // Determinar dimensiones basadas en el tamaño
   const getDimensions = () => {
     switch (size) {

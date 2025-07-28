@@ -31,10 +31,6 @@ const Movimientos = () => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [textoBoton] = useState();
 
-  // Log the first movimiento object to see its structure
-  if (movimientos && movimientos.length > 0) {
-  }
-
   const columns: Column<Movimiento & { key: number }>[] = [
     { key: "cantidad", label: "Cantidad", filterable: true },
     {
@@ -49,12 +45,12 @@ const Movimientos = () => {
       }
     },
     {
-      key: "tipo_movimiento_id",
+      key: "tipo_movimiento_id_obj",
       label: "Tipo de Movimiento",
       filterable: true,
       render: (movimiento) => {
-        if (movimiento.tipo_movimiento_id && movimiento.tipo_movimiento_id.tipo_movimiento) {
-          return movimiento.tipo_movimiento_id.tipo_movimiento;
+        if (movimiento.tipo_movimiento_id && (movimiento.tipo_movimiento_id as any).tipo_movimiento) {
+          return (movimiento.tipo_movimiento_id as any).tipo_movimiento;
         }
         return 'No disponible';
       }
@@ -64,8 +60,8 @@ const Movimientos = () => {
       label: "Material",
       filterable: true,
       render: (movimiento) => {
-        if (movimiento.material && movimiento.material.nombre_material) {
-          return movimiento.material.nombre_material;
+        if (movimiento.material_id && (movimiento.material_id as any).nombre_material) {
+          return (movimiento.material_id as any).nombre_material;
         }
         return 'No disponible';
       }
@@ -94,19 +90,6 @@ const Movimientos = () => {
         return 'No disponible';
       }
     },
-    {
-      key: "responsable_id",
-      label: "Responsable",
-      filterable: true,
-      render: (movimiento) => {
-        if (movimiento.responsable_id) {
-          const usuario = usuarios.find(u => u.id_usuario === movimiento.responsable_id);
-          return usuario ? `${usuario.nombre} ${usuario.apellido}` : 'No disponible';
-        }
-        return 'No asignado';
-      }
-    },
-    { key: "observaciones", label: "Observaciones", filterable: true },
     { key: "fecha_creacion", label: "Fecha de Creación", filterable: true },
   ];
 
@@ -178,24 +161,6 @@ const Movimientos = () => {
         onClick: () => setIsMaterialModalOpen(true),
       }
     },
-    {
-      key: "responsable_id",
-      label: "Responsable",
-      type: "select",
-      required: false,
-      className: "col-span-1",
-      options: [
-        { value: "", label: "Seleccione un responsable (opcional)" },
-        ...usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` }))
-      ],
-    },
-    {
-      key: "observaciones",
-      label: "Observaciones",
-      type: "text",
-      required: false,
-      className: "col-span-2",
-    },
   ];
 
   const formFieldsEdit: FormField[] = [
@@ -266,24 +231,6 @@ const Movimientos = () => {
         onClick: () => setIsMaterialModalOpen(true),
       }
     },
-    {
-      key: "responsable_id",
-      label: "Responsable",
-      type: "select",
-      required: false,
-      className: "col-span-1",
-      options: [
-        { value: "", label: "Seleccione un responsable (opcional)" },
-        ...usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` }))
-      ],
-    },
-    {
-      key: "observaciones",
-      label: "Observaciones",
-      type: "text",
-      required: false,
-      className: "col-span-2",
-    },
   ];
 
   const handleSubmit = async (values: Record<string, string>) => {
@@ -295,8 +242,6 @@ const Movimientos = () => {
       const tipo_movimiento = parseInt(values.tipo_movimiento);
       const material_id = parseInt(values.material_id);
       const cantidad = parseInt(values.cantidad);
-      const responsable_id = values.responsable_id ? parseInt(values.responsable_id) : undefined;
-      const observaciones = values.observaciones || '';
 
       // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
@@ -313,12 +258,11 @@ const Movimientos = () => {
           usuario_id,
           sitio_origen_id,
           sitio_destino_id,
+          sitio_id: sitio_origen_id, // Usar sitio_origen_id como sitio_id
           tipo_movimiento,
           material_id,
           cantidad,
-          responsable_id,
-          observaciones,
-          estado: 1,
+          estado: original.estado,
           fecha_creacion: original.fecha_creacion || currentDate,
           fecha_modificacion: currentDate,
         } as Movimiento;
@@ -329,18 +273,17 @@ const Movimientos = () => {
         // Crear nuevo movimiento
         const createPayload = {
           usuario_id,
-          usuario_movimiento_id: usuario_id,
           sitio_origen_id,
           sitio_destino_id,
+          sitio_id: sitio_origen_id, // Usar sitio_origen_id como sitio_id
           tipo_movimiento,
           material_id,
           cantidad,
-          responsable_id,
-          observaciones,
-          estado: 1,
+          estado: 1, // Cambiar a número 1 como espera el backend
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
         } as Movimiento;
+        
         await crearMovimiento(createPayload);
         showSuccessToast('Movimiento creado con éxito');
       }
@@ -359,11 +302,10 @@ const Movimientos = () => {
         usuario_id: movimiento.usuario_id,
         sitio_origen_id: movimiento.sitio_origen_id,
         sitio_destino_id: movimiento.sitio_destino_id,
+        sitio_id: movimiento.sitio_origen_id, // Usar sitio_origen_id como sitio_id
         tipo_movimiento: movimiento.tipo_movimiento,
         material_id: movimiento.material_id,
         cantidad: movimiento.cantidad,
-        responsable_id: movimiento.responsable_id,
-        observaciones: movimiento.observaciones,
         estado: movimiento.estado === true || movimiento.estado === 1 ? 0 : 1,
         fecha_modificacion: new Date().toISOString()
       } as Movimiento;
@@ -387,14 +329,12 @@ const Movimientos = () => {
     if (!movimiento.id_movimiento) return;
 
     const formValues = {
-      usuario_id: movimiento.usuario_id.toString(),
-      sitio_origen_id: movimiento.sitio_origen_id.toString(),
-      sitio_destino_id: movimiento.sitio_destino_id.toString(),
-      tipo_movimiento: movimiento.tipo_movimiento.toString(),
-      material_id: movimiento.material_id.toString(),
+      usuario_id: movimiento.usuario_id?.toString() || '',
+      sitio_origen_id: movimiento.sitio_origen_id?.toString() || '',
+      sitio_destino_id: movimiento.sitio_destino_id?.toString() || '',
+      tipo_movimiento: movimiento.tipo_movimiento?.toString() || '',
+      material_id: movimiento.material_id?.toString() || '',
       cantidad: movimiento.cantidad.toString(),
-      responsable_id: movimiento.responsable_id?.toString() || '',
-      observaciones: movimiento.observaciones || ''
     };
 
     setFormData(formValues);

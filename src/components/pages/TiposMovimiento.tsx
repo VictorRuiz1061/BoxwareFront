@@ -1,4 +1,4 @@
-import TiposMovimiento from '../templates/TiposMovimiento';
+import TiposMovimiento from '../templates/Inventario';
 
 const TiposMovimientoPage = () => {
   return <TiposMovimiento />;

@@ -109,34 +109,45 @@ const Municipios = ({ isInModal = false, onMunicipioCreated }: MunicipiosProps) 
     setIsModalOpen(true);
   };
 
+  // Si está en modo modal, mostrar directamente el formulario
+  if (isInModal) {
+    return (
+      <div className="w-full">
+        <Form
+          fields={formFieldsCreate}
+          onSubmit={handleSubmit}
+          buttonText="Crear"
+          initialValues={{
+            fecha_creacion: new Date().toISOString().split('T')[0]
+          }}
+          schema={municipioSchema}
+        />
+      </div>
+    );
+  }
+
   return (
     <AnimatedContainer>
       <div className="w-full">
-        {!isInModal && (
-          <>
-            <h1 className="text-xl font-bold mb-4">Gestión de Municipios</h1>
-            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Municipio">
-              {textoBoton}
-            </Botton>
-          </>
-        )}
+        <h1 className="text-xl font-bold mb-4">Gestión de Municipios</h1>
+        <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Municipio">
+          {textoBoton}
+        </Botton>
 
         {loading ? (
           <p>Cargando municipios...</p>
         ) : (
-          !isInModal && (
-            <div className="w-full">
-              {createEntityTable({
-                columns: columns as Column<any>[],
-                data: municipios,
-                idField: 'id_municipio',
-                handlers: {
-                  onToggleEstado: handleToggleEstado,
-                  onEdit: handleEdit
-                }
-              })}
-            </div>
-          )
+          <div className="w-full">
+            {createEntityTable({
+              columns: columns as Column<any>[],
+              data: municipios,
+              idField: 'id_municipio',
+              handlers: {
+                onToggleEstado: handleToggleEstado,
+                onEdit: handleEdit
+              }
+            })}
+          </div>
         )}
 
         {/* Modal para crear/editar municipio usando el modal global */}

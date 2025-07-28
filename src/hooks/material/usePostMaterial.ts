@@ -1,7 +1,7 @@
 import { usePostMaterial as useApiPostMaterial } from '@/api/materiales';
 import { Material } from '@/types';
 
-type CreateMaterialPayload = Omit<Material, 'id_material'>;
+type CreateMaterialPayload = Omit<Material, 'id_material'> & { imagen?: File | string };
 
 export function usePostMaterial() {
   const post = useApiPostMaterial();

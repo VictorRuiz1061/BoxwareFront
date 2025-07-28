@@ -3,11 +3,13 @@
 export { default as axiosInstance } from './axiosConfig';
 
 // Export all API modules
+export * from './alertas';
 export * from './areas';
 export * from './auth';
 export * from './centros';
 export * from './Elemento';
 export * from './fichas';
+export * from './inventario';
 export * from './materiales';
 export * from './modulos';
 export * from './movimiento';

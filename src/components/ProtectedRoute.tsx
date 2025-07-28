@@ -37,7 +37,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Redireccionar si no está autenticado o no tiene token válido
   if (!isAuthenticated || !hasToken) {
-    console.log('Acceso denegado: Usuario no autenticado o token inválido');
     return <Navigate to="/" />;
   }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TablaImagen, showErrorToast } from '../atomos';
-import { validateImage, createImagePreview, revokeImagePreview } from '@/utils';
+import { validateImage, createImagePreview, revokeImagePreview } from '@/utils/imageUtils';
 
 interface ImageSelectorProps {
   label: string;
@@ -53,7 +53,6 @@ const ImageSelector = ({ label, value, onChange, onError }: ImageSelectorProps) 
 
       showErrorToast('Imagen seleccionada correctamente. Se guardará cuando envíes el formulario.');
     } catch (error) {
-      console.error('Error al procesar la imagen:', error);
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido al procesar la imagen';
       showErrorToast(errorMsg);
       onError?.(errorMsg);
@@ -134,8 +133,8 @@ const ImageSelector = ({ label, value, onChange, onError }: ImageSelectorProps) 
         
         <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-1">
           <p>• Formatos permitidos: JPG, PNG, GIF, WebP</p>
-          <p>• Tamaño máximo: 5MB</p>
-          <p>• Dimensiones: 100x100px - 2048x2048px</p>
+          <p>• Tamaño máximo: 50MB</p>
+          <p>• Sin restricciones de dimensiones (8K, 4K, etc.)</p>
           <p>• La imagen se guardará cuando envíes el formulario</p>
           {selectedFile && (
             <p className="text-green-600 dark:text-green-400 font-medium">

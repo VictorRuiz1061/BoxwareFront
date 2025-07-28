@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Header from '../organismos/Header';
 import Sidebar from '../organismos/Sidebar';
+import AlertasToastContainer from '../organismos/AlertasToastContainer';
 import { useTheme } from '../../context/ThemeContext';
 
 const MainLayout = () => {
@@ -19,6 +20,9 @@ const MainLayout = () => {
             <Outlet />
           </main>
         </div>
+        
+        {/* Contenedor de toasts de alertas */}
+        <AlertasToastContainer />
       </div>
   );
 };

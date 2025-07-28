@@ -134,13 +134,11 @@ const Permisos = () => {
   const handleSubmit = async (values: Record<string, any>) => {
     // Prevenir múltiples envíos
     if (isSubmitting) {
-      console.log('Formulario ya se está enviando, ignorando envío duplicado');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      console.log('Iniciando envío del formulario con valores:', values);
 
       // Convertir los IDs de módulos a números
       const modulo_ids = Array.isArray(values.modulo_id)
@@ -189,7 +187,6 @@ const Permisos = () => {
           fecha_creacion: currentDate,
         };
 
-        console.log('Enviando permiso:', newPermiso);
         await crearPermiso(newPermiso as any);
         showSuccessToast('Permiso creado correctamente');
       }
@@ -198,7 +195,6 @@ const Permisos = () => {
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el permiso:', error);
       showErrorToast('Error al guardar el permiso');
     } finally {
       setIsSubmitting(false);

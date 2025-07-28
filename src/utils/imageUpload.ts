@@ -26,12 +26,12 @@ export const saveImageToAssets = async (file: File): Promise<ImageUploadResult> 
       };
     }
 
-    // Validar el tamaño del archivo (máximo 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validar el tamaño del archivo (máximo 50MB para permitir imágenes de alta resolución)
+    const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
       return {
         success: false,
-        error: 'El archivo es demasiado grande. Máximo 5MB permitido.'
+        error: 'El archivo es demasiado grande. Máximo 50MB permitido.'
       };
     }
 
@@ -72,42 +72,24 @@ export const validateImage = async (file: File): Promise<{ valid: boolean; error
     };
   }
 
-  // Validar tamaño (máximo 5MB)
-  const maxSize = 5 * 1024 * 1024;
+  // Validar tamaño (aumentado a 50MB para permitir imágenes de alta resolución)
+  const maxSize = 50 * 1024 * 1024; // 50MB
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: 'El archivo es demasiado grande. Máximo 5MB permitido.'
+      error: 'El archivo es demasiado grande. Máximo 50MB permitido.'
     };
   }
 
-  // Validar dimensiones de la imagen
+  // Validar que la imagen se pueda cargar correctamente
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     
     img.onload = () => {
       URL.revokeObjectURL(url);
-      
-      // Validar dimensiones mínimas y máximas
-      const minWidth = 100;
-      const minHeight = 100;
-      const maxWidth = 2048;
-      const maxHeight = 2048;
-
-      if (img.width < minWidth || img.height < minHeight) {
-        resolve({
-          valid: false,
-          error: `La imagen debe tener al menos ${minWidth}x${minHeight} píxeles`
-        });
-      } else if (img.width > maxWidth || img.height > maxHeight) {
-        resolve({
-          valid: false,
-          error: `La imagen no debe exceder ${maxWidth}x${maxHeight} píxeles`
-        });
-      } else {
-        resolve({ valid: true });
-      }
+      // No hay restricciones de dimensiones, solo verificamos que se pueda cargar
+      resolve({ valid: true });
     };
 
     img.onerror = () => {

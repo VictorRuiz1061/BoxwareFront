@@ -4,7 +4,7 @@ const TOKEN_KEY = 'token';
 
 
 // Usar la variable de entorno para el tiempo de expiración del token, con fallback a 10 minutos (600 segundos)
-const TOKEN_EXPIRY = parseInt(import.meta.env.VITE_TOKEN_EXPIRY || '600', 10);
+const TOKEN_EXPIRY = parseInt(import.meta.env.VITE_TOKEN_EXPIRY || '1800', 10);
 
 export const setTokenCookie = (token: string, maxAge = TOKEN_EXPIRY) => {
   document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${maxAge}; samesite=strict`;

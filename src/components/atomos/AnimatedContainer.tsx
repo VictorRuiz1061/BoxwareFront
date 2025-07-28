@@ -5,7 +5,7 @@ interface AnimatedContainerProps {
   className?: string;
   delay?: number;
   duration?: number;
-  animation?: 'slideUp' | 'fadeIn' | 'scaleIn' | 'slideFromLeft' | 'slideFromRight';
+  animation?: 'slideUp' | 'slideDown' | 'fadeIn' | 'scaleIn' | 'slideFromLeft' | 'slideFromRight';
 }
 
 const AnimatedContainer: React.FC<AnimatedContainerProps> = ({
@@ -28,6 +28,7 @@ const AnimatedContainer: React.FC<AnimatedContainerProps> = ({
   // Animation classes
   const animationClasses = {
     slideUp: 'translate-y-16 opacity-0',
+    slideDown: '-translate-y-16 opacity-0',
     fadeIn: 'opacity-0',
     scaleIn: 'scale-95 opacity-0',
     slideFromLeft: '-translate-x-16 opacity-0',
