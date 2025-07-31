@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const movimientoSchema = z.object({
   usuario_id: z.string().min(1, 'Debe seleccionar un usuario'),
+  usuario_responsable_id: z.string().min(1, 'Debe seleccionar el usuario responsable'),
   tipo_movimiento: z.string().min(1, 'Debe seleccionar un tipo de movimiento'),
   material_id: z.string().min(1, 'Debe seleccionar un material'),
   sitio_origen_id: z.string().min(1, 'Debe seleccionar un sitio de origen'),

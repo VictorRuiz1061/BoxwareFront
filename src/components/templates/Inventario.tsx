@@ -32,18 +32,10 @@ const Inventario = () => {
 
   const formFieldsCreate: FormField[] = [
     { key: "stock", label: "Stock", type: "number", required: true },
-    { 
-      key: "sitio_id", 
-      label: "Sitio", 
-      type: "select", 
-      required: true,
+    { key: "sitio_id", label: "Sitio", type: "select", required: true,
       options: sitios?.map(sitio => ({ value: sitio.id_sitio.toString(), label: sitio.nombre_sitio })) || []
     },
-    { 
-      key: "material_id", 
-      label: "Material", 
-      type: "select", 
-      required: true,
+    { key: "material_id", label: "Material", type: "select", required: true,
       options: materiales?.map(material => ({ value: material.id_material.toString(), label: material.nombre_material })) || []
     },
     { key: "placa_sena", label: "Placa SENA", type: "text", required: false },
@@ -52,18 +44,10 @@ const Inventario = () => {
 
   const formFieldsEdit: FormField[] = [
     { key: "stock", label: "Stock", type: "number", required: true },
-    { 
-      key: "sitio_id", 
-      label: "Sitio", 
-      type: "select", 
-      required: true,
+    { key: "sitio_id", label: "Sitio", type: "select", required: true,
       options: sitios?.map(sitio => ({ value: sitio.id_sitio.toString(), label: sitio.nombre_sitio })) || []
     },
-    { 
-      key: "material_id", 
-      label: "Material", 
-      type: "select", 
-      required: true,
+    { key: "material_id", label: "Material", type: "select", required: true,
       options: materiales?.map(material => ({ value: material.id_material.toString(), label: material.nombre_material })) || []
     },
     { key: "placa_sena", label: "Placa SENA", type: "text", required: false },
@@ -133,8 +117,6 @@ const Inventario = () => {
     showErrorToast("El inventario no tiene funcionalidad de estado");
   };
 
-
-
   return (
     <AnimatedContainer>
       <div className="w-full">
@@ -148,7 +130,6 @@ const Inventario = () => {
           <p>Cargando inventario...</p>
         ) : (
           <div className="w-full">
-            {inventarios && inventarios.length > 0 ? (
               <div>
                 {createEntityTable({
                   columns: columns as Column<any>[],
@@ -164,13 +145,9 @@ const Inventario = () => {
                   }
                 })}
               </div>
-            ) : (
-              <p>No hay datos de inventario disponibles</p>
-            )}
           </div>
         )}
 
-        {/* Modal para crear/editar inventario usando el modal global */}
         <Modal 
           isOpen={isModalOpen} 
           onClose={() => {

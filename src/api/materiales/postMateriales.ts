@@ -8,12 +8,13 @@ export async function postMaterial(data: Partial<Material> & { imagen?: File | s
     
     // Agregar todos los campos del material al FormData
     Object.keys(data).forEach(key => {
-      if (key === 'imagen' && data[key] instanceof File) {
+      const value = data[key as keyof typeof data];
+      if (key === 'imagen' && value instanceof File) {
         // Si es un archivo, agregarlo como archivo
-        formData.append('imagen', data[key] as File);
-      } else if (key !== 'imagen') {
+        formData.append('imagen', value);
+      } else if (key !== 'imagen' && value !== undefined) {
         // Si no es imagen, agregarlo como string
-        formData.append(key, String(data[key]));
+        formData.append(key, String(value));
       }
     });
 

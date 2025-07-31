@@ -18,6 +18,7 @@ export interface Movimiento {
   material_id?: number;
   // Relaciones para mostrar datos
   usuario_movimiento_id?: number;
+  usuario_responsable_id?: number;
   tipo_movimiento_id?: number;
   usuario?: Usuario;
   tipo_movimiento_id_obj?: TipoMovimiento;

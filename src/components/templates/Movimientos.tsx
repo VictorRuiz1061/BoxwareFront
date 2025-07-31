@@ -45,6 +45,17 @@ const Movimientos = () => {
       }
     },
     {
+      key: "usuario_responsable_id",
+      label: "Usuario Responsable",
+      filterable: true,
+      render: (movimiento) => {
+        if (movimiento.usuario && movimiento.usuario.nombre) {
+          return movimiento.usuario.nombre;
+        }
+        return 'No disponible';
+      }
+    },
+    {
       key: "tipo_movimiento_id_obj",
       label: "Tipo de Movimiento",
       filterable: true,
@@ -104,6 +115,18 @@ const Movimientos = () => {
     {
       key: "usuario_id",
       label: "Usuario",
+      type: "select",
+      required: true,
+      className: "col-span-1",
+      options: usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` })),
+      extraButton: {
+        icon: "+",
+        onClick: () => setIsUsuarioModalOpen(true),
+      }
+    },
+    {
+      key: "usuario_responsable_id",
+      label: "Usuario Responsable",
       type: "select",
       required: true,
       className: "col-span-1",
