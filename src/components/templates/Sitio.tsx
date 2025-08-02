@@ -81,9 +81,9 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
           tipo_sitio_id: tipo_sitio_id,
           estado: true,
           fecha_modificacion: currentDate,
-        } as SitioType;
+        };
 
-        await actualizarSitio(editingId, updatePayload);
+        await actualizarSitio(editingId, updatePayload as any);
         showSuccessToast('Sitio actualizado con éxito');
       } else {
         const createPayload = {
@@ -94,17 +94,19 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
           estado: true,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
-        } as SitioType;
+        };
 
-        await crearSitio(createPayload);
+        await crearSitio(createPayload as any);
         showSuccessToast('Sitio creado con éxito');
-        window.location.reload(); // Recargar para ver los cambios
+        if (onSitioCreated) {
+          onSitioCreated();
+        }
       }
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      showErrorToast('Error al guardar el sitio');
+      showErrorToast('Error al guardar el centro');
     }
   };
 
@@ -119,9 +121,9 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
         tipo_sitio_id: sitio.tipo_sitio_id,
         estado: nuevoEstado,
         fecha_modificacion: new Date().toISOString()
-      } as SitioType;
+      };
 
-      await actualizarSitio(sitio.id_sitio, updateData);
+      await actualizarSitio(sitio.id_sitio, updateData as any);
       showSuccessToast(`El sitio fue ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
     } catch (error) {
       showErrorToast("Error al cambiar el estado del sitio.");
@@ -145,18 +147,29 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
     setIsModalOpen(true);
   };
 
+  // Si está en modo modal, mostrar directamente el formulario
+  if (isInModal) {
+    return (
+      <div className="w-full">
+        <Form
+          fields={formFieldsCreate}
+          onSubmit={handleSubmit}
+          buttonText="Crear"
+          initialValues={{
+            fecha_creacion: new Date().toISOString().split('T')[0]
+          }}
+          schema={sitioSchema}
+        />
+      </div>
+    );
+  }
+
   return (
     <AnimatedContainer>
       <div className="w-full">
-        {!isInModal && (
-          <>
             <h1 className="text-xl font-bold mb-4">Gestión de Sitios</h1>
 
-            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Sitio">
-              {textoBoton}
-            </Botton>
-          </>
-        )}
+            <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Sitio"/>
 
         {loading ? (
           <p>Cargando sitios...</p>
@@ -210,3 +223,7 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
 };
 
 export default Sitio;
+function onSitioCreated() {
+  throw new Error("Function not implemented.");
+}
+

@@ -10,9 +10,9 @@ import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { movimientoSchema } from '@/schemas';
 import Materiales from "./Materiales";
-import TipoMaterial from "./TipoMaterial";
 import Sitio from "./Sitio";
 import UsuarioForm from "./UsuarioForm";
+import TipoMovimiento from "./tipoMovimiento";
 
 const Movimientos = () => {
   const { movimientos, loading } = useGetMovimientos();
@@ -429,13 +429,13 @@ const Movimientos = () => {
           }} />
         </Modal>
 
-        {/* Modal para crear tipo de movimiento usando el modal global */}
-        <Modal
-          isOpen={isTipoMovimientoModalOpen}
-          onClose={() => setIsTipoMovimientoModalOpen(false)}
-          title="Crear Nuevo Tipo de Movimiento"
+        {/* Modal para crear municipio usando el modal global */}
+        <Modal 
+          isOpen={isTipoMovimientoModalOpen} 
+          onClose={() => setIsTipoMovimientoModalOpen(false)} 
+          title="Crear Nuevo Municipio"
         >
-          <TipoMaterial isInModal={true} onTipoMaterialCreated={() => {
+          <TipoMovimiento isInModal={true} onTipoMovimientoCreated={() => {
             setIsTipoMovimientoModalOpen(false);
           }} />
         </Modal>
