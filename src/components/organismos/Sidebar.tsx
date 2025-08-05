@@ -6,7 +6,9 @@ import { Home, Users, Shield, Key, Box, Package, Boxes, RefreshCw, RotateCw,
 import { useTheme } from "@/context/ThemeContext";
 import { Dialog, Transition } from "@headlessui/react";
 import { useGetModulos } from "@/hooks/modulos";
+import { useGetAuth } from "@/hooks/auth/useGetAuth";
 import { useAuth } from "@/hooks/auth";
+import { useGetPermisos } from "@/hooks/permisos";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -16,6 +18,10 @@ const Sidebar = () => {
   const location = useLocation();
   const { darkMode } = useTheme();
   const { modulos, loading } = useGetModulos();
+  const { permisos, loading: permisosLoading } = useGetPermisos();
+  const { user } = useGetAuth(); // Usamos useGetAuth para obtener el usuario
+  const { logoutUser } = useAuth(); // Usamos useAuth para el logout
+
   // Definir un tipo para los elementos del menú
   type MenuItem = {
     icon: JSX.Element;
@@ -26,9 +32,6 @@ const Sidebar = () => {
   };
   
   const [dynamicMenuGroups, setDynamicMenuGroups] = useState<MenuItem[]>([]);
-
-  // Usar el hook de logout para asegurar que se limpien todas las credenciales
-  const { logoutUser } = useAuth();
   
   const handleLogout = () => {
     logoutUser();
@@ -96,15 +99,114 @@ const Sidebar = () => {
   };
   
   // Función para organizar los módulos en estructura jerárquica
+  // Función para obtener los IDs de módulos permitidos según los permisos del usuario
+  const getPermittedModuleIds = (): string[] => {
+    // Si no hay permisos o no hay usuario, devolvemos un array vacío
+    if (!permisos || !Array.isArray(permisos) || permisos.length === 0 || !user) {
+      return [];
+    }
+    
+    // Verificar si el usuario es Super Administrador (siempre tiene acceso a todo)
+    const isSuperAdmin = 
+      (user.rol && typeof user.rol === 'object' && user.rol?.nombre_rol === 'Super Administrador') ||
+      (user.rol && typeof user.rol === 'object' && 'nombre_rol' in user.rol && 
+       user.rol.nombre_rol === 'Super Administrador');
+    
+    if (isSuperAdmin) {
+      // Devolver todos los IDs de módulos disponibles
+      const allModuleIds = modulos.map(m => m.id_modulo.toString());
+      return allModuleIds;
+    }
+    
+    // Buscamos los permisos asociados al rol del usuario actual
+    const userPermisos = permisos.filter(permiso => {
+      if (!permiso) return false;
+      
+      // Extraer el ID del rol del permiso (puede estar en diferentes formatos)
+      let permisoRolId;
+      
+      if (permiso.rol_id && typeof permiso.rol_id === 'object' && permiso.rol_id !== null) {
+        permisoRolId = permiso.rol_id.id_rol;
+      } else {
+        permisoRolId = permiso.rol_id;
+      }
+      
+      // Extraer el ID del rol del usuario (puede estar en diferentes formatos)
+      let userRolId;
+      
+      if (user.rol && typeof user.rol === 'object' && 'id_rol' in user.rol) {
+        userRolId = user.rol.id_rol;
+      } else {
+        userRolId = user.rol_id;
+      }
+      
+      // Asegurarse de que ambos valores existen antes de comparar
+      if (permisoRolId === undefined || userRolId === undefined) {
+        return false;
+      }
+      
+      const match = permisoRolId == userRolId && permiso.puede_ver === true;
+      return match;
+    });
+    
+    // Extraemos los IDs de módulos de los permisos del usuario
+    const moduleIds: string[] = [];
+    userPermisos.forEach(permiso => {
+      if (permiso && permiso.modulo_id && Array.isArray(permiso.modulo_id)) {
+        permiso.modulo_id.forEach(id => {
+          if (id !== null && id !== undefined) {
+            if (typeof id === 'string' || typeof id === 'number') {
+              moduleIds.push(id.toString());
+            } else if (typeof id === 'object' && id !== null && 'id_modulo' in id) {
+              moduleIds.push(id.id_modulo.toString());
+            }
+          }
+        });
+      }
+    });
+    
+    // Eliminar duplicados
+    return [...new Set(moduleIds)];
+    
+    return moduleIds;
+  };
+
   const organizarModulos = (): MenuItem[] => {
     // Verificar que modulos sea un array
     if (!modulos || !Array.isArray(modulos) || modulos.length === 0) {
       return [];
     }
     
+    // Obtenemos los IDs de módulos permitidos para el usuario
+    const permittedModuleIds = getPermittedModuleIds();
+    
+    // Si no hay módulos permitidos, solo mostramos el Dashboard
+    if (permittedModuleIds.length === 0 && user) {
+      return [
+        {
+          icon: <Home size={20} />,
+          label: "Inicio",
+          path: "/dashboard",
+          standalone: true,
+        }
+      ];
+    }
+    
     // Primero, separamos los módulos principales y los submódulos
-    const modulosPrincipales = modulos.filter(m => !m.es_submenu && m.estado);
-    const submodulos = modulos.filter(m => m.es_submenu && m.estado);
+    // Solo incluimos los módulos principales que están permitidos para el usuario
+    const modulosPrincipales = modulos.filter(m => {
+      const isPermitted = !m.es_submenu && 
+                         m.estado && 
+                         permittedModuleIds.includes(m.id_modulo.toString());
+      return isPermitted;
+    });
+    
+    const submodulos = modulos.filter(m => {
+      const isPermitted = m.es_submenu && 
+                         m.estado && 
+                         permittedModuleIds.includes(m.id_modulo.toString());
+      return isPermitted;
+    });
     
     // Creamos la estructura para el menú
     const menuItems: MenuItem[] = [
@@ -118,83 +220,61 @@ const Sidebar = () => {
     
     // Agregamos los módulos principales con sus submódulos
     modulosPrincipales.forEach(modulo => {
+      // Filtramos los submódulos que pertenecen a este módulo principal
       const moduloItems = submodulos
         .filter(sub => sub.modulo_padre_id === modulo.id_modulo)
         .map(sub => ({
           icon: getIconComponent(sub.imagen),
           label: sub.descripcion_ruta,
-          path: sub.rutas,
+          path: sub.rutas, // Usamos la ruta del submódulo
         }));
       
-      const menuItem: MenuItem = {
-        icon: getIconComponent(modulo.imagen),
-        label: modulo.descripcion_ruta,
-        items: moduloItems.length > 0 ? moduloItems : undefined,
-        path: moduloItems.length === 0 ? modulo.rutas : undefined,
-        standalone: moduloItems.length === 0
-      };
+      // Construir el menú para este módulo
       
-      menuItems.push(menuItem);
+      // Si el módulo principal no tiene ruta propia pero tiene submódulos permitidos
+      if (moduloItems.length > 0) {
+        // Creamos el ítem de menú para el módulo principal
+        const menuItem: MenuItem = {
+          icon: getIconComponent(modulo.imagen),
+          label: modulo.descripcion_ruta,
+          items: moduloItems,
+          path: undefined,
+          standalone: false
+        };
+        
+        menuItems.push(menuItem);
+      }
+      // Si el módulo principal tiene su propia ruta, lo agregamos como elemento independiente
+      else if (modulo.rutas) {
+        menuItems.push({
+          icon: getIconComponent(modulo.imagen),
+          label: modulo.descripcion_ruta,
+          path: modulo.rutas,
+          standalone: true
+        });
+      }
     });
     
     return menuItems;
   };
   
-  // Actualizar el menú cuando cambien los módulos
+  // Efecto para cargar el menú dinámico cuando los módulos estén disponibles
   useEffect(() => {
-    if (!loading) {
+    if (!loading && !permisosLoading && modulos && Array.isArray(modulos) && permisos && Array.isArray(permisos)) {
       const menuItems = organizarModulos();
       setDynamicMenuGroups(menuItems);
     }
-  }, [modulos, loading]);
+  }, [modulos, permisos, loading, permisosLoading, user]);
   
-  // Menú estático de respaldo (se usa mientras se cargan los módulos)
+  // Menú estático de respaldo (se usa mientras se cargan los módulos o permisos)
+  // Solo muestra el Dashboard si no hay permisos cargados
   const staticMenuGroups: MenuItem[] = [
     {
       icon: <Home size={20} />,
       label: "Inicio",
       path: "/dashboard",
       standalone: true,
-    },
-    //       path: "/informes/movimientos-historicos",
-    //     },
-    //     {
-    //       icon: <BarChart size={20} />,
-    //       label: "Materiales Más Utilizados",
-    //       path: "/informes/materiales-mas-utilizados",
-    //     },
-    //     {
-    //       icon: <PieChart size={20} />,
-    //       label: "Estado Inventario",
-    //       path: "/informes/estado-inventario",
-    //     },
-    //     {
-    //       icon: <BarChart size={20} />,
-    //       label: "Materiales Stock Mínimo",
-    //       path: "/informes/materiales-stock-minimo",
-    //     },
-    //     {
-    //       icon: <FileText size={20} />,
-    //       label: "Inventario por Sede/Área",
-    //       path: "/informes/inventario-por-sede-area",
-    //     },
-    //     {
-    //       icon: <FileText size={20} />,
-    //       label: "Transferencias entre Sedes",
-    //       path: "/informes/transferencias-sedes",
-    //     },
-    //     {
-    //       icon: <FileText size={20} />,
-    //       label: "Historial por Usuario",
-    //       path: "/informes/historial-por-usuario",
-    //     },
-    //     {
-    //       icon: <FileText size={20} />,
-    //       label: "Materiales de Baja",
-    //       path: "/informes/materiales-baja",
-    //     },
-    //   ],
-    // },
+    }
   ];
 
   return (
@@ -209,7 +289,7 @@ const Sidebar = () => {
             onClick={() => setCollapsed(!collapsed)}
             className={`p-2 rounded-md ${darkMode ? 'hover:bg-slate-700 text-emerald-400' : 'hover:bg-gray-100'}`}
           >
-            <Menu size={20} />
+            <Menu size={20} /> 
           </button>
         </div>
 

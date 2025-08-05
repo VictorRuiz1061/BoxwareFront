@@ -1,10 +1,12 @@
 import axiosInstance from '../axiosConfig';
 import { LoginCredentials, RegisterData, AuthResponse } from '@/types/auth';
-// No necesitamos importar extractObjectData ya que ahora procesamos la respuesta directamente
-
 const TOKEN_KEY = 'token';
 
-export const setTokenCookie = (token: string, maxAge = 86400) => {
+
+// Usar la variable de entorno para el tiempo de expiración del token, con fallback a 30 minutos (1800 segundos)
+const TOKEN_EXPIRY = parseInt(import.meta.env.VITE_TOKEN_EXPIRY || '1800', 10);
+
+export const setTokenCookie = (token: string, maxAge = TOKEN_EXPIRY) => {
   document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${maxAge}; samesite=strict`;
 };
 
@@ -119,9 +121,17 @@ export const hasValidToken = (): boolean => {
 
   try {
     const [, payloadBase64] = token.split('.');
-    const payload = JSON.parse(atob(payloadBase64));
+    if (!payloadBase64) return false;
+    
+    // Ensure proper base64 padding
+    const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    const paddedBase64 = pad ? base64 + '='.repeat(4 - pad) : base64;
+    
+    const payload = JSON.parse(atob(paddedBase64));
     return !!payload.exp && payload.exp > Date.now() / 1000;
   } catch (e) {
+    console.error('Error validating token:', e);
     return false;
   }
 };

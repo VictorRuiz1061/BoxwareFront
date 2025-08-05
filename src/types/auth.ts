@@ -6,6 +6,14 @@ export interface UserAuth {
   email: string;
   rol_id: number;
   imagen?: string;
+  // Información del rol del usuario, puede venir como objeto completo
+  rol?: {
+    id_rol: number;
+    nombre_rol: string;
+    descripcion?: string;
+    estado?: boolean;
+    [key: string]: any; // Para otras propiedades que pueda tener
+  };
 }
 
 // Credenciales para inicio de sesión (API)
@@ -58,4 +66,16 @@ export interface AuthState {
   user: UserAuth | null;
   loading: boolean;
   error: string | null;
+}
+
+// Datos para cambio de contraseña (API)
+export interface ChangePasswordData {
+  contrasenaActual: string;
+  nuevaContrasena: string;
+  confirmarContrasena: string;
+}
+
+// Respuesta del cambio de contraseña
+export interface ChangePasswordResponse {
+  message: string;
 }

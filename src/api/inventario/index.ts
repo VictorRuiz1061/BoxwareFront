@@ -1,4 +1,3 @@
-// Export all ficha-related API functions
-export * from './getInventario';
-export * from './postInventario';
-export * from './putInventario';
+export { getInventarios, useGetInventarios } from './getInventarios';
+export { postInventario, usePostInventario } from './postInventario';
+export { putInventario, usePutInventario } from './putInventario';

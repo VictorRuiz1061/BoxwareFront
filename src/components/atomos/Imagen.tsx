@@ -97,12 +97,6 @@ const Imagen = ({
   );
 };
 
-// Para cambiar los tamaños, solo modifica SIZE_MAP arriba.
-// Ejemplo de uso:
-// <Imagen src="url" size="lg" />
-// <Imagen src="url" size="sm" radius="full" />
-
-// Componente para mostrar imágenes en tablas con un tamaño predefinido
 export const TablaImagen = ({ 
   src, 
   alt = "Imagen",
@@ -115,15 +109,6 @@ export const TablaImagen = ({
   // Estado para controlar cuando el mouse está sobre la imagen
   const [isHovered, setIsHovered] = useState(false);
   
-  // Verificar si la URL es válida
-  const isValidUrl = (url: string) => {
-    try {
-      return url && url.trim() !== '' && (url.startsWith('http') || url.startsWith('/'));
-    } catch {
-      return false;
-    }
-  };
-
   // Determinar dimensiones basadas en el tamaño
   const getDimensions = () => {
     switch (size) {

@@ -3,8 +3,8 @@ import { useGetPermisos, usePostPermiso, usePutPermiso } from '@/hooks/permisos'
 import { useGetRoles } from '@/hooks/roles';
 import { useGetModulos } from '@/hooks/modulos';
 import type { Permiso, Modulo, Rol } from '@/types';
-import { AnimatedContainer, Boton, showSuccessToast, showErrorToast } from "@/components/atomos";
-import { createEntityTable, Form } from "@/components/organismos";
+import { AnimatedContainer, Botton, showSuccessToast, showErrorToast } from "@/components/atomos";
+import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { permisoSchema } from '@/schemas';
 import Roles from "./Roles";
@@ -21,7 +21,9 @@ const Permisos = () => {
   const [isModuloModalOpen, setIsModuloModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
-    
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [textoBoton] = useState();
+
   const renderModulo = (modulo_id: Array<number | Modulo> | number | Modulo) => {
     if (Array.isArray(modulo_id)) {
       return modulo_id
@@ -49,7 +51,7 @@ const Permisos = () => {
   type PermisoWithKey = Permiso & { key: number };
 
   const columns: Column<PermisoWithKey>[] = [
-    { key: "nombre", label: "Nombre", filterable: true},
+    { key: "nombre", label: "Nombre", filterable: true },
     {
       key: "modulo_id",
       label: "Módulo",
@@ -70,12 +72,12 @@ const Permisos = () => {
   ];
 
   const formFields: FormField[] = [
-    { 
-      key: "nombre", 
-      label: "Nombre", 
-      type: "text", 
+    {
+      key: "nombre",
+      label: "Nombre",
+      type: "text",
       required: true,
-      className: "col-span-1" 
+      className: "col-span-1"
     },
     {
       key: "rol_id",
@@ -87,7 +89,6 @@ const Permisos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsRolModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
     {
@@ -102,29 +103,28 @@ const Permisos = () => {
       extraButton: {
         icon: "+",
         onClick: () => setIsModuloModalOpen(true),
-        className: "ml-2 bg-green-500 hover:bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center"
       }
     },
-    { 
-      key: "puede_ver", 
-      label: "Permiso para Ver", 
-      type: "toggle", 
+    {
+      key: "puede_ver",
+      label: "Permiso para Ver",
+      type: "toggle",
       required: false,
       className: "col-span-2",
       description: "Permite al usuario ver los registros"
     },
-    { 
-      key: "puede_crear", 
-      label: "Permiso para Crear", 
-      type: "toggle", 
+    {
+      key: "puede_crear",
+      label: "Permiso para Crear",
+      type: "toggle",
       required: false,
       className: "col-span-2",
       description: "Permite al usuario crear nuevos registros"
     },
-    { 
-      key: "puede_actualizar", 
-      label: "Permiso para Actualizar", 
-      type: "toggle", 
+    {
+      key: "puede_actualizar",
+      label: "Permiso para Actualizar",
+      type: "toggle",
       required: false,
       className: "col-span-2",
       description: "Permite al usuario actualizar registros existentes"
@@ -132,28 +132,35 @@ const Permisos = () => {
   ];
 
   const handleSubmit = async (values: Record<string, any>) => {
+    // Prevenir múltiples envíos
+    if (isSubmitting) {
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
+
       // Convertir los IDs de módulos a números
-      const modulo_ids = Array.isArray(values.modulo_id) 
+      const modulo_ids = Array.isArray(values.modulo_id)
         ? values.modulo_id.map((id: string) => parseInt(id, 10))
         : [parseInt(values.modulo_id, 10)];
-      
+
       const rol_id = parseInt(values.rol_id);
-      
+
       // Fecha actual para timestamps
       const currentDate = new Date().toISOString();
-      
+
       // Convertir valores de toggle a booleanos
       const puede_ver = Boolean(values.puede_ver);
       const puede_crear = Boolean(values.puede_crear);
       const puede_actualizar = Boolean(values.puede_actualizar);
-      
+
       if (editingId) {
         const permisoOriginal = permisos.find(p => p.id_permiso === editingId);
         if (!permisoOriginal) {
           throw new Error('Permiso no encontrado');
         }
-        
+
         const updatePayload: Permiso = {
           id_permiso: editingId,
           nombre: values.nombre,
@@ -165,7 +172,7 @@ const Permisos = () => {
           puede_actualizar,
           fecha_creacion: permisoOriginal.fecha_creacion || currentDate,
         };
-        
+
         await actualizarPermiso(editingId, updatePayload);
         showSuccessToast('Permiso actualizado correctamente');
       } else {
@@ -179,18 +186,18 @@ const Permisos = () => {
           puede_actualizar,
           fecha_creacion: currentDate,
         };
-        
-        console.log('Enviando permiso:', newPermiso);
+
         await crearPermiso(newPermiso as any);
-        showSuccessToast('Permiso creado correctamente');  
+        showSuccessToast('Permiso creado correctamente');
       }
-      
+
       setIsModalOpen(false);
       setFormData({});
       setEditingId(null);
     } catch (error) {
-      console.error('Error al guardar el permiso:', error);
       showErrorToast('Error al guardar el permiso');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -212,6 +219,7 @@ const Permisos = () => {
   const handleCreate = () => {
     setFormData({});
     setEditingId(null);
+    setIsSubmitting(false);
     setIsModalOpen(true);
   };
 
@@ -242,31 +250,25 @@ const Permisos = () => {
       puede_eliminar: permiso.puede_eliminar || false
     });
     setEditingId(permiso.id_permiso);
+    setIsSubmitting(false);
     setIsModalOpen(true);
   };
 
   return (
-    <>
+    <AnimatedContainer>
       <div className="w-full">
-        <AnimatedContainer animation="fadeIn" duration={400} className="w-full">
-          <h1 className="text-xl font-bold mb-4">Gestión de Permisos</h1>
-        </AnimatedContainer>
-      
-        <AnimatedContainer animation="slideUp" delay={100} duration={400}>
-          <Boton
-            onClick={handleCreate}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mb-4 rounded-md"
-          >
-            Crear Nuevo Permiso
-          </Boton>
-        </AnimatedContainer>
+        <h1 className="text-xl font-bold mb-4">Gestión de Permisos</h1>
+
+        <Botton className="mb-4" onClick={handleCreate} texto="Crear Nuevo Permiso">
+          {textoBoton}
+        </Botton>
 
         {loading ? (
           <div className="flex justify-center items-center py-8">
             <p className="text-gray-500">Cargando permisos...</p>
           </div>
         ) : (
-          <AnimatedContainer animation="slideUp" delay={200} duration={500} className="w-full">
+          <div className="w-full">
             {createEntityTable({
               columns: columns as Column<any>[],
               data: permisos,
@@ -276,74 +278,54 @@ const Permisos = () => {
                 onEdit: handleEdit
               }
             })}
-          </AnimatedContainer>
-        )}
-
-        {/* Modal para crear/editar permiso */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <AnimatedContainer animation="scaleIn" duration={300} className="w-full max-w-4xl">
-              <div className="p-6 rounded-lg shadow-lg w-full max-h-[90vh] overflow-y-auto relative bg-white dark:bg-gray-800">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
-                  className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                >
-                  <span className="text-gray-800 font-bold">×</span>
-                </button>
-                
-                <h2 className="text-lg font-bold mb-4 text-center">
-                  {editingId ? "Editar Permiso" : "Crear Nuevo Permiso"}
-                </h2>
-                
-                <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
-                  <Form
-                    fields={formFields}
-                    onSubmit={handleSubmit}
-                    buttonText={editingId ? "Actualizar" : "Crear"}
-                    initialValues={formData}
-                    schema={permisoSchema}
-                  />
-                </div>
-              </div>
-            </AnimatedContainer>  
-          </div> 
-        )}
-
-        {/* Modal para crear rol */}
-        {isRolModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsRolModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <Roles isInModal={true} onRolCreated={() => {
-                setIsRolModalOpen(false);
-              }} />
-            </div>
           </div>
         )}
 
-        {/* Modal para crear módulo */}
-        {isModuloModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md relative">
-              <button 
-                onClick={() => setIsModuloModalOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-              >
-                <span className="text-gray-800 font-bold">×</span>
-              </button>
-              <Modulos isInModal={true} onModuloCreated={() => {
-                setIsModuloModalOpen(false);
-              }} />
-            </div>
+        {/* Modal para crear/editar permiso usando el modal global */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            setFormData({});
+            setEditingId(null);
+          }} 
+          title={editingId ? "Editar Permiso" : "Crear Nuevo Permiso"}
+        >
+          <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+            <Form
+              fields={formFields}
+              onSubmit={handleSubmit}
+              buttonText={isSubmitting ? "Procesando..." : (editingId ? "Actualizar" : "Crear")}
+              initialValues={formData}
+              schema={permisoSchema}
+              disabled={isSubmitting}
+            />
           </div>
-        )}
+        </Modal>
+
+        {/* Modal para crear rol usando el modal global */}
+        <Modal 
+          isOpen={isRolModalOpen} 
+          onClose={() => setIsRolModalOpen(false)} 
+          title="Crear Nuevo Rol"
+        >
+          <Roles isInModal={true} onRolCreated={() => {
+            setIsRolModalOpen(false);
+          }} />
+        </Modal>
+
+        {/* Modal para crear módulo usando el modal global */}
+        <Modal 
+          isOpen={isModuloModalOpen} 
+          onClose={() => setIsModuloModalOpen(false)} 
+          title="Crear Nuevo Módulo"
+        >
+          <Modulos isInModal={true} onModuloCreated={() => {
+            setIsModuloModalOpen(false);
+          }} />
+        </Modal>
       </div>
-    </>
+    </AnimatedContainer>
   );
 };
 

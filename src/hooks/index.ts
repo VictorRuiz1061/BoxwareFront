@@ -7,6 +7,7 @@ export * from './caracteristicas';
 export * from './centros';
 export * from './Elemento';
 export * from './fichas';
+export * from './inventario';
 export * from './material';
 export * from './modulos';
 export * from './movimiento';

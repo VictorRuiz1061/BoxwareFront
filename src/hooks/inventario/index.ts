@@ -1,4 +1,3 @@
-// Export all ficha-related hooks
-export * from './useGetInventario';
-export * from './usePostInventario';
-export * from './usePutInventario';
+export { useGetInventarios } from './useGetInventarios';
+export { usePostInventario } from './usePostInventario';
+export { usePutInventario } from './usePutInventario';

@@ -1,6 +1,7 @@
-import { useGetInventario as useApiGetInventario } from "@/api/inventario";
+import { useGetModulos as useApiGetModulos } from "@/api/modulos";
 
-export function useGetInventario() {
-  const { data: inventario = [], isLoading: loading } = useApiGetInventario();
-  return { inventario, loading };
+export function useGetModulos() {
+  const { data, isLoading: loading } = useApiGetModulos();
+  const modulos = Array.isArray(data) ? data : [];
+  return { modulos, loading };
 }

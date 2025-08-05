@@ -6,3 +6,17 @@ export interface Programa {
   fecha_modificacion: string;
   area_id: number;
 }
+
+export interface CreateProgramaRequest {
+  nombre_programa: string;
+  estado: boolean;
+  area_id: number;
+}
+
+export interface UpdateProgramaRequest {
+  id: number;
+  nombre_programa: string;
+  estado: boolean;
+  area_id: number;
+  fecha_creacion: string;
+}
