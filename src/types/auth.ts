@@ -59,3 +59,15 @@ export interface AuthState {
   loading: boolean;
   error: string | null;
 }
+
+// Datos para cambio de contraseña (API)
+export interface ChangePasswordData {
+  contrasenaActual: string;
+  nuevaContrasena: string;
+  confirmarContrasena: string;
+}
+
+// Respuesta del cambio de contraseña
+export interface ChangePasswordResponse {
+  message: string;
+}

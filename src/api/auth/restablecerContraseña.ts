@@ -2,27 +2,8 @@ import axios from '../axiosConfig';
 
 export const forgotPassword = async (email: string) => {
     try {
-      // Usar fetch en lugar de axios para probar
-      const response = await fetch('http://localhost:3000/recuperar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: email })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw { 
-          response: { 
-            status: response.status, 
-            data: data 
-          } 
-        };
-      }
-      
-      return data;
+      const response = await axios.post('/recuperar', { email });
+      return response.data;
     } catch (error) {
       throw error;
     }

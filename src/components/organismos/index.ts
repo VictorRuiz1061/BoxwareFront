@@ -8,5 +8,3 @@ export { default as Pdf } from './Pdf';
 export { default as Sidebar } from './Sidebar';
 export { createEntityTable } from './Table';
 export type { Column } from './Table';
-export { default as AlertasDropdown } from './AlertasDropdown';
-export { default as AlertasToastContainer } from './AlertasToastContainer';

@@ -2,23 +2,29 @@ import { Settings } from "lucide-react";
 import AnimatedContainer from "@/components/atomos/AnimatedContainer";
 import Image from "@/components/atomos/Imagen";
 import ThemeToggle from "@/components/atomos/ThemeToggle";
-import AlertasDropdown from "@/components/organismos/AlertasDropdown";
 import { useTheme } from "@/context/ThemeContext";
 import { useGetRoles } from "@/hooks/roles";
 import { useEffect, useState } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
+import { useGetAuth } from "@/hooks/auth/useGetAuth";
+import { useGetUsuariosVer } from "@/hooks/usuario";
 
 const Header = () => {
   const { darkMode } = useTheme();
   const { roles } = useGetRoles();
   const { authState } = useAuthContext();
+  const { user } = useGetAuth();
+  
+  // Obtener el ID del usuario para cargar datos completos
+  const idUsuario = (user && "id" in user) ? (user as any).id : undefined;
+  const { usuario: usuarioDetalles } = idUsuario ? useGetUsuariosVer(idUsuario) : { usuario: null };
 
   const [rolNombre, setRolNombre] = useState<string>("");
-  const [alertasOpen, setAlertasOpen] = useState(false);
+  const [] = useState(false);
 
-  // Obtener el usuario del contexto de autenticación
-  const usuarioActual = authState.user;
+  // Obtener el usuario del contexto de autenticación y complementar con datos detallados
+  const usuarioActual = usuarioDetalles || authState.user;
 
   useEffect(() => {
     // Si hay un usuario autenticado, buscar su rol
@@ -64,10 +70,12 @@ const Header = () => {
                    usuarioActual?.foto || 
                    "/assets/default.jpg";
   
-  // Usar la imagen del usuario
-  const finalUserImage = userImage;
-                   
-
+  // Formatear correctamente la URL de la imagen
+  // Asegurarse de que la imagen se muestre correctamente
+  const finalUserImage = userImage && typeof userImage === 'string' 
+    ? (userImage.startsWith('http') ? userImage : `https://${userImage}`)
+    : "/assets/default.jpg";
+    
   return (
     <AnimatedContainer animation="fadeIn" duration={1200} className="w-full">
       <header className={`${darkMode ? 'bg-slate-900' : 'bg-white'} shadow-lg h-16 relative z-10 transition-colors duration-300`}>
@@ -75,12 +83,6 @@ const Header = () => {
           <div className="flex items-center space-x-6">
             {/* Toggle de tema */}
               <ThemeToggle />
-
-            {/* Notificaciones */}
-              <AlertasDropdown 
-                isOpen={alertasOpen} 
-                onToggle={() => setAlertasOpen(!alertasOpen)} 
-              />
 
             {/* Configuración */}
               <Link to="/configuraciones" className={`p-2 text-white ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-blue-500'} rounded-lg transition-all duration-300 group`}>

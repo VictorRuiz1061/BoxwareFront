@@ -3,7 +3,7 @@ import { LoginCredentials, RegisterData, AuthResponse } from '@/types/auth';
 const TOKEN_KEY = 'token';
 
 
-// Usar la variable de entorno para el tiempo de expiración del token, con fallback a 10 minutos (600 segundos)
+// Usar la variable de entorno para el tiempo de expiración del token, con fallback a 30 minutos (1800 segundos)
 const TOKEN_EXPIRY = parseInt(import.meta.env.VITE_TOKEN_EXPIRY || '1800', 10);
 
 export const setTokenCookie = (token: string, maxAge = TOKEN_EXPIRY) => {

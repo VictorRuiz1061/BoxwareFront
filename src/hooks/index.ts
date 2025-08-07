@@ -1,7 +1,3 @@
-// Main hooks barrel file
-
-// Export all hook modules
-export * from './alertas';
 export * from './areas';
 export * from './auth';
 export * from './centros';
@@ -25,3 +21,4 @@ export * from './usuario';
 // Export utility hooks
 export * from './useEntityManager';
 export * from './useImageUpload';
+export * from './useNotificaciones';
