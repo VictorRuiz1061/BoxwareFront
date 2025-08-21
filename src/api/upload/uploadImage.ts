@@ -24,11 +24,9 @@ export async function uploadImage(file: File): Promise<UploadImageResponse> {
 
     return response.data;
   } catch (error: any) {
-    console.error('Error al subir imagen:', error);
     
     // Si el endpoint no existe, simular una respuesta exitosa para desarrollo
     if (error.response?.status === 404) {
-      console.warn('Endpoint de carga de imágenes no encontrado, simulando respuesta para desarrollo');
       
       // Crear un nombre único para el archivo
       const timestamp = Date.now();

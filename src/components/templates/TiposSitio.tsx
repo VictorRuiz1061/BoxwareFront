@@ -63,8 +63,6 @@ const TiposSitio = ({ isInModal = false, onTipoSitioCreated }: TiposSitioProps) 
 
         if (onTipoSitioCreated) {
           onTipoSitioCreated();
-        } else {
-          window.location.reload(); // Solo recargar si no estamos en modo modal
         }
       }
 

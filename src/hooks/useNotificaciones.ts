@@ -19,7 +19,6 @@ export const useNotificaciones = () => {
       : null;
       
     if (!userId) {
-      console.warn('Usuario autenticado pero sin ID válido');
       return;
     }
     
@@ -32,7 +31,6 @@ export const useNotificaciones = () => {
       setCount(response.count);
     } catch (err) {
       setError('Error al cargar notificaciones');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -45,7 +43,6 @@ export const useNotificaciones = () => {
       setNotificaciones(prev => prev.filter(n => n.id_notificacion !== id));
       setCount(prev => prev - 1);
     } catch (err) {
-      console.error('Error al marcar como leída:', err);
     }
   };
 

@@ -22,7 +22,6 @@ const Sitio = ({ isInModal = false }: SitioProps) => {
   const [isTipoSitioModalOpen, setIsTipoSitioModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const [textoBoton] = useState();
 
   const columns: Column<SitioType>[] = [
     { key: "nombre_sitio", label: "Nombre del Sitio", filterable: true },
@@ -226,4 +225,3 @@ export default Sitio;
 function onSitioCreated() {
   throw new Error("Function not implemented.");
 }
-

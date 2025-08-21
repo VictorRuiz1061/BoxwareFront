@@ -1,9 +1,11 @@
+import axiosInstance from "@/api/axiosConfig";
+
 /**
  * Configuración para las imágenes en el frontend
  */
 
 // URL base del servidor backend
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+export const API_BASE_URL = axiosInstance.defaults.baseURL || 'http://localhost:3000';
 
 // URLs base para acceder a las imágenes (ahora el backend envía URLs completas)
 export const IMAGE_BASE_URLS = {
