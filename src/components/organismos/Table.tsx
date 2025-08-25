@@ -311,7 +311,7 @@ export function createEntityTable<T extends { [key: string]: any }>({
   columns: Column<T & { key: React.Key }>[];
   idField: keyof T;
   handlers: {
-    onToggleEstado: (item: T & { key: React.Key }) => void;
+    onToggleEstado?: (item: T & { key: React.Key }) => void;
     onEdit: (item: T & { key: React.Key }) => void;
   };
   options?: {

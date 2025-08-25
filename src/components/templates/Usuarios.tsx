@@ -204,63 +204,52 @@ const Usuarios = () => {
     }
   ];
 
-  const handleSubmit = async (values: Record<string, string>) => {
-    try {
-      const rol_id = parseInt(values.rol_id);
-      if (isNaN(rol_id)) {
-        throw new Error("El rol seleccionado no es válido");
-      }
+const handleSubmit = async (values: Record<string, string>) => {
+  try {
+    const parsedRolId = parseInt(values.rol_id);
+    const rol_id_array = [parsedRolId]; // Convert to array
 
-      // Crear FormData para enviar datos y archivo
-      const formDataToSend = new FormData();
-      
-      // Agregar datos del usuario
-      formDataToSend.append('nombre', values.nombre);
-      formDataToSend.append('apellido', values.apellido);
-      formDataToSend.append('edad', values.edad);
-      formDataToSend.append('cedula', values.cedula);
-      formDataToSend.append('email', values.email);
-      formDataToSend.append('telefono', values.telefono);
-      formDataToSend.append('rol_id', rol_id.toString());
-
-      // Agregar contraseña si es necesario
-      if (values.contrasena && values.contrasena.trim() !== '') {
-        formDataToSend.append('contrasena', values.contrasena);
-      }
-
-      // Agregar imagen si se seleccionó una nueva
-      if (selectedImageFile) {
-        formDataToSend.append('imagen', selectedImageFile);
-      }
-
-      // Agregar datos adicionales según si es creación o edición
-      if (editingId) {
-        formDataToSend.append('fecha_modificacion', new Date().toISOString().split('T')[0]);
-        
-        // Para edición, usar el endpoint PUT con FormData
-        await actualizarUsuario(editingId, formDataToSend);
-        showSuccessToast("Usuario actualizado correctamente");
-      } else {
-        if (!values.contrasena || values.contrasena.trim() === '') {
-          throw new Error("La contraseña es obligatoria para crear un nuevo usuario");
-        }
-
-        formDataToSend.append('estado', 'true');
-        formDataToSend.append('fecha_registro', new Date().toISOString().split('T')[0]);
-
-        // Para creación, usar el endpoint POST con FormData
-        await crearUsuario(formDataToSend as any);
-        showSuccessToast("Usuario creado correctamente");
-      }
-
-      setIsModalOpen(false);
-      setEditingId(null);
-      setFormData({});
-      setSelectedImageFile(null);
-    } catch (error) {
-      showErrorToast('Error al guardar el usuario');
+    if (!editingId && (!values.contrasena || values.contrasena.trim() === "")) {
+      throw new Error("La contraseña es obligatoria para crear un nuevo usuario");
     }
-  };
+
+    const baseUsuario = {
+      nombre: values.nombre,
+      apellido: values.apellido,
+      edad: Number(values.edad),
+      cedula: values.cedula,
+      email: values.email,
+      telefono: values.telefono,
+      imagen: selectedImageFile ? "/assets/3.jpg" : values.imagen || "",
+      rol_id: rol_id_array,
+    };
+
+    if (editingId) {
+      const updatePayload: Partial<Usuario> = {
+        ...baseUsuario,
+        contrasena: values.contrasena || undefined, // Only update if provided
+      };
+      await actualizarUsuario(editingId, updatePayload);
+      showSuccessToast("Usuario actualizado correctamente");
+    } else {
+      const createPayload: Omit<Usuario, 'id_usuario'> = {
+        ...baseUsuario,
+        contrasena: values.contrasena,
+        estado: true,
+        fecha_registro: new Date().toISOString(),
+      };
+      await crearUsuario(createPayload as Usuario); // Cast to Usuario as id_usuario is omitted
+      showSuccessToast("Usuario creado correctamente");
+    }
+
+    setIsModalOpen(false);
+    setEditingId(null);
+    setFormData({});
+    setSelectedImageFile(null);
+  } catch (error: any) {
+    showErrorToast(error.message || "Error al guardar el usuario");
+  }
+};
 
   const handleToggleEstado = async (usuario: Usuario) => {
     try {
@@ -268,7 +257,6 @@ const Usuarios = () => {
       const updateData = {
         id_usuario: usuario.id_usuario,
         estado: nuevoEstado,
-        fecha_modificacion: new Date().toISOString().split('T')[0]
       };
 
       await actualizarUsuario(usuario.id_usuario, updateData);
@@ -293,7 +281,7 @@ const Usuarios = () => {
       email: usuario.email,
       telefono: usuario.telefono,
       contrasena: usuario.contrasena,
-      rol_id: usuario.rol_id ? usuario.rol_id.toString() : '',
+      rol_id: usuario.rol_id && usuario.rol_id.length > 0 ? usuario.rol_id[0].toString() : '',
       imagen: usuario.imagen || '',
       fecha_registro: usuario.fecha_registro,
     });
@@ -474,12 +462,7 @@ const Usuarios = () => {
                 fields={editingId ? formFieldsEdit : formFieldsCreate}
                 onSubmit={handleSubmit}
                 buttonText={editingId ? "Actualizar" : "Crear"}
-                initialValues={{
-                  ...formData,
-                  ...(editingId
-                    ? { fecha_modificacion: new Date().toISOString().split('T')[0] }
-                    : { fecha_creacion: new Date().toISOString().split('T')[0] })
-                }}
+                initialValues={formData}
                 schema={editingId ? usuarioEditSchema : usuarioSchema}
               />
             </div>

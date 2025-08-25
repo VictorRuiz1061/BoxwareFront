@@ -11,7 +11,6 @@ import type { Column, FormField } from "@/components/organismos";
 import { movimientoSchema } from '@/schemas';
 import Materiales from "./Materiales";
 import Sitio from "./Sitio";
-import UsuarioForm from "./UsuarioForm";
 import TipoMovimiento from "./tipoMovimiento";
 
 const Movimientos = () => {
@@ -26,7 +25,7 @@ const Movimientos = () => {
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [isTipoMovimientoModalOpen, setIsTipoMovimientoModalOpen] = useState(false);
   const [isSitioModalOpen, setIsSitioModalOpen] = useState(false);
-  const [isUsuarioModalOpen, setIsUsuarioModalOpen] = useState(false);
+  const [, setIsUsuarioModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [textoBoton] = useState();
@@ -454,16 +453,6 @@ const Movimientos = () => {
           />
         </Modal>
 
-        {/* Modal para crear usuario usando el modal global */}
-        <Modal
-          isOpen={isUsuarioModalOpen}
-          onClose={() => setIsUsuarioModalOpen(false)}
-          title="Crear Nuevo Usuario"
-        >
-          <UsuarioForm onUsuarioCreated={() => {
-            setIsUsuarioModalOpen(false);
-          }} />
-        </Modal>
       </div>
     </AnimatedContainer>
   );

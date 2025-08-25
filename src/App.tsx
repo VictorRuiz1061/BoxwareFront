@@ -22,6 +22,7 @@ import TipoMaterial from "./components/pages/TipoMaterial";
 import Movimientos from "./components/pages/Movimientos";
 import TiposMovimiento from "./components/pages/TiposMovimiento";
 import Inventario from "./components/pages/Inventario";
+import Caracteristicas from "./components/pages/Caracteristicas";
 
 // Ubicacion Pages
 import Sedes from "./components/pages/Sedes";
@@ -63,6 +64,7 @@ function App() {
         <Route path="/movimientos" element={<Movimientos />} />
         <Route path="/tipos_movimiento" element={<TiposMovimiento />} />
         <Route path="/inventario" element={<Inventario />} />
+        <Route path="/caracteristicas" element={<Caracteristicas />} />
         
         {/* Ubicaciones */}
         <Route path="/sedes" element={<Sedes />} />

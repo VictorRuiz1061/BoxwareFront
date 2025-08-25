@@ -92,7 +92,7 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
       } else {
         const createPayload = {
           nombre_centro: values.nombre_centro,
-          id_municipio: isInModal ? 1 : parseInt(values.id_municipio), // ID por defecto en modo modal
+          id_municipio: parseInt(values.id_municipio), // ID por defecto en modo modal
           estado: true,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
@@ -148,7 +148,7 @@ const Centros = ({ isInModal = false, onCentroCreated }: CentrosProps) => {
     return (
       <div className="w-full">
         <Form
-          fields={formFieldsModal}
+          fields={formFieldsCreate}
           onSubmit={handleSubmit}
           buttonText="Crear"
           initialValues={{

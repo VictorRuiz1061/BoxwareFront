@@ -41,7 +41,7 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
   const formFieldsCreate: FormField[] = [
     { key: "nombre_area", label: "Nombre del Área", type: "text", required: true },
     {
-      key: "id_sede",
+      key: "sede_id",
       label: "Sede",
       type: "select",
       required: true,
@@ -56,7 +56,7 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
   const formFieldsEdit: FormField[] = [
     { key: "nombre_area", label: "Nombre del Área", type: "text", required: true },
     {
-      key: "id_sede",
+      key: "sede_id",
       label: "Sede",
       type: "select",
       required: true,
@@ -80,7 +80,7 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
       if (editingId) {
         const updatePayload = {
           id_area: editingId,
-          id_sede: parseInt(values.id_sede),
+          sede_id: parseInt(values.sede_id),
           nombre_area: values.nombre_area,
           estado: true,
           fecha_creacion: currentDate,
@@ -92,7 +92,7 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
       } else {
         const createPayload = {
           nombre_area: values.nombre_area,
-          id_sede: isInModal ? 1 : parseInt(values.id_sede), // ID por defecto en modo modal
+          sede_id: isInModal ? 1 : parseInt(values.sede_id), // ID por defecto en modo modal
           estado: true,
           fecha_creacion: currentDate,
           fecha_modificacion: currentDate
@@ -144,7 +144,7 @@ const Areas = ({ isInModal = false, onAreaCreated }: AreasProps) => {
   const handleEdit = (area: Area) => {
     setFormData({
       nombre_area: area.nombre_area,
-      id_sede: area.id_sede ? area.id_sede.toString() : ''
+      sede_id: area.sede_id ? area.sede_id.toString() : ''
     });
     setEditingId(area.id_area);
     setIsModalOpen(true);

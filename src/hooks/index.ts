@@ -21,4 +21,3 @@ export * from './usuario';
 // Export utility hooks
 export * from './useEntityManager';
 export * from './useImageUpload';
-export * from './useNotificaciones';

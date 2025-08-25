@@ -8,7 +8,6 @@ import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { fichaSchema } from '@/schemas';
 import Programas from './Programa';
-import UsuarioForm from './UsuarioForm';
 
 const Fichas = () => {
   const { fichas, loading } = useGetFichas();
@@ -18,7 +17,7 @@ const Fichas = () => {
   const { programas } = useGetProgramas();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProgramaModalOpen, setIsProgramaModalOpen] = useState(false);
-  const [isUsuarioModalOpen, setIsUsuarioModalOpen] = useState(false);
+  const [, setIsUsuarioModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [textoBoton] = useState();
@@ -250,17 +249,6 @@ const Fichas = () => {
         >
           <Programas isInModal={true} onProgramaCreated={() => {
             setIsProgramaModalOpen(false);
-          }} />
-        </Modal>
-
-        {/* Modal para crear usuario usando el modal global */}
-        <Modal 
-          isOpen={isUsuarioModalOpen} 
-          onClose={() => setIsUsuarioModalOpen(false)} 
-          title="Crear Nuevo Usuario"
-        >
-          <UsuarioForm onUsuarioCreated={() => {
-            setIsUsuarioModalOpen(false);
           }} />
         </Modal>
       </div>

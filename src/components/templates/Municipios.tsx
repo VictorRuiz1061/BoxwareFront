@@ -40,17 +40,11 @@ const Municipios = ({ isInModal = false, onMunicipioCreated }: MunicipiosProps) 
       const currentDate = new Date().toISOString();
 
       if (editingId) {
-        // Actualizar municipio existente
-        const original = municipios.find(m => m.id_municipio === editingId);
-        if (!original) {
-          throw new Error('No se encontró el municipio original');
-        }
-
         const updatePayload = {
           id_municipio: editingId,
           nombre_municipio: values.nombre_municipio,
           estado: true,
-          fecha_creacion: original.fecha_creacion,
+          fecha_creacion: new Date().toISOString(), // Changed to new date
           fecha_modificacion: currentDate,
         };
 

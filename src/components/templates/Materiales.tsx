@@ -11,6 +11,8 @@ import { materialSchema } from '@/schemas';
 import Elemento from "./Elemento";
 import TipoMaterial from "./TipoMaterial";
 
+import { uploadImage } from "@/api/materiales/uploadImage";
+
 interface MaterialesProps {
   isInModal?: boolean;
   onMaterialCreated?: () => void;
@@ -226,80 +228,61 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
 
   const handleSubmit = async (values: Record<string, string>) => {
     try {
-      // Convertir valores de string a los tipos correctos
+      let imageUrl = '';
+      const imagenValue = formData.imagen;
+
+      if (imagenValue instanceof File) {
+        const response = await uploadImage(imagenValue);
+        imageUrl = response.imageUrl;
+      } else if (typeof imagenValue === 'string') {
+        imageUrl = imagenValue;
+      }
+
       const categoria_id = parseInt(values.categoria_id);
       const tipo_material_id = parseInt(values.tipo_material_id);
       const producto_perecedero = values.producto_perecedero === 'true';
-      
-      // Obtener la imagen del formData, manejando tanto string como File
-      const imagenValue = formData.imagen;
-
-      // Fecha actual para timestamps
       const currentDate = new Date().toISOString().split('T')[0];
-      
+      const fechaVencimiento = values.fecha_vencimiento 
+        ? new Date(values.fecha_vencimiento).toISOString()
+        : new Date(currentDate).toISOString();
+
       if (editingId) {
-        // Actualizar material existente
-        const updatePayload: Partial<Material> & { imagen?: File | string } = {
+        const updatePayload: Partial<Material> = {
           id_material: editingId,
           nombre_material: values.nombre_material,
           descripcion_material: values.descripcion_material,
           unidad_medida: values.unidad_medida,
           producto_perecedero: producto_perecedero,
-          fecha_vencimiento: values.fecha_vencimiento || currentDate,
+          fecha_vencimiento: fechaVencimiento,
           categoria_id: categoria_id,
           tipo_material_id: tipo_material_id,
           estado: true,
+          imagen: imageUrl,
         };
 
-        // Agregar imagen si existe
-        if (imagenValue instanceof File) {
-          (updatePayload as any).imagen = imagenValue;
-        } else if (typeof imagenValue === 'string' && imagenValue) {
-          updatePayload.imagen = imagenValue;
-        }
-        
-        try {
-          await actualizarMaterial(editingId, updatePayload);
-          showSuccessToast('Material actualizado con éxito');
-        } catch (updateError) {
-          showErrorToast('Error al actualizar el material');
-          return;
-        }
+        await actualizarMaterial(editingId, updatePayload);
+        showSuccessToast('Material actualizado con éxito');
       } else {
-        // Crear nuevo material
         const createPayload: any = {
           codigo_sena: values.codigo_sena,
           nombre_material: values.nombre_material,
           descripcion_material: values.descripcion_material,
           unidad_medida: values.unidad_medida,
           producto_perecedero: producto_perecedero,
-          fecha_vencimiento: values.fecha_vencimiento || currentDate,
+          fecha_vencimiento: fechaVencimiento,
           categoria_id: categoria_id,
           tipo_material_id: tipo_material_id,
           estado: true,
+          imagen: imageUrl,
         };
 
-        // Agregar imagen si existe
-        if (imagenValue instanceof File) {
-          createPayload.imagen = imagenValue;
-        } else if (typeof imagenValue === 'string' && imagenValue) {
-          createPayload.imagen = imagenValue;
-        }
-
-        try {
-          await crearMaterial(createPayload);
-          showSuccessToast('Material creado con éxito');
-          
-          // Si estamos en modo modal y hay callback, lo llamamos
-          if (isInModal && onMaterialCreated) {
-            onMaterialCreated();
-          }
-        } catch (createError) {
-          showErrorToast('Error al crear el material');
-          return;
+        await crearMaterial(createPayload);
+        showSuccessToast('Material creado con éxito');
+        if (isInModal && onMaterialCreated) {
+          onMaterialCreated();
         }
       }
-      
+
       if (!isInModal) {
         setIsModalOpen(false);
         setFormData({});
@@ -333,6 +316,14 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
   };
 
   const handleEdit = (material: Material) => {
+    const categoriaId = typeof (material.categoria_id as any) === 'object'
+      ? (material.categoria_id as any).id_categoria_elemento
+      : material.categoria_id;
+
+    const tipoMaterialId = typeof (material.tipo_material_id as any) === 'object'
+      ? (material.tipo_material_id as any).id_tipo_material
+      : material.tipo_material_id;
+
     setFormData({
       nombre_material: material.nombre_material,
       descripcion_material: material.descripcion_material,
@@ -340,8 +331,8 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
       imagen: material.imagen || '',
       producto_perecedero: material.producto_perecedero.toString(),
       fecha_vencimiento: material.fecha_vencimiento || '',
-      categoria_id: material.categoria_id?.toString() || '',
-      tipo_material_id: material.tipo_material_id?.toString() || ''
+      categoria_id: categoriaId?.toString() || '',
+      tipo_material_id: tipoMaterialId?.toString() || ''
     });
     setEditingId(material.id_material);
     setIsModalOpen(true);
