@@ -8,6 +8,7 @@ import { createEntityTable, Form, Modal } from "@/components/organismos";
 import type { Column, FormField } from "@/components/organismos";
 import { fichaSchema } from '@/schemas';
 import Programas from './Programa';
+import Usuarios from './Usuarios';
 
 const Fichas = () => {
   const { fichas, loading } = useGetFichas();
@@ -16,9 +17,9 @@ const Fichas = () => {
   const { usuarios } = useGetUsuarios();
   const { programas } = useGetProgramas();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isProgramaModalOpen, setIsProgramaModalOpen] = useState(false);
-  const [, setIsUsuarioModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [isUsuarioModalOpen, setIsUsuarioModalOpen] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [textoBoton] = useState();
 
@@ -117,14 +118,14 @@ const Fichas = () => {
       if (editingId) {
         // Actualizar ficha existente
         const updatePayload: Partial<Ficha> = {
-          id_ficha: editingId,
+          id_ficha: parseInt(editingId, 10),
           usuario_id: usuario_id,
           programa_id: programa_id,
           estado: true,
           fecha_modificacion: currentDate,
         };
 
-        await actualizarFicha(editingId, updatePayload);
+        await actualizarFicha(parseInt(editingId, 10), updatePayload);
         showSuccessToast('Ficha actualizada con éxito');
       } else {
         // Crear nueva ficha
@@ -249,6 +250,17 @@ const Fichas = () => {
         >
           <Programas isInModal={true} onProgramaCreated={() => {
             setIsProgramaModalOpen(false);
+          }} />
+        </Modal>
+
+        {/* Modal para crear usuario usando el modal global */}
+        <Modal 
+          isOpen={isUsuarioModalOpen} 
+          onClose={() => setIsUsuarioModalOpen(false)} 
+          title="Crear Nuevo Usuario"
+        >
+          <Usuarios isInModal={true} onUsuarioCreated={() => {
+            setIsUsuarioModalOpen(false);
           }} />
         </Modal>
       </div>

@@ -3,6 +3,6 @@ import { Usuario } from "@/types";
 
 export function usePostUsuario() {
   const post = useApiPostUsuario();
-  const crearUsuario = async (data: Usuario) => post.mutateAsync(data);
+  const crearUsuario = async (data: Usuario | FormData) => post.mutateAsync(data);
   return { crearUsuario };
 }

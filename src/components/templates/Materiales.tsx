@@ -12,6 +12,7 @@ import Elemento from "./Elemento";
 import TipoMaterial from "./TipoMaterial";
 
 import { uploadImage } from "@/api/materiales/uploadImage";
+import { STATIC_URLS } from "@/config/apiConfig";
 
 interface MaterialesProps {
   isInModal?: boolean;
@@ -24,6 +25,8 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
   const { actualizarMaterial } = usePutMaterial();
   const { categorias } = useGetCategoriasElementos();
   const { tipoMateriales } = useGetTipoMateriales();
+  console.log("Materiales component - categorias:", categorias);
+  console.log("Materiales component - tipoMateriales:", tipoMateriales);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoriaModalOpen, setIsCategoriaModalOpen] = useState(false);
   const [isTipoMaterialModalOpen, setIsTipoMaterialModalOpen] = useState(false);
@@ -38,8 +41,21 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
       label: "Imagen", 
       filterable: false,
       render: (material) => {
-        // El backend ahora envía URLs completas, así que usamos la imagen directamente
-        const imageUrl = material.imagen || '/assets/default.jpg';
+        // Construir la URL correcta para la imagen del backend
+        let imageUrl;
+        
+        if (material.imagen) {
+          // Si la imagen ya es una URL completa, usarla directamente
+          if (material.imagen.startsWith('http://') || material.imagen.startsWith('https://')) {
+            imageUrl = material.imagen;
+          } else {
+            // Si no, construir la URL completa al backend
+            imageUrl = `${STATIC_URLS.MATERIAL_IMAGES}/${material.imagen}`;
+          }
+        } else {
+          // Si no hay imagen, usar la imagen por defecto del frontend
+          imageUrl = STATIC_URLS.DEFAULT_IMAGE;
+        }
         
         return (
           <TablaImagen 
@@ -231,20 +247,28 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
       let imageUrl = '';
       const imagenValue = formData.imagen;
 
+      // Primero subimos la imagen si existe
       if (imagenValue instanceof File) {
-        const response = await uploadImage(imagenValue);
-        imageUrl = response.imageUrl;
-      } else if (typeof imagenValue === 'string') {
+        try {
+          const response = await uploadImage(imagenValue);
+          imageUrl = response.imageUrl;
+        } catch (error) {
+          console.error('Error al subir la imagen:', error);
+          showErrorToast('Error al subir la imagen. Inténtalo de nuevo.');
+          return; // Detener el proceso si falla la subida de imagen
+        }
+      } else if (typeof imagenValue === 'string' && imagenValue) {
         imageUrl = imagenValue;
       }
 
-      const categoria_id = parseInt(values.categoria_id);
-      const tipo_material_id = parseInt(values.tipo_material_id);
+      // Asegurarnos de que los tipos de datos sean correctos
+      const categoria_id = Number(values.categoria_id);
+      const tipo_material_id = Number(values.tipo_material_id);
       const producto_perecedero = values.producto_perecedero === 'true';
       const currentDate = new Date().toISOString().split('T')[0];
       const fechaVencimiento = values.fecha_vencimiento 
-        ? new Date(values.fecha_vencimiento).toISOString()
-        : new Date(currentDate).toISOString();
+        ? new Date(values.fecha_vencimiento).toISOString().split('T')[0]
+        : new Date(currentDate).toISOString().split('T')[0];
 
       if (editingId) {
         const updatePayload: Partial<Material> = {
@@ -263,6 +287,7 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
         await actualizarMaterial(editingId, updatePayload);
         showSuccessToast('Material actualizado con éxito');
       } else {
+        // Asegurarnos de que todos los campos requeridos estén presentes y con el formato correcto
         const createPayload: any = {
           codigo_sena: values.codigo_sena,
           nombre_material: values.nombre_material,
@@ -270,11 +295,23 @@ const Materiales = ({ isInModal, onMaterialCreated }: MaterialesProps) => {
           unidad_medida: values.unidad_medida,
           producto_perecedero: producto_perecedero,
           fecha_vencimiento: fechaVencimiento,
-          categoria_id: categoria_id,
-          tipo_material_id: tipo_material_id,
-          estado: true,
-          imagen: imageUrl,
+          categoria_id: Number(categoria_id),  // Asegurar que sea número
+          tipo_material_id: Number(tipo_material_id),  // Asegurar que sea número
+          estado: true
         };
+        
+        // Verificar que los IDs sean números válidos
+        if (isNaN(createPayload.categoria_id) || isNaN(createPayload.tipo_material_id)) {
+          showErrorToast('Error: Los IDs de categoría y tipo de material deben ser números válidos');
+          return;
+        }
+        
+        console.log('Payload final para crear material:', createPayload);
+        
+        // Solo incluir la imagen si existe
+        if (imageUrl) {
+          createPayload.imagen = imageUrl;
+        }
 
         await crearMaterial(createPayload);
         showSuccessToast('Material creado con éxito');

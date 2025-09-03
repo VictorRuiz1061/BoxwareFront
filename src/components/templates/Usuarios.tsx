@@ -8,7 +8,12 @@ import { Column, createEntityTable, Form, FormField, Modal } from "@/components/
 import { usuarioSchema, usuarioEditSchema } from "@/schemas";
 import Roles from "./Roles";
 
-const Usuarios = () => {
+interface UsuariosProps {
+  isInModal?: boolean;
+  onUsuarioCreated?: () => void;
+}
+
+const Usuarios = ({ isInModal = false, onUsuarioCreated }: UsuariosProps) => {
   const { usuarios, loading } = useGetUsuarios();
   const { crearUsuario } = usePostUsuario();
   const { actualizarUsuario } = usePutUsuario();
@@ -207,39 +212,44 @@ const Usuarios = () => {
 const handleSubmit = async (values: Record<string, string>) => {
   try {
     const parsedRolId = parseInt(values.rol_id);
-    const rol_id_array = [parsedRolId]; // Convert to array
 
     if (!editingId && (!values.contrasena || values.contrasena.trim() === "")) {
       throw new Error("La contraseña es obligatoria para crear un nuevo usuario");
     }
 
-    const baseUsuario = {
-      nombre: values.nombre,
-      apellido: values.apellido,
-      edad: Number(values.edad),
-      cedula: values.cedula,
-      email: values.email,
-      telefono: values.telefono,
-      imagen: selectedImageFile ? "/assets/3.jpg" : values.imagen || "",
-      rol_id: rol_id_array,
-    };
+    // Crear FormData para manejar la imagen
+    const formData = new FormData();
+    
+    // Agregar campos básicos al FormData
+    formData.append('nombre', values.nombre);
+    formData.append('apellido', values.apellido);
+    formData.append('edad', values.edad);
+    formData.append('cedula', values.cedula);
+    formData.append('email', values.email);
+    formData.append('telefono', values.telefono);
+    formData.append('rol_id', parsedRolId.toString());
+    formData.append('estado', 'true');
+    formData.append('contrasena', values.contrasena);
+
+    // Agregar imagen si existe
+    if (selectedImageFile) {
+      formData.append('imagen', selectedImageFile);
+    } else if (values.imagen) {
+      formData.append('imagen', values.imagen);
+    } else {
+      // Proporcionar una imagen por defecto si no hay ninguna
+      formData.append('imagen', '');
+    }
 
     if (editingId) {
-      const updatePayload: Partial<Usuario> = {
-        ...baseUsuario,
-        contrasena: values.contrasena || undefined, // Only update if provided
-      };
-      await actualizarUsuario(editingId, updatePayload);
+      await actualizarUsuario(editingId, formData);
       showSuccessToast("Usuario actualizado correctamente");
     } else {
-      const createPayload: Omit<Usuario, 'id_usuario'> = {
-        ...baseUsuario,
-        contrasena: values.contrasena,
-        estado: true,
-        fecha_registro: new Date().toISOString(),
-      };
-      await crearUsuario(createPayload as Usuario); // Cast to Usuario as id_usuario is omitted
+      await crearUsuario(formData);
       showSuccessToast("Usuario creado correctamente");
+      if (onUsuarioCreated) {
+        onUsuarioCreated();
+      }
     }
 
     setIsModalOpen(false);
@@ -247,6 +257,7 @@ const handleSubmit = async (values: Record<string, string>) => {
     setFormData({});
     setSelectedImageFile(null);
   } catch (error: any) {
+    console.error('Error al guardar usuario:', error);
     showErrorToast(error.message || "Error al guardar el usuario");
   }
 };
@@ -288,6 +299,20 @@ const handleSubmit = async (values: Record<string, string>) => {
     setEditingId(usuario.id_usuario);
     setIsModalOpen(true);
   };
+
+  if (isInModal) {
+    return (
+      <div className="w-full">
+        <Form
+          fields={formFieldsCreate}
+          onSubmit={handleSubmit}
+          buttonText="Crear"
+          initialValues={{}}
+          schema={usuarioSchema}
+        />
+      </div>
+    );
+  }
 
   return (
     <AnimatedContainer>

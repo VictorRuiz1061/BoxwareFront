@@ -4,8 +4,11 @@ import { CategoriaElemento } from "@/types/Elemento";
 import { extractArrayData } from "@/utils/responseHandler";
 
 export async function getCategoriasElementos(): Promise<CategoriaElemento[]> {
+  console.log("Fetching categoriasElementos...");
   const response = await axiosInstance.get("/categoria-elementos");
-  return extractArrayData<CategoriaElemento>(response);
+  const data = extractArrayData<CategoriaElemento>(response);
+  console.log("Received categoriasElementos data:", data);
+  return data;
 }
 
 export function useGetCategoriasElementos() {

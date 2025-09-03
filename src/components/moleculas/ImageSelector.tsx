@@ -65,7 +65,7 @@ const ImageSelector = ({ label, value, onChange, onError }: ImageSelectorProps) 
     if (previewUrl && previewUrl.startsWith('blob:')) {
       revokeImagePreview(previewUrl);
     }
-    setPreviewUrl('/assets/default.jpg');
+    setPreviewUrl('assets/default.jpg');
     setSelectedFile(null);
     onChange('');
   };
@@ -78,7 +78,7 @@ const ImageSelector = ({ label, value, onChange, onError }: ImageSelectorProps) 
       <div className="flex flex-col items-center space-y-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
         <div className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-sm relative">
           <TablaImagen
-            src={previewUrl || '/assets/default.jpg'}
+            src={previewUrl || 'assets/default.jpg'}
             alt="Vista previa"
             size="lg"
           />

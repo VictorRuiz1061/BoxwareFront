@@ -23,6 +23,7 @@ import Movimientos from "./components/pages/Movimientos";
 import TiposMovimiento from "./components/pages/TiposMovimiento";
 import Inventario from "./components/pages/Inventario";
 import Caracteristicas from "./components/pages/Caracteristicas";
+import InformesPage from "./components/pages/Informes";
 
 // Ubicacion Pages
 import Sedes from "./components/pages/Sedes";
@@ -65,6 +66,7 @@ function App() {
         <Route path="/tipos_movimiento" element={<TiposMovimiento />} />
         <Route path="/inventario" element={<Inventario />} />
         <Route path="/caracteristicas" element={<Caracteristicas />} />
+        <Route path="/informes" element={<InformesPage />} />
         
         {/* Ubicaciones */}
         <Route path="/sedes" element={<Sedes />} />

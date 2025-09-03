@@ -118,10 +118,7 @@ const Movimientos = () => {
       required: true,
       className: "col-span-1",
       options: usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` })),
-      extraButton: {
-        icon: "+",
-        onClick: () => setIsUsuarioModalOpen(true),
-      }
+      
     },
     {
       key: "usuario_responsable_id",
@@ -130,10 +127,7 @@ const Movimientos = () => {
       required: true,
       className: "col-span-1",
       options: usuarios.map(u => ({ value: u.id_usuario, label: `${u.nombre} ${u.apellido}` })),
-      extraButton: {
-        icon: "+",
-        onClick: () => setIsUsuarioModalOpen(true),
-      }
+      
     },
     {
       key: "sitio_origen_id",
@@ -142,10 +136,7 @@ const Movimientos = () => {
       required: true,
       className: "col-span-1",
       options: sitios.map(s => ({ value: s.id_sitio, label: s.nombre_sitio })),
-      extraButton: {
-        icon: "+",
-        onClick: () => setIsSitioModalOpen(true),
-      }
+      
     },
     {
       key: "sitio_destino_id",
@@ -154,10 +145,7 @@ const Movimientos = () => {
       required: true,
       className: "col-span-1",
       options: sitios.map(s => ({ value: s.id_sitio, label: s.nombre_sitio })),
-      extraButton: {
-        icon: "+",
-        onClick: () => setIsSitioModalOpen(true),
-      }
+      
     },
     {
       key: "tipo_movimiento",

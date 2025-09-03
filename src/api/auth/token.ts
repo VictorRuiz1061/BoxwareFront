@@ -86,7 +86,7 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     const processedUser = {
       ...user,
       // Asegurarnos de que tenga un campo imagen si no lo tiene
-      imagen: user.imagen || '/assets/default.jpg'
+      imagen: user.imagen || 'assets/default.jpg'
     };
     
     localStorage.setItem('user', JSON.stringify(processedUser));

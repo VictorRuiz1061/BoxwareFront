@@ -121,7 +121,7 @@ export const compressImage = (
  * @returns URL completa de la imagen
  */
 export const getImageUrl = (imagePath: string, baseUrl: string = ''): string => {
-  if (!imagePath) return '/assets/default.jpg';
+  if (!imagePath) return 'assets/default.jpg';
   
   // Si ya es una URL completa (http/https), devolverla tal como está
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {

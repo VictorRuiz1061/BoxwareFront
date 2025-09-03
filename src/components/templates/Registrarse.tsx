@@ -15,7 +15,7 @@ const Registrarse = () => {
     edad: '',
     cedula: '',
     password: '',
-    id_rol: 2
+    id_rol: 1
   });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +55,7 @@ const Registrarse = () => {
       telefono: formData.telefono,
       estado: true,
       fecha_registro: now,
-      rol_id: 2
+      rol_id: 1
     } as any);
 
     setIsLoading(false);

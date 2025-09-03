@@ -170,7 +170,7 @@ const Sedes = ({ isInModal = false, onSedeCreated }: SedesProps) => {
     return (
       <div className="w-full">
         <Form
-          fields={formFieldsModal}
+          fields={formFieldsCreate}
           onSubmit={handleSubmit}
           buttonText="Crear"
           initialValues={{

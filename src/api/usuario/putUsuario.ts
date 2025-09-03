@@ -3,7 +3,13 @@ import axiosInstance from "@/api/axiosConfig";
 import { Usuario } from "@/types/usuario";
 
 export async function putUsuario(id: number, data: Partial<Usuario> | FormData): Promise<Usuario> {
-  const response = await axiosInstance.put(`/usuarios/${id}`, data);
+  const config = data instanceof FormData ? {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  } : {};
+  
+  const response = await axiosInstance.put(`/usuarios/${id}`, data, config);
   return response.data;
 }
 
